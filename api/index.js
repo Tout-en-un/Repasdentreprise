@@ -628,9 +628,13 @@ app.get('/api/restaurant/companies', restaurantAuth, async (req, res) => {
 });
 
 // Get single invoice as PDF for restaurant
-app.get('/api/restaurant/invoices/:id/pdf', restaurantAuth, async (req, res) => {
+app.get('/api/restaurant/invoices/:id/pdf', async (req, res) => {
+  const token = req.query.token || req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Token manquant' });
   try {
-    const inv = await pool.query(`SELECT i.*,r.name AS restaurant_name,r.address AS restaurant_address,c.name AS company_name FROM invoices i JOIN restaurants r ON i.restaurant_id=r.id JOIN companies c ON i.company_id=c.id WHERE i.id=$1 AND i.restaurant_id=$2`, [req.params.id, req.user.id]);
+    const d = jwt.verify(token, JWT_SECRET);
+    if (d.role !== 'restaurant') return res.status(403).json({ error: 'Accès refusé' });
+    const inv = await pool.query(`SELECT i.*,r.name AS restaurant_name,r.address AS restaurant_address,c.name AS company_name FROM invoices i JOIN restaurants r ON i.restaurant_id=r.id JOIN companies c ON i.company_id=c.id WHERE i.id=$1 AND i.restaurant_id=$2`, [req.params.id, d.id]);
     if (!inv.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
     const inv_data = inv.rows[0];
     const items = Array.isArray(inv_data.items) ? inv_data.items : JSON.parse(inv_data.items||'[]');
@@ -1120,9 +1124,13 @@ app.post('/api/admin/invoices/:id/confirm', companyAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/admin/invoices/:id/pdf', companyAuth, async (req, res) => {
-  const companyId = req.user.id;
+app.get('/api/admin/invoices/:id/pdf', async (req, res) => {
+  const token = req.query.token || req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Token manquant' });
   try {
+    const d = jwt.verify(token, JWT_SECRET);
+    if (d.role !== 'company') return res.status(403).json({ error: 'Accès refusé' });
+    const companyId = d.id;
     const inv = await pool.query(`SELECT i.*,r.name AS restaurant_name,r.address AS restaurant_address,c.name AS company_name FROM invoices i JOIN restaurants r ON i.restaurant_id=r.id JOIN companies c ON i.company_id=c.id WHERE i.id=$1 AND i.company_id=$2`, [req.params.id, companyId]);
     if (!inv.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
     const inv_data = inv.rows[0];
@@ -1147,12 +1155,12 @@ app.get('/api/admin/invoices/:id/pdf', companyAuth, async (req, res) => {
     items.forEach((item, i) => {
       if (i%2===0) doc.rect(50,y-3,doc.page.width-100,18).fill('#FFF8F3');
       doc.fillColor('#2C1810').fontSize(9).font('Helvetica');
-      doc.text(item.name||'', 58, y).text(String(item.qty||1), 308, y).text(`${item.price||0} FCFA`, 380, y).text(`${(item.qty||1)*(item.price||0)} FCFA`, 450, y);
+      doc.text(item.name||'', 58, y).text(String(item.qty||1), 308, y).text(`${item.price||0}FCFA`, 380, y).text(`${(item.qty||1)*(item.price||0)}FCFA`, 450, y);
       y += 20;
     });
     y += 10;
     doc.rect(350,y,doc.page.width-400,30).fill('#E85A2A');
-    doc.fillColor('#FFF8F3').fontSize(13).font('Helvetica-Bold').text(`TOTAL : ${inv_data.total_amount} FCFA`, 360, y+8);
+    doc.fillColor('#FFF8F3').fontSize(13).font('Helvetica-Bold').text(`TOTAL : ${inv_data.total_amount}FCFA`, 360, y+8);
     doc.rect(0,doc.page.height-35,doc.page.width,35).fill('#2C1810');
     doc.fillColor('#8B6554').fontSize(9).text('FoodChooseApp — Gestion des repas d\'entreprise', 50, doc.page.height-20);
     doc.end();

@@ -708,8 +708,8 @@ async function loadConfirmedOrders() {
   } catch(e) { console.error('loadConfirmedOrders:', e); }
 }
 
-function downloadRestInvoice(id) { window.open(`/api/restaurant/invoices/${id}/pdf`, '_blank'); }
-function printRestInvoice(id) { window.open(`/api/restaurant/invoices/${id}/pdf`, '_blank'); }
+function downloadRestInvoice(id) { window.open(`/api/restaurant/invoices/${id}/pdf?token=${token}`, '_blank'); }
+function printRestInvoice(id) { window.open(`/api/restaurant/invoices/${id}/pdf?token=${token}`, '_blank'); }
 
 function openInvoiceModal(invoiceId, companyId) {
   currentInvoiceId = invoiceId;

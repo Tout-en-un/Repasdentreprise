@@ -86,6 +86,8 @@ let notifPollInterval = null;
 // Démarre le système de notifications : charge une première fois immédiatement,
 // puis toutes les 6 secondes pour rester à jour sans surcharger le serveur.
 function initNotifications(targetType, targetId) {
+  if (!targetType) targetType = localStorage.getItem('fc_role');
+  if (!targetId) targetId = localStorage.getItem('fc_id') || localStorage.getItem('fc_rest_id') || localStorage.getItem('fc_co_id');
   loadNotifications();
   notifPollInterval = setInterval(loadNotifications, 6000);
 }

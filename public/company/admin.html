@@ -733,9 +733,10 @@ async function confirmInvoice(id) {
 }
 
 function downloadInvoice(id) {
-  fetch(`/api/admin/invoices/${id}/pdf`, { headers: { Authorization: `Bearer ${token}` } })
-    .then(r=>r.blob()).then(blob=>{ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`facture_${id}.pdf`; a.click(); URL.revokeObjectURL(url); })
-    .catch(()=>toast('Erreur','error'));
+  window.open(`/api/admin/invoices/${id}/pdf?token=${token}`, '_blank');
+}
+function printInvoice(id) {
+  window.open(`/api/admin/invoices/${id}/pdf?token=${token}`, '_blank');
 }
 
 function printInvoice(id) {

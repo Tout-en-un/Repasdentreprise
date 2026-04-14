@@ -277,12 +277,12 @@ CREATE TABLE IF NOT EXISTS order_batches (
 );
 
 
--- ============================================
--- TABLE : invoices
--- Représente les factures générées à partir des lots de commandes.
--- Une facture est envoyée par le restaurant à l'entreprise
--- après confirmation du lot.
--- ============================================
+-- Pour exécuter sur Neon, exécuter ces commandes SQL:
+-- ALTER TABLE invoices ADD COLUMN IF NOT EXISTS from_date DATE;
+-- ALTER TABLE invoices ADD COLUMN IF NOT EXISTS to_date DATE;
+-- ALTER TABLE invoices ADD COLUMN IF NOT EXISTS sent BOOLEAN DEFAULT false;
+-- ALTER TABLE invoices ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP;
+-- ALTER TABLE invoices ADD COLUMN IF NOT EXISTS confirmed_at TIMESTAMP;
 CREATE TABLE IF NOT EXISTS invoices (
   -- identifiant de la facture
   id SERIAL PRIMARY KEY,
@@ -305,8 +305,19 @@ CREATE TABLE IF NOT EXISTS invoices (
   -- détail des articles facturés sous forme JSON (nom plat, qté, prix unitaire)
   items JSONB DEFAULT '[]',
 
-  -- état de la facture : 'pending', 'paid', 'disputed', etc.
+  -- période de la facture
+  from_date DATE,
+  to_date DATE,
+
+  -- état de la facture : 'pending', 'confirmed', 'paid', 'disputed', etc.
   status VARCHAR(20) DEFAULT 'pending',
+
+  -- facture envoyée à l'entreprise
+  sent BOOLEAN DEFAULT false,
+  sent_at TIMESTAMP,
+
+  -- confirmation de réception par l'entreprise
+  confirmed_at TIMESTAMP,
 
   -- date de création de l'enregistrement en base
   created_at TIMESTAMP DEFAULT NOW()
@@ -576,3 +587,9 @@ CREATE INDEX IF NOT EXISTS idx_notif_target ON notifications(target_type, target
 
 -- accélère les requêtes sur l'historique des commandes par date (rapports, exports)
 CREATE INDEX IF NOT EXISTS idx_history_date ON order_history(order_date);
+
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS from_date DATE;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS to_date DATE;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS sent BOOLEAN DEFAULT false;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS confirmed_at TIMESTAMP;

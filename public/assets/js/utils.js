@@ -55,13 +55,12 @@ function toast(msg, type = 'info') {
 // Ça évite une requête réseau et ça marche même hors connexion.
 function playSound(type = 'notif') {
   try {
-    // On crée un contexte audio frais à chaque fois pour éviter les conflits entre sons
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
-    // Le son varie selon le type : les messages ont un "bip bip" descendant, les notifs un "bip bip bip" plus dynamique
     if (type === 'message') {
       osc.frequency.setValueAtTime(880, ctx.currentTime);
       osc.frequency.setValueAtTime(660, ctx.currentTime + 0.08);
@@ -70,12 +69,11 @@ function playSound(type = 'notif') {
       osc.frequency.setValueAtTime(900, ctx.currentTime + 0.1);
       osc.frequency.setValueAtTime(700, ctx.currentTime + 0.2);
     }
-    // Volume modéré et fondu en sortie pour que ce soit agréable, pas agressif
     gain.gain.setValueAtTime(0.2, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.4);
-  } catch(e) {} // Sur certains navigateurs ou en mode silencieux, on ignore silencieusement l'erreur
+  } catch(e) {}
 }
 
 // ─── Notifications polling ────────────────────────────

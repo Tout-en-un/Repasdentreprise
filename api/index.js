@@ -396,37 +396,68 @@ app.delete('/api/restaurant/menus/:id', restaurantAuth, async (req, res) => {
 
 // Restaurant orders
 app.get('/api/restaurant/orders', restaurantAuth, async (req, res) => {
-  const { date, period, from, to, companyId } = req.query;
-  let whereDate = 'o.order_date = $2';
+  const { date, period, from, to, companyId, status } = req.query;
+  let whereDate = "o.order_date >= CURRENT_DATE - INTERVAL '7 days'";
   let params = [req.user.id];
   
-  // Support period search (from/to dates) and company filter
   if (from && to) {
     whereDate = "o.order_date >= $2 AND o.order_date <= $3";
-    params.push(from, to);
-    if (companyId) {
+    params = [req.user.id, from, to];
+    if (companyId && companyId !== 'undefined') {
       whereDate += " AND o.company_id = $4";
       params.push(companyId);
     }
+    if (status) {
+      whereDate += " AND o.status = $" + (params.length + 1);
+      params.push(status);
+    }
   } else if (period === 'week') {
     whereDate = "o.order_date >= date_trunc('week', CURRENT_DATE) AND o.order_date <= CURRENT_DATE";
-    if (companyId) {
+    if (companyId && companyId !== 'undefined') {
       whereDate += " AND o.company_id = $2";
       params.push(companyId);
+    }
+    if (status) {
+      whereDate += " AND o.status = $" + (params.length + 1);
+      params.push(status);
     }
   } else if (period === 'month') {
     whereDate = "o.order_date >= date_trunc('month', CURRENT_DATE) AND o.order_date <= CURRENT_DATE";
-    if (companyId) {
+    if (companyId && companyId !== 'undefined') {
       whereDate += " AND o.company_id = $2";
       params.push(companyId);
     }
-  } else {
-    // Single date
-    const dateParam = date || todayStr();
-    params.push(dateParam);
-    if (companyId) {
+    if (status) {
+      whereDate += " AND o.status = $" + (params.length + 1);
+      params.push(status);
+    }
+  } else if (date) {
+    whereDate = "o.order_date = $2";
+    if (companyId && companyId !== 'undefined') {
       whereDate += " AND o.company_id = $3";
+      params = [req.user.id, date, companyId];
+      if (status) {
+        whereDate += " AND o.status = $4";
+        params.push(status);
+      }
+    } else {
+      params = [req.user.id, date];
+      if (status) {
+        whereDate += " AND o.status = $3";
+        params.push(status);
+      }
+    }
+  } else {
+    if (companyId && companyId !== 'undefined') {
+      whereDate = "o.order_date >= CURRENT_DATE - INTERVAL '7 days' AND o.company_id = $2";
       params.push(companyId);
+      if (status) {
+        whereDate += " AND o.status = $3";
+        params.push(status);
+      }
+    } else if (status) {
+      whereDate = "o.order_date >= CURRENT_DATE - INTERVAL '7 days' AND o.status = $2";
+      params.push(status);
     }
   }
   
@@ -559,6 +590,43 @@ app.get('/api/restaurant/invoices', restaurantAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Create invoice (generate)
+app.post('/api/restaurant/invoices', restaurantAuth, async (req, res) => {
+  const { company_id, items, total_amount } = req.body;
+  const companyId = parseInt(company_id);
+  if (!companyId || isNaN(companyId)) return res.status(400).json({ error: 'ID entreprise invalide' });
+  if (!total_amount || total_amount <= 0) return res.status(400).json({ error: 'Montant invalide' });
+  try {
+    const inv = await pool.query(
+      'INSERT INTO invoices (company_id, restaurant_id, items, total_amount) VALUES ($1, $2, $3, $4) RETURNING *',
+      [companyId, req.user.id, JSON.stringify(items || []), total_amount]
+    );
+    res.json({ success: true, invoiceId: inv.rows[0].id });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Send invoice
+app.post('/api/restaurant/invoices/:id/send', restaurantAuth, async (req, res) => {
+  try {
+    const inv = await pool.query('SELECT i.*, c.email, c.name as company_name, r.name as restaurant_name FROM invoices i JOIN companies c ON i.company_id=c.id JOIN restaurants r ON i.restaurant_id=r.id WHERE i.id=$1 AND i.restaurant_id=$2', [req.params.id, req.user.id]);
+    if (!inv.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
+    await pool.query('UPDATE invoices SET sent=true, sent_at=NOW() WHERE id=$1', [req.params.id]);
+    const invData = inv.rows[0];
+    if (invData.email) {
+      sendMail(invData.email, `🧾 Facture de ${invData.restaurant_name}`, `<p>Vous avez reçu une facture de <strong>${invData.restaurant_name}</strong> d'un montant de <strong>${invData.total_amount} CFA</strong>.</p><p><a href="${req.protocol}://${req.get('host')}/api/restaurant/invoices/${invData.id}/pdf">Télécharger la facture PDF</a></p>`).catch(err => console.error('Email send error:', err));
+    }
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get companies for restaurant
+app.get('/api/restaurant/companies', restaurantAuth, async (req, res) => {
+  try {
+    const companies = await pool.query('SELECT DISTINCT c.id, c.name FROM companies c JOIN affiliations a ON c.id = a.company_id WHERE a.restaurant_id=$1 ORDER BY c.name', [req.user.id]);
+    res.json(companies.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Get single invoice as PDF for restaurant
 app.get('/api/restaurant/invoices/:id/pdf', restaurantAuth, async (req, res) => {
   try {
@@ -571,7 +639,7 @@ app.get('/api/restaurant/invoices/:id/pdf', restaurantAuth, async (req, res) => 
     res.setHeader('Content-Disposition', `attachment; filename="facture_${req.params.id}.pdf"`);
     doc.pipe(res);
     doc.rect(0,0,doc.page.width,110).fill('#E85A2A');
-    doc.fillColor('#FFF8F3').fontSize(26).font('Helvetica-Bold').text('🍽 FoodChooseApp', 50, 30);
+    doc.fillColor('#FFF8F3').fontSize(26).font('Helvetica-Bold').text('FoodChooseApp', 50, 30);
     doc.fontSize(13).font('Helvetica').text('FACTURE', 50, 62);
     doc.fontSize(10).text(`N° FAC-${String(req.params.id).padStart(5,'0')} | ${new Date(inv_data.created_at).toLocaleDateString('fr-FR')}`, 50, 80);
     let y = 135;
@@ -668,7 +736,7 @@ app.get('/api/restaurant/export-pdf', restaurantAuth, async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="rapport_${period||'jour'}.pdf"`);
     doc.pipe(res);
     doc.rect(0,0,doc.page.width,110).fill('#E85A2A');
-    doc.fillColor('#FFF8F3').fontSize(26).font('Helvetica-Bold').text('🍽 FoodChooseApp', 50, 30);
+    doc.fillColor('#FFF8F3').fontSize(26).font('Helvetica-Bold').text('FoodChooseApp', 50, 30);
     doc.fontSize(14).font('Helvetica').text(`Rapport — ${periodLabel}`, 50, 62);
     doc.fontSize(11).text(`Restaurant : ${req.user.name} | Généré le ${new Date().toLocaleDateString('fr-FR')}`, 50, 82);
     let y = 135;
@@ -911,8 +979,17 @@ app.post('/api/admin/employees', companyAuth, async (req, res) => {
 
 app.delete('/api/admin/employees/:id', companyAuth, async (req, res) => {
   const companyId = req.user.id;
-  await pool.query('DELETE FROM users WHERE id=$1 AND company_id=$2', [req.params.id, companyId]);
-  res.json({ message: 'Employé supprimé' });
+  const userId = parseInt(req.params.id);
+  if (isNaN(userId)) return res.status(400).json({ error: 'ID invalide' });
+  
+  try {
+    await pool.query('DELETE FROM ratings WHERE user_id=$1', [userId]);
+    await pool.query('DELETE FROM orders WHERE user_id=$1 AND company_id=$2', [userId, companyId]);
+    await pool.query('DELETE FROM users WHERE id=$1 AND company_id=$2', [userId, companyId]);
+    res.json({ message: 'Employé supprimé' });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.get('/api/admin/orders', companyAuth, async (req, res) => {
@@ -1023,6 +1100,26 @@ app.get('/api/admin/invoices', companyAuth, async (req, res) => {
   res.json(r.rows);
 });
 
+app.post('/api/admin/invoices/:id/confirm', companyAuth, async (req, res) => {
+  const companyId = req.user.id;
+  const invoiceId = parseInt(req.params.id);
+  if (isNaN(invoiceId)) return res.status(400).json({ error: 'ID invalide' });
+  
+  try {
+    const inv = await pool.query('SELECT * FROM invoices WHERE id=$1 AND company_id=$2', [invoiceId, companyId]);
+    if (!inv.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
+    
+    await pool.query('UPDATE invoices SET status=$1 WHERE id=$2', ['confirmed', invoiceId]);
+    
+    const rest = await pool.query('SELECT r.name FROM restaurants r JOIN invoices i ON i.restaurant_id=r.id WHERE i.id=$1', [invoiceId]);
+    if (rest.rows.length) {
+      await createNotification('restaurant', inv.rows[0].restaurant_id, '✅ Facture confirmée', `L'entreprise a confirmé la réception de la facture FAC-${String(invoiceId).padStart(5,'0')}`, 'invoice', { invoiceId: invoiceId });
+    }
+    
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/admin/invoices/:id/pdf', companyAuth, async (req, res) => {
   const companyId = req.user.id;
   try {
@@ -1035,7 +1132,7 @@ app.get('/api/admin/invoices/:id/pdf', companyAuth, async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="facture_${req.params.id}.pdf"`);
     doc.pipe(res);
     doc.rect(0,0,doc.page.width,110).fill('#E85A2A');
-    doc.fillColor('#FFF8F3').fontSize(26).font('Helvetica-Bold').text('🍽 FoodChooseApp', 50, 30);
+    doc.fillColor('#FFF8F3').fontSize(26).font('Helvetica-Bold').text('FoodChooseApp', 50, 30);
     doc.fontSize(13).font('Helvetica').text('FACTURE', 50, 62);
     doc.fontSize(10).text(`N° FAC-${String(req.params.id).padStart(5,'0')} | ${new Date(inv_data.created_at).toLocaleDateString('fr-FR')}`, 50, 80);
     let y = 135;
@@ -1121,7 +1218,7 @@ app.get('/api/admin/export-pdf', companyAuth, async (req, res) => {
     res.setHeader('Content-Disposition',`attachment; filename="commandes_${d}.pdf"`);
     doc.pipe(res);
     doc.rect(0,0,doc.page.width,110).fill('#E85A2A');
-    doc.fillColor('#FFF8F3').fontSize(26).font('Helvetica-Bold').text('🍽 FoodChooseApp', 50, 30);
+    doc.fillColor('#FFF8F3').fontSize(26).font('Helvetica-Bold').text('FoodChooseApp', 50, 30);
     doc.fontSize(14).font('Helvetica').text(`Commandes — ${new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}`, 50, 60);
     doc.fontSize(10).text(`Entreprise : ${coName}`, 50, 82);
     let y = 135;
@@ -1277,13 +1374,18 @@ app.put('/api/employee/order/:id', employeeAuth, async (req, res) => {
 });
 
 app.delete('/api/employee/order/:id', employeeAuth, async (req, res) => {
-  const ex = await pool.query('SELECT o.*,m.name AS menu_name,r.name AS rest_name FROM orders o JOIN menus m ON o.menu_id=m.id JOIN restaurants r ON o.restaurant_id=r.id WHERE o.id=$1 AND o.user_id=$2', [req.params.id, req.user.id]);
-  if (!ex.rows.length) return res.status(404).json({ error: 'Introuvable' });
-  if (ex.rows[0].status !== 'pending') return res.status(400).json({ error: 'Impossible de supprimer' });
-  await pool.query('DELETE FROM orders WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
-  await pool.query('INSERT INTO order_history (user_id,company_id,employee_id,employee_name,restaurant_name,menu_name,order_date,action) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
-    [req.user.id, req.user.companyId, req.user.employeeId, req.user.name, ex.rows[0].rest_name, ex.rows[0].menu_name, ex.rows[0].order_date, 'deleted']);
-  res.json({ message: 'Supprimée' });
+  try {
+    const orderId = parseInt(req.params.id);
+    if (isNaN(orderId)) return res.status(400).json({ error: 'ID invalide' });
+    
+    const ex = await pool.query('SELECT o.*,m.name AS menu_name,r.name AS rest_name FROM orders o JOIN menus m ON o.menu_id=m.id JOIN restaurants r ON o.restaurant_id=r.id WHERE o.id=$1 AND o.user_id=$2', [orderId, req.user.id]);
+    if (!ex.rows.length) return res.status(404).json({ error: 'Introuvable' });
+    if (ex.rows[0].status !== 'pending') return res.status(400).json({ error: 'Impossible de supprimer' });
+    await pool.query('DELETE FROM orders WHERE id=$1 AND user_id=$2', [orderId, req.user.id]);
+    await pool.query('INSERT INTO order_history (user_id,company_id,employee_id,employee_name,restaurant_name,menu_name,order_date,action) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+      [req.user.id, req.user.companyId, req.user.employeeId, req.user.name, ex.rows[0].rest_name, ex.rows[0].menu_name, ex.rows[0].order_date, 'deleted']);
+    res.json({ message: 'Supprimée' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/employee/ratings', employeeAuth, async (req, res) => {
@@ -1495,61 +1597,102 @@ const employeesWithoutOrder = async (today) => {
   return r.rows;
 };
 
-// 9h — notification in-app
+// Get employees who haven't received reminder at specific hour today
+const employeesWithoutReminderAtHour = async (today, hour) => {
+  const r = await pool.query(`
+    SELECT u.id, u.email, u.first_name
+    FROM users u
+    WHERE u.company_id IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id AND o.order_date = $1)
+      AND NOT EXISTS (
+        SELECT 1 FROM notifications n 
+        WHERE n.user_id = u.id 
+          AND n.created_at::date = $1
+          AND n.title LIKE $2
+      )
+  `, [today, `%${hour}h%`]);
+  return r.rows;
+};
+
+// 9h — notification + email
 cron.schedule('0 9 * * 1-5', async () => {
   try {
     const today = todayStr();
-    const employees = await employeesWithoutOrder(today);
+    const appUrl = process.env.APP_URL || 'http://localhost:3050';
+    const employees = await employeesWithoutReminderAtHour(today, '9h');
     for (const emp of employees) {
       await createNotification('employee', emp.id,
-        '🍽 Choisissez votre repas du jour !',
+        '9h 🍽 Choisissez votre repas du jour !',
         `Bonjour ${emp.first_name} ! Pensez à faire votre choix de repas avant la clôture des commandes.`,
         'reminder', {});
+      sendMail(emp.email, '🍽 Choisissez votre repas du jour !',
+        `<div style="font-family:Georgia,serif;max-width:600px;margin:0 auto;padding:40px;background:#FFF8F3;border-radius:12px;">
+          <h1 style="color:#E85A2A;font-size:28px;">FoodChooseApp</h1>
+          <h2 style="color:#2C1810;">Bonjour ${emp.first_name} !</h2>
+          <p style="color:#4A3728;line-height:1.7">C'est l'heure de choisir votre repas du jour !<br>Pensez à faire votre choix avant la clôture des commandes.</p>
+          <div style="text-align:center;margin:24px 0">
+            <a href="${appUrl}/employee" style="display:inline-block;background:#E85A2A;color:white;padding:14px 32px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">Choisir mon repas</a>
+          </div>
+          <p style="color:#8B6554;font-size:13px;margin-top:24px;border-top:1px solid #F0E6DE;padding-top:16px">© FoodChooseApp — Plateforme de choix de repas</p>
+        </div>`
+      ).catch(err => console.error('Email rappel 9h:', err));
     }
-    if (employees.length) console.log(`🔔 Rappels 9h : ${employees.length} employé(s)`);
+    if (employees.length) console.log(`🔔🔔 Rappels 9h : ${employees.length} employé(s)`);
   } catch(e) { console.error('Cron 9h error:', e.message); }
 }, { timezone: 'Africa/Abidjan' });
 
-// 10h — notification in-app
+// 10h — notification + email
 cron.schedule('0 10 * * 1-5', async () => {
   try {
     const today = todayStr();
-    const employees = await employeesWithoutOrder(today);
+    const appUrl = process.env.APP_URL || 'http://localhost:3050';
+    const employees = await employeesWithoutReminderAtHour(today, '10h');
     for (const emp of employees) {
       await createNotification('employee', emp.id,
-        '⏰ Rappel — Repas du jour',
+        '10h ⏰ Rappel — Repas du jour',
         `${emp.first_name}, vous n'avez pas encore fait votre choix ! Il vous reste encore un peu de temps.`,
         'reminder', {});
+      sendMail(emp.email, '⏰ Rappel — Choisissez votre repas !',
+        `<div style="font-family:Georgia,serif;max-width:600px;margin:0 auto;padding:40px;background:#FFF8F3;border-radius:12px;">
+          <h1 style="color:#E85A2A;font-size:28px;">FoodChooseApp</h1>
+          <h2 style="color:#2C1810;">Bonjour ${emp.first_name} !</h2>
+          <p style="color:#4A3728;line-height:1.7">Vous n'avez pas encore fait votre choix de repas.<br>Il vous reste encore du temps avant la clôture !</p>
+          <div style="text-align:center;margin:24px 0">
+            <a href="${appUrl}/employee" style="display:inline-block;background:#E85A2A;color:white;padding:14px 32px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">Choisir mon repas</a>
+          </div>
+          <p style="color:#8B6554;font-size:13px;margin-top:24px;border-top:1px solid #F0E6DE;padding-top:16px">© FoodChooseApp — Plateforme de choix de repas</p>
+        </div>`
+      ).catch(err => console.error('Email rappel 10h:', err));
     }
-    if (employees.length) console.log(`🔔 Rappels 10h : ${employees.length} employé(s)`);
+    if (employees.length) console.log(`🔔🔔 Rappels 10h : ${employees.length} employé(s)`);
   } catch(e) { console.error('Cron 10h error:', e.message); }
 }, { timezone: 'Africa/Abidjan' });
 
-// 11h — email
+// 11h — notification + email (dernier rappel)
 cron.schedule('0 11 * * 1-5', async () => {
   try {
     const today = todayStr();
     const appUrl = process.env.APP_URL || 'http://localhost:3050';
-    const employees = await employeesWithoutOrder(today);
+    const employees = await employeesWithoutReminderAtHour(today, '11h');
     for (const emp of employees) {
       await createNotification('employee', emp.id,
-        '📧 Dernier rappel — Commandez maintenant',
+        '11h 📧 Dernier rappel — Commandez maintenant',
         `Un email de rappel a été envoyé à votre adresse. C'est le dernier rappel !`,
         'reminder', {});
-      sendMail(emp.email, '🍽 Dernier rappel — Repas du jour',
+      sendMail(emp.email, '📧 Dernier rappel — Repas du jour',
         `<div style="font-family:Georgia,serif;max-width:600px;margin:0 auto;padding:40px;background:#FFF8F3;border-radius:12px;">
-          <h1 style="color:#E85A2A;font-size:28px;">🍽 FoodChooseApp</h1>
+          <h1 style="color:#E85A2A;font-size:28px;">FoodChooseApp</h1>
           <h2 style="color:#2C1810;">Bonjour ${emp.first_name} !</h2>
           <p style="color:#4A3728;line-height:1.7">Vous n'avez pas encore sélectionné votre repas d'aujourd'hui.<br>
           C'est votre <strong>dernier rappel</strong>. Connectez-vous maintenant pour faire votre choix.</p>
           <div style="text-align:center;margin:24px 0">
-            <a href="${appUrl}/employee" style="display:inline-block;background:#E85A2A;color:white;padding:14px 32px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">🍽 Choisir mon repas →</a>
+            <a href="${appUrl}/employee" style="display:inline-block;background:#E85A2A;color:white;padding:14px 32px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">Choisir mon repas</a>
           </div>
           <p style="color:#8B6554;font-size:13px;margin-top:24px;border-top:1px solid #F0E6DE;padding-top:16px">© FoodChooseApp — Plateforme de choix de repas</p>
         </div>`
       ).catch(err => console.error('Email rappel 11h:', err));
     }
-    if (employees.length) console.log(`📧 Rappels email 11h : ${employees.length} employé(s)`);
+    if (employees.length) console.log(`📧📧 Rappels email 11h : ${employees.length} employé(s)`);
   } catch(e) { console.error('Cron 11h error:', e.message); }
 }, { timezone: 'Africa/Abidjan' });
 

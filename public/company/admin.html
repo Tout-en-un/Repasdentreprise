@@ -714,14 +714,22 @@ async function loadInvoices() {
       <td style="font-size:11px;color:var(--muted)">FAC-${String(inv.id).padStart(5,'0')}</td>
       <td><strong>${inv.restaurant_name}</strong></td>
       <td>${formatDate(inv.created_at)}</td>
-      <td style="font-weight:700;color:var(--orange)">${parseFloat(inv.total_amount||0).toLocaleString()} FCFA</td>
-      <td><span class="badge badge-${inv.status==='paid'?'validated':'pending'}">${inv.status}</span></td>
+      <td style="font-weight:700;color:var(--orange)">${parseFloat(inv.total_amount||0).toLocaleString()}FCFA</td>
+      <td><span class="badge badge-${inv.status==='paid'?'validated':inv.status==='confirmed'?'validated':'pending'}">${inv.status==='confirmed'?'Confirmée':inv.status}</span></td>
       <td>
         <button class="btn btn-outline btn-sm" onclick="downloadInvoice(${inv.id})">⬇️ PDF</button>
-        <button class="btn btn-primary btn-sm" onclick="printInvoice(${inv.id})">🖨️</button>
+        ${inv.status !== 'confirmed' ? `<button class="btn btn-primary btn-sm" onclick="confirmInvoice(${inv.id})">✓ Confirmer</button>` : ''}
       </td>
     </tr>`).join('');
   } catch(e) {}
+}
+
+async function confirmInvoice(id) {
+  try {
+    await apiFetch(`/api/admin/invoices/${id}/confirm`, { method: 'POST' }, token);
+    toast('Facture confirmée!', 'success');
+    loadInvoices();
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 function downloadInvoice(id) {
@@ -1148,8 +1156,9 @@ async function changeCompanyPassword() {
   window.toggleNotifDropdown = toggleNotifDropdown;
   window.markNotifRead = markNotifRead;
   window.loadInvoices = loadInvoices;
-  window.downloadInvoice = downloadInvoice;
-  window.printInvoice = printInvoice;
+window.downloadInvoice = downloadInvoice;
+window.printInvoice = printInvoice;
+window.confirmInvoice = confirmInvoice;
   window.sendAdminVoiceMsg = sendAdminVoiceMsg;
   window.toggleAdminVoiceRecord = toggleAdminVoiceRecord;
   window.exportCompanyOrdersPDF = exportCompanyOrdersPDF;

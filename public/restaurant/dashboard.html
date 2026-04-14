@@ -253,11 +253,38 @@
   <!-- ═══ INVOICES ═══ -->
   <div class="page" id="page-invoices">
     <div class="page-grid">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📄 Générer une facture</span>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Sélectionner l'entreprise *</label>
+            <select class="form-control" id="invoiceCompanySelect" onchange="loadConfirmedOrders()">
+              <option value="">Choisir une entreprise...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Période</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="date" class="form-control" id="invoiceFrom" style="width:140px">
+              <span style="color:var(--muted)">au</span>
+              <input type="date" class="form-control" id="invoiceTo" style="width:140px">
+            </div>
+          </div>
+          <div id="ordersPreview" style="margin-bottom:12px"></div>
+          <button class="btn btn-primary" style="width:100%" onclick="generateInvoice()">⚡ Générer la facture</button>
+          <div id="generateResult" style="margin-top:16px"></div>
+        </div>
+      </div>
       <div class="card" style="grid-column:1/-1">
-        <div class="card-header"><span class="card-title">🧾 Factures envoyées</span></div>
+        <div class="card-header">
+          <span class="card-title">🧾 Factures envoyées</span>
+          <button class="btn btn-outline btn-sm" onclick="loadInvoices()">🔄</button>
+        </div>
         <div class="card-body">
           <table class="table" id="invoicesTable">
-            <thead><tr><th>N°</th><th>Entreprise</th><th>Date</th><th>Montant</th><th>Actions</th></tr></thead>
+            <thead><tr><th>N° Facture</th><th>Entreprise</th><th>Date emission</th><th>Montant</th><th>Statut</th><th>Actions</th></tr></thead>
             <tbody id="invoicesBody"></tbody>
           </table>
         </div>
@@ -329,6 +356,27 @@ if (!token || localStorage.getItem('fc_role') !== 'restaurant') window.location.
 // Global functions for onclick handlers
 function logout() { localStorage.clear(); window.location.href = '/'; }
 
+// Order batch and invoice functions (global scope for onclick handlers)
+async function createBatchForCompany(companyId, orderDate) {
+  try {
+    const batch = await apiFetch('/api/restaurant/batches', { method: 'POST', body: { company_id: companyId, batch_date: orderDate } }, token);
+    toast('Batch créé!', 'success');
+    loadOrders();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function createInvoiceForCompany(companyName, companyId, orderDate) {
+  try {
+    const orders = await apiFetch(`/api/restaurant/orders?companyId=${companyId}&from=${orderDate}&to=${orderDate}`, {}, token);
+    if (!orders.length) return toast('Aucune commande', 'error');
+    const items = orders.map(o => ({ name: o.menu_name, qty: 1, price: parseFloat(o.price) }));
+    const totalAmount = items.reduce((s, i) => s + (i.qty * i.price), 0);
+    await apiFetch('/api/restaurant/invoices', { method: 'POST', body: { company_id: companyId, items, total_amount: totalAmount, batch_date: orderDate } }, token);
+    toast('Facture créée!', 'success');
+    loadOrders();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
 const restName = localStorage.getItem('fc_name') || '—';
 document.getElementById('sidebarName').textContent = restName.substring(0,20);
@@ -350,7 +398,385 @@ function switchToPage(page) {
   else if (page === 'ratings') loadRatings();
   else if (page === 'profile') loadProfile();
   else if (page === 'messages') { loadConversations(); startMsgPolling(); }
-  else if (page === 'invoices') loadInvoices();
+  else if (page === 'invoices') { loadInvoices(); loadCompaniesForInvoices(); }
+}
+
+function loadCompaniesForInvoices() {
+  apiFetch('/api/restaurant/companies', {}, token).then(function(companies) {
+    var sel = document.getElementById('invoiceCompanySelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Choisir une entreprise...</option>';
+    companies.forEach(function(c) {
+      sel.innerHTML += '<option value="'+c.id+'">'+c.name+'</option>';
+    });
+  });
+}
+
+function loadCompaniesForFilter() {
+  apiFetch('/api/restaurant/companies', {}, token).then(function(companies) {
+    var sel = document.getElementById('companyFilter');
+    if (!sel) return;
+    companies.forEach(function(c) {
+      sel.innerHTML += '<option value="'+c.id+'">'+c.name+'</option>';
+    });
+  });
+}
+
+// ═══ DASHBOARD ═══
+async function loadDashboard() {
+  try {
+    const stats = await apiFetch('/api/restaurant/stats', {}, token);
+    document.getElementById('s-today').textContent = stats.today || 0;
+    document.getElementById('s-week').textContent = stats.week || 0;
+    document.getElementById('s-month').textContent = stats.month || 0;
+    document.getElementById('s-revenue').textContent = (stats.revenue || 0).toLocaleString();
+    
+    const avgRating = parseFloat(stats.avgRating) || 0;
+    const ratingsEl = document.getElementById('ratingStats');
+    ratingsEl.innerHTML = `<div style="text-align:center;padding:20px">
+      <div style="font-size:36px;font-weight:bold;color:var(--orange)">${avgRating.toFixed(1)} ⭐</div>
+      <div style="color:var(--muted);margin-top:6px">${stats.ratingCount || 0} avis</div>
+      <div style="margin-top:16px;font-size:13px;color:var(--brown)">🏢 ${stats.companies || 0} entreprises affiliées</div>
+    </div>`;
+    
+    renderOrderChart(stats.weeklyData || []);
+  } catch(e) { console.error('loadDashboard:', e); }
+}
+
+function renderOrderChart(data) {
+  const el = document.getElementById('orderChart');
+  if (!data || !data.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">Aucune donnée</div>'; return; }
+  const max = Math.max(...data.map(d => d.count), 1);
+  el.innerHTML = data.map(d => {
+    const h = Math.max(30, (d.count / max) * 120);
+    return `<div style="flex:1;text-align:center"><div style="height:120px;display:flex;align-items:flex-end;justify-content:center"><div style="width:24px;height:${h}px;background:var(--orange);border-radius:4px 4px 0 0"></div></div><div style="font-size:11px;color:var(--muted);margin-top:6px">${d.day}</div><div style="font-size:12px;font-weight:600;color:var(--text)">${d.count}</div></div>`;
+  }).join('');
+}
+
+function exportPDF(type) {
+  window.open(`/api/restaurant/export/pdf?type=${type}`, '_blank');
+}
+
+function exportOrdersPDF() {
+  const from = document.getElementById('ordersFrom').value;
+  const to = document.getElementById('ordersTo').value;
+  let url = '/api/restaurant/orders/pdf';
+  const params = [];
+  if (from) params.push('from=' + from);
+  if (to) params.push('to=' + to);
+  if (params.length) url += '?' + params.join('&');
+  window.open(url, '_blank');
+}
+
+// ═══ MENUS ═══
+async function loadMenus() {
+  try {
+    const menus = await apiFetch('/api/restaurant/menus', {}, token);
+    const wrap = document.getElementById('menusTableWrap');
+    if (!menus.length) { wrap.innerHTML = '<div class="empty-state"><span class="icon">🍜</span>Aucun menu</div>'; return; }
+    wrap.innerHTML = `<table><thead><tr><th>Nom</th><th>Catégorie</th><th>Prix</th><th>Statut</th><th>Actions</th></tr></thead><tbody>${menus.map(m => `
+      <tr>
+        <td>${m.name}</td>
+        <td>${m.category === 'plat' ? '🍜 Plat' : m.category === 'boisson' ? '🥤 Boisson' : m.category === 'snack' ? '🥨 Snack' : m.category === 'dessert' ? '🍰 Dessert' : '🥐 Petit-déj'}</td>
+        <td>${parseFloat(m.price).toLocaleString()} CFA</td>
+        <td><span style="padding:4px 8px;border-radius:6px;background:${m.available ? '#D1FAE5' : '#FEE2E2'};color:${m.available ? '#065F46' : '#991B1B'}">${m.available ? 'Actif' : 'Inactif'}</span></td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="toggleMenu(${m.id}, ${!m.available})">${m.available ? '⏸' : '▶'}</button>
+          <button class="btn btn-outline btn-sm" onclick="editMenu(${m.id})">✏️</button>
+          <button class="btn btn-outline btn-sm" style="color:var(--danger)" onclick="deleteMenu(${m.id})">🗑</button>
+        </td>
+      </tr>
+    `).join('')}</tbody></table>`;
+  } catch(e) { console.error('loadMenus:', e); }
+}
+
+async function addMenu() {
+  const name = document.getElementById('menuName').value.trim();
+  const category = document.getElementById('menuCat').value;
+  const description = document.getElementById('menuDesc').value.trim();
+  const price = parseFloat(document.getElementById('menuPrice').value);
+  if (!name || isNaN(price)) return toast('Nom et prix requis', 'error');
+  try {
+    await apiFetch('/api/restaurant/menus', { method: 'POST', body: { name, category, description, price } }, token);
+    toast('Menu ajouté!', 'success');
+    document.getElementById('menuName').value = '';
+    document.getElementById('menuDesc').value = '';
+    document.getElementById('menuPrice').value = '';
+    loadMenus();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function toggleMenu(id, available) {
+  try {
+    await apiFetch(`/api/restaurant/menus/${id}`, { method: 'PUT', body: { available } }, token);
+    loadMenus();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function editMenu(id) {
+  const name = prompt('Nouveau nom:');
+  const price = prompt('Nouveau prix:');
+  if (!name || !price) return;
+  try {
+    await apiFetch(`/api/restaurant/menus/${id}`, { method: 'PUT', body: { name, price: parseFloat(price) } }, token);
+    loadMenus();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteMenu(id) {
+  if (!confirm('Supprimer ce menu?')) return;
+  try {
+    await apiFetch(`/api/restaurant/menus/${id}`, { method: 'DELETE' }, token);
+    loadMenus();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ═══ RATINGS ═══
+async function loadRatings() {
+  try {
+    const ratings = await apiFetch('/api/restaurant/ratings', {}, token);
+    const tbody = document.getElementById('ratingsTableBody');
+    if (!ratings.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">Aucun avis</td></tr>'; return; }
+    tbody.innerHTML = ratings.map(r => `<tr>
+      <td>${r.menu_name || '—'}</td>
+      <td>${r.employee_name || '—'}</td>
+      <td>${'⭐'.repeat(r.score)}</td>
+      <td>${r.comment || '—'}</td>
+      <td>${r.created_at ? new Date(r.created_at).toLocaleDateString('fr-FR') : '—'}</td>
+    </tr>`).join('');
+  } catch(e) { console.error('loadRatings:', e); }
+}
+
+// ═══ PROFILE ═══
+async function loadProfile() {
+  try {
+    const profile = await apiFetch('/api/restaurant/profile', {}, token);
+    document.getElementById('pName').value = profile.name || '';
+    document.getElementById('pPhone').value = profile.phone || '';
+    document.getElementById('pLocation').value = profile.location || '';
+    document.getElementById('pAddress').value = profile.address || '';
+    if (profile.photo) {
+      document.getElementById('photoImg').src = profile.photo;
+      document.getElementById('photoImg').style.display = 'block';
+    }
+    renderSpecialties('profileSpecialties', profile.specialties || []);
+    renderPaymentFields('profilePayments', profile.payment_methods || []);
+  } catch(e) { console.error('loadProfile:', e); }
+}
+
+async function saveProfile() {
+  const data = {
+    name: document.getElementById('pName').value.trim(),
+    phone: document.getElementById('pPhone').value.trim(),
+    location: document.getElementById('pLocation').value.trim(),
+    address: document.getElementById('pAddress').value.trim()
+  };
+  try {
+    await apiFetch('/api/restaurant/profile', { method: 'PUT', body: data }, token);
+    localStorage.setItem('fc_name', data.name);
+    toast('Profil enregistré!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function changeRestPassword() {
+  const current = document.getElementById('pwCurrent').value;
+  const newPass = document.getElementById('pwNew').value;
+  const confirm = document.getElementById('pwNew2').value;
+  if (!current || !newPass || newPass.length < 6) return toast('Mot de passe invalide', 'error');
+  if (newPass !== confirm) return toast('Les mots de passe ne correspondent pas', 'error');
+  try {
+    await apiFetch('/api/restaurant/password', { method: 'PUT', body: { currentPassword: current, newPassword: newPass } }, token);
+    toast('Mot de passe changé!', 'success');
+    document.getElementById('pwCurrent').value = '';
+    document.getElementById('pwNew').value = '';
+    document.getElementById('pwNew2').value = '';
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function handlePhoto(input) {
+  if (!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('photoImg').src = e.target.result;
+    document.getElementById('photoImg').style.display = 'block';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+async function saveSpecialties() {
+  const specialties = getSelectedSpecialties('profileSpecialties');
+  try {
+    await apiFetch('/api/restaurant/profile', { method: 'PUT', body: { specialties } }, token);
+    toast('Spécialités enregistrées!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function savePayments() {
+  const payments = getPaymentTypes('profilePayments');
+  try {
+    await apiFetch('/api/restaurant/profile', { method: 'PUT', body: { payment_methods: payments } }, token);
+    toast('Modes de paiement enregistrés!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteAccount() {
+  const reason = document.getElementById('delReason').value.trim();
+  const exp = document.getElementById('delExp').value;
+  const issue = document.getElementById('delIssue').value.trim();
+  const confirm = document.getElementById('delConfirm').checked;
+  if (!reason || !exp || !confirm) return toast('Veuillez répondre aux questions', 'error');
+  try {
+    await apiFetch('/api/restaurant/delete', { method: 'DELETE', body: { reason, experience: exp, issue } }, token);
+    localStorage.clear();
+    window.location.href = '/';
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function openDeleteModal() { document.getElementById('deleteModal').classList.add('open'); }
+
+function openRestFileUpload() { document.getElementById('restFileInput').click(); }
+function toggleVoiceRecord() { alert('Fonctionnalité en développement'); }
+
+function clearRestFile() { document.getElementById('restFilePreview').innerHTML = ''; }
+
+// ═══ INVOICES ═══
+let currentInvoiceId = null;
+let currentInvoiceCompanyId = null;
+
+async function loadInvoices() {
+  try {
+    const invoices = await apiFetch('/api/restaurant/invoices', {}, token);
+    const tbody = document.getElementById('invoicesBody');
+    if (!invoices.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted)">Aucune facture</td></tr>'; return; }
+    tbody.innerHTML = invoices.map(inv => `<tr>
+      <td>FAC-${String(inv.id).padStart(5, '0')}</td>
+      <td>${inv.company_name || '—'}</td>
+      <td>${inv.created_at ? new Date(inv.created_at).toLocaleDateString('fr-FR') : '—'}</td>
+      <td>${parseFloat(inv.total_amount || 0).toLocaleString()} CFA</td>
+      <td><span style="padding:4px 8px;border-radius:6px;background:${inv.sent ? '#D1FAE5' : '#FEF3C7'};color:${inv.sent ? '#065F46' : '#92400E'}">${inv.sent ? ' Envoyée' : ' Non envoyée'}</span></td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="downloadRestInvoice(${inv.id})">📥 PDF</button>
+        ${!inv.sent ? `<button class="btn btn-primary btn-sm" onclick="openInvoiceModal(${inv.id}, ${inv.company_id})">📤 Envoyer</button>` : ''}
+      </td>
+    </tr>`).join('');
+  } catch(e) { console.error('loadInvoices:', e); }
+}
+
+async function generateInvoice() {
+  const companyId = document.getElementById('invoiceCompanySelect').value;
+  const from = document.getElementById('invoiceFrom').value;
+  const to = document.getElementById('invoiceTo').value;
+  
+  if (!companyId) return toast('Sélectionnez une entreprise', 'error');
+  
+  try {
+    let url = `/api/restaurant/orders?companyId=${companyId}`;
+    if (from) url += '&from=' + from;
+    if (to) url += '&to=' + to;
+    
+    const orders = await apiFetch(url, {}, token);
+    if (!orders.length) return toast('Aucune commande pour cette période', 'error');
+    
+    const items = orders.map(o => ({ name: o.menu_name, qty: 1, price: parseFloat(o.price) }));
+    const totalAmount = items.reduce((s, i) => s + (i.qty * i.price), 0);
+    
+    const result = await apiFetch('/api/restaurant/invoices', { method: 'POST', body: { company_id: companyId, items: items, total_amount: totalAmount } }, token);
+    
+    toast('Facture générée avec succès!', 'success');
+    document.getElementById('generateResult').innerHTML = `<div style="padding:12px;background:#D1FAE5;border-radius:8px;color:#065F46">✅ Facture FAC-${String(result.invoiceId).padStart(5,'0')} générée - ${orders.length} commandes => ${totalAmount.toLocaleString()} CFA</div>`;
+    loadInvoices();
+    document.getElementById('invoiceCompanySelect').value = '';
+    document.getElementById('invoiceFrom').value = '';
+    document.getElementById('invoiceTo').value = '';
+  } catch(e) { 
+    console.error('generateInvoice:', e);
+    toast(e.message || 'Erreur lors de la génération', 'error'); 
+  }
+}
+
+async function loadConfirmedOrders() {
+  const companyId = document.getElementById('invoiceCompanySelect').value;
+  if (!companyId) return;
+  try {
+    const orders = await apiFetch(`/api/restaurant/orders?companyId=${companyId}`, {}, token);
+    const preview = document.getElementById('ordersPreview');
+    if (!orders.length) { preview.innerHTML = '<div style="color:var(--muted);font-size:13px">Aucune commande</div>'; return; }
+    const total = orders.reduce((s, o) => s + parseFloat(o.price || 0), 0);
+    preview.innerHTML = `<div style="padding:10px;background:#FFF8F3;border-radius:8px;font-size:13px">
+      <strong>${orders.length} commande(s)</strong> - Total: ${total.toLocaleString()} CFA
+    </div>`;
+  } catch(e) { console.error('loadConfirmedOrders:', e); }
+}
+
+function downloadRestInvoice(id) { window.open(`/api/restaurant/invoices/${id}/pdf`, '_blank'); }
+function printRestInvoice(id) { window.open(`/api/restaurant/invoices/${id}/pdf`, '_blank'); }
+
+function openInvoiceModal(invoiceId, companyId) {
+  currentInvoiceId = invoiceId;
+  currentInvoiceCompanyId = companyId;
+  document.getElementById('invoiceModal').classList.add('open');
+}
+
+async function sendInvoice() {
+  if (!currentInvoiceId) return;
+  try {
+    await apiFetch(`/api/restaurant/invoices/${currentInvoiceId}/send`, { method: 'POST' }, token);
+    toast('Facture envoyée!', 'success');
+    document.getElementById('invoiceModal').classList.remove('open');
+    loadInvoices();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ═══ MESSAGES ═══
+async function loadConversations() {
+  try {
+    const convs = await apiFetch('/api/restaurant/conversations', {}, token);
+    const list = document.getElementById('convList');
+    if (!convs.length) { list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">Aucune conversation</div>'; return; }
+    list.innerHTML = convs.map(c => `<div class="conv-item" onclick="openChat(${c.company_id})">
+      <div style="font-weight:600">🏢 ${c.company_name}</div>
+      <div style="font-size:12px;color:var(--muted)">${c.last_message || 'Aucun message'}</div>
+    </div>`).join('');
+  } catch(e) { console.error('loadConversations:', e); }
+}
+
+function openChat(companyId) {
+  currentChatCompanyId = companyId;
+  loadMessages(companyId);
+  document.getElementById('chatMain').innerHTML = `<div style="padding:20px">
+    <div id="msgList" style="max-height:400px;overflow-y:auto"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <input class="form-control" id="msgInput" placeholder="Votre message..." onkeypress="if(event.key==='Enter')sendMessage()">
+      <button class="btn btn-primary" onclick="sendMessage()">Envoyer</button>
+    </div>
+  </div>`;
+}
+
+async function loadMessages(companyId) {
+  try {
+    const msgs = await apiFetch(`/api/restaurant/messages/${companyId}`, {}, token);
+    const list = document.getElementById('msgList');
+    if (!msgs.length) { list.innerHTML = '<div style="text-align:center;color:var(--muted)">Aucun message</div>'; return; }
+    list.innerHTML = msgs.map(m => `<div style="padding:8px;margin:4px 0;background:${m.from_restaurant ? 'var(--orange)' : '#F3F4F6'};color:${m.from_restaurant ? 'white' : 'var(--text)'};border-radius:8px;align-self:${m.from_restaurant ? 'flex-end' : 'flex-start'};max-width:80%">${m.message}</div>`).join('');
+  } catch(e) { console.error('loadMessages:', e); }
+}
+
+async function sendMessage() {
+  const input = document.getElementById('msgInput');
+  const msg = input.value.trim();
+  if (!msg || !currentChatCompanyId) return;
+  try {
+    await apiFetch('/api/restaurant/messages', { method: 'POST', body: { company_id: currentChatCompanyId, message: msg } }, token);
+    input.value = '';
+    loadMessages(currentChatCompanyId);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function startMsgPolling() {
+  if (msgPollInterval) clearInterval(msgPollInterval);
+  msgPollInterval = setInterval(() => {
+    if (currentChatCompanyId) loadMessages(currentChatCompanyId);
+  }, 5000);
 }
 
 function loadOrders(from, to, companyId) {
@@ -361,7 +787,10 @@ function loadOrders(from, to, companyId) {
     var el = document.getElementById('batchesList');
     if (!orders.length) { el.innerHTML = '<div class="empty-state"><span class="icon">🛒</span>Aucune commande</div>'; return; }
     var byCompany = {};
-    orders.forEach(function(o) { if (!byCompany[o.company_name]) byCompany[o.company_name] = []; byCompany[o.company_name].push(o); });
+    orders.forEach(function(o) { 
+      if (!byCompany[o.company_name]) byCompany[o.company_name] = []; 
+      byCompany[o.company_name].push(o); 
+    });
     var total = orders.reduce(function(s, o) { return s + parseFloat(o.price || 0); }, 0);
     el.innerHTML = '<div style="background:#FFF0EA;padding:14px;margin-bottom:14px">📊 <strong>'+orders.length+'</strong> commandes — <strong>'+total.toLocaleString()+'FCFA</strong></div>';
     Object.entries(byCompany).forEach(function(_ref) {
@@ -371,7 +800,17 @@ function loadOrders(from, to, companyId) {
       var companyId = firstOrder.company_id;
       var orderDate = firstOrder.order_date;
       var coTotal = ords.reduce(function(s, o) { return s + parseFloat(o.price || 0); }, 0);
-      el.innerHTML += '<div style="background:#F9F1EB;padding:16px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:12px"><div>🏢 '+co+'</div><div style="display:flex;gap:8px"><button class="btn btn-outline btn-sm" onclick="createBatchForCompany('+companyId+', \''+orderDate+'\')">📦 Batch</button><button class="btn btn-primary btn-sm" onclick="createInvoiceForCompany(\''+co+'\', '+companyId+', \''+orderDate+'\')">🧾 Facture</button></div></div></div>';
+      var hasValidated = ords.some(function(o) { return o.status === 'validated_by_admin'; });
+      var hasInvoiced = ords.some(function(o) { return o.status === 'invoiced'; });
+      var buttons = '';
+      if (hasInvoiced) {
+        buttons = '<span style="color:var(--success);font-size:12px">✓ Facturée</span>';
+      } else if (hasValidated) {
+        buttons = '<button class="btn btn-primary btn-sm" onclick="createInvoiceForCompany(\''+co+'\', '+companyId+', \''+orderDate+'\')">🧾 Générer facture</button>';
+      } else {
+        buttons = '<button class="btn btn-outline btn-sm" onclick="createBatchForCompany('+companyId+', \''+orderDate+'\')">📦 Confirmer</button>';
+      }
+      el.innerHTML += '<div style="background:#F9F1EB;padding:16px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:12px"><div>🏢 '+co+' <span style="font-size:12px;color:var(--muted)">'+ords.length+' cmd</span></div><div style="display:flex;gap:8px;align-items:center">'+buttons+'</div></div></div>';
     });
   });
 }
@@ -412,7 +851,6 @@ window.loadProfile = loadProfile;
 window.openChat = openChat;
 window.loadConversations = loadConversations;
 window.loadMessages = loadMessages;
-window.sendMsg = sendMsg;
 window.openRestFileUpload = openRestFileUpload;
 window.toggleVoiceRecord = toggleVoiceRecord;
 window.createBatchForCompany = createBatchForCompany;
@@ -428,6 +866,11 @@ window.clearRestFile = clearRestFile;
 window.openInvoiceModal = openInvoiceModal;
 window.sendMessage = sendMessage;
 window.confirmBatch = confirmBatch;
+window.generateInvoice = generateInvoice;
+window.loadConfirmedOrders = loadConfirmedOrders;
+window.openDeleteModal = openDeleteModal;
+window.handlePhoto = handlePhoto;
+window.startMsgPolling = startMsgPolling;
 }); // end DOMContentLoaded
 </script>
 </body>

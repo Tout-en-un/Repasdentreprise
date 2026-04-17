@@ -1,12 +1,24 @@
 {
   "version": 2,
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 30,
-      "includeFiles": "public/**"
+  "builds": [
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node"
     }
-  },
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/api/index.js" }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "api/index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "api/index.js"
+    }
+  ],
+  "crons": [
+    { "path": "/api/cron/reminder_9h", "schedule": "0 9 * * 1-5" },
+    { "path": "/api/cron/reminder_10h", "schedule": "0 10 * * 1-5" },
+    { "path": "/api/cron/reminder_11h", "schedule": "0 11 * * 1-5" }
   ]
 }

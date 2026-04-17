@@ -25,6 +25,21 @@ const JWT_SECRET = process.env.JWT_SECRET || 'foodchooseapp_2024_secret';
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  next();
+});
+
+// All API routes first
+app.get('/api/test', (req, res) => {
+  res.json({ test: 'success' });
+});
+
+app.get('/api/cron/test', (req, res) => {
+  res.json({ test: 'cron working' });
+});
+
 const PUBLIC_DIR = path.join(__dirname, '../public');
 app.use(express.static(PUBLIC_DIR));
 
@@ -371,22 +386,40 @@ app.post('/api/restaurant/menus', restaurantAuth, async (req, res) => {
 });
 
 app.put('/api/restaurant/menus/:id', restaurantAuth, async (req, res) => {
-  const { name, description, category, price, imageUrl } = req.body;
+  const { name, description, category, price, imageUrl, available } = req.body;
   try {
+    const fields = [];
+    const values = [];
+    let idx = 1;
+    if (name !== undefined) { fields.push(`name=$${idx++}`); values.push(name); }
+    if (description !== undefined) { fields.push(`description=$${idx++}`); values.push(description); }
+    if (category !== undefined) { fields.push(`category=$${idx++}`); values.push(category); }
+    if (price !== undefined) { fields.push(`price=$${idx++}`); values.push(parseFloat(price)); }
+    if (imageUrl !== undefined) { fields.push(`image_url=$${idx++}`); values.push(imageUrl); }
+    if (available !== undefined) { fields.push(`available=$${idx++}`); values.push(available); }
+    if (fields.length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
+    values.push(req.params.id, req.user.id);
     await pool.query(
-      'UPDATE menus SET name=$1,description=$2,category=$3,price=$4,image_url=COALESCE($5,image_url) WHERE id=$6 AND restaurant_id=$7',
-      [name, description||'', category||'plat', parseFloat(price)||0, imageUrl||null, req.params.id, req.user.id]
+      `UPDATE menus SET ${fields.join(',')} WHERE id=$${idx++} AND restaurant_id=$${idx}`,
+      values
     );
     res.json({ message: 'Menu mis à jour' });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.put('/api/restaurant/menus/:id/toggle', restaurantAuth, async (req, res) => {
-  const r = await pool.query(
-    'UPDATE menus SET available = NOT available WHERE id=$1 AND restaurant_id=$2 RETURNING available',
-    [req.params.id, req.user.id]
-  );
-  res.json({ available: r.rows[0]?.available });
+  try {
+    const r = await pool.query(
+      'UPDATE menus SET available = NOT available WHERE id=$1 AND restaurant_id=$2 RETURNING available',
+      [req.params.id, req.user.id]
+    );
+    if (r.rows.length === 0) {
+      return res.status(404).json({ error: 'Menu non trouvé' });
+    }
+    res.json({ available: r.rows[0].available });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.delete('/api/restaurant/menus/:id', restaurantAuth, async (req, res) => {
@@ -1587,9 +1620,8 @@ app.get('/company/register', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'c
 app.get('/company/login', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'company/login.html')));
 app.get('/company/admin', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'company/admin.html')));
 app.get('/employee', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'employee/index.html')));
-app.get('*', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
 
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 //  RAPPELS QUOTIDIENS (Lun-Ven)
 //  9h  → notification in-app
 //  10h → notification in-app
@@ -1614,7 +1646,8 @@ const employeesWithoutReminderAtHour = async (today, hour) => {
       AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id AND o.order_date = $1)
       AND NOT EXISTS (
         SELECT 1 FROM notifications n 
-        WHERE n.user_id = u.id 
+        WHERE n.target_type = 'user' 
+          AND n.target_id = u.id 
           AND n.created_at::date = $1
           AND n.title LIKE $2
       )
@@ -1629,7 +1662,7 @@ cron.schedule('0 9 * * 1-5', async () => {
     const appUrl = process.env.APP_URL || 'http://localhost:3050';
     const employees = await employeesWithoutReminderAtHour(today, '9h');
     for (const emp of employees) {
-      await createNotification('employee', emp.id,
+      await createNotification('user', emp.id,
         '9h 🍽 Choisissez votre repas du jour !',
         `Bonjour ${emp.first_name} ! Pensez à faire votre choix de repas avant la clôture des commandes.`,
         'reminder', {});
@@ -1656,7 +1689,7 @@ cron.schedule('0 10 * * 1-5', async () => {
     const appUrl = process.env.APP_URL || 'http://localhost:3050';
     const employees = await employeesWithoutReminderAtHour(today, '10h');
     for (const emp of employees) {
-      await createNotification('employee', emp.id,
+      await createNotification('user', emp.id,
         '10h ⏰ Rappel — Repas du jour',
         `${emp.first_name}, vous n'avez pas encore fait votre choix ! Il vous reste encore un peu de temps.`,
         'reminder', {});
@@ -1683,7 +1716,7 @@ cron.schedule('0 11 * * 1-5', async () => {
     const appUrl = process.env.APP_URL || 'http://localhost:3050';
     const employees = await employeesWithoutReminderAtHour(today, '11h');
     for (const emp of employees) {
-      await createNotification('employee', emp.id,
+      await createNotification('user', emp.id,
         '11h 📧 Dernier rappel — Commandez maintenant',
         `Un email de rappel a été envoyé à votre adresse. C'est le dernier rappel !`,
         'reminder', {});
@@ -1704,7 +1737,92 @@ cron.schedule('0 11 * * 1-5', async () => {
   } catch(e) { console.error('Cron 11h error:', e.message); }
 }, { timezone: 'Africa/Abidjan' });
 
+app.get('/api/wake_db', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+const sendReminderAtHour = async (hour, titlePrefix, messageTemplate) => {
+  const today = todayStr();
+  const appUrl = process.env.APP_URL || 'http://localhost:3050';
+  const employees = await employeesWithoutReminderAtHour(today, hour);
+  for (const emp of employees) {
+    await createNotification('user', emp.id, `${hour} ${titlePrefix}`,
+      messageTemplate(emp.first_name), 'reminder', {});
+    sendMail(emp.email, `${hour} ${titlePrefix}`,
+      `<div style="font-family:Georgia,serif;max-width:600px;margin:0 auto;padding:40px;background:#FFF8F3;border-radius:12px;">
+        <h1 style="color:#E85A2A;font-size:28px;">FoodChooseApp</h1>
+        <h2 style="color:#2C1810;">Bonjour ${emp.first_name} !</h2>
+        <p style="color:#4A3728;line-height:1.7">${messageTemplate(emp.first_name).replace(/\n/g, '<br>')}</p>
+        <div style="text-align:center;margin:24px 0">
+          <a href="${appUrl}/employee" style="display:inline-block;background:#E85A2A;color:white;padding:14px 32px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">Choisir mon repas</a>
+        </div>
+        <p style="color:#8B6554;font-size:13px;margin-top:24px;border-top:1px solid #F0E6DE;padding-top:16px">© FoodChooseApp — Plateforme de choix de repas</p>
+      </div>`
+    ).catch(err => console.error(`Email rappel ${hour}:`, err));
+  }
+  if (employees.length) console.log(`🔔🔔 Rappels ${hour} : ${employees.length} employé(s)`);
+  return employees.length;
+};
+
+app.get('/api/cron/reminder_9h', async (req, res) => {
+  console.log('[CRON 9h] Endpoint triggered at', new Date().toISOString());
+  try {
+    const count = await sendReminderAtHour('9h', '🍽 Choisissez votre repas du jour !', (name) =>
+      `Bonjour ${name} ! Pensez à faire votre choix de repas avant la clôture des commandes.`
+    );
+    res.json({ ok: true, reminders: count });
+  } catch (e) {
+    console.error('Cron 9h error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/cron/reminder_10h', async (req, res) => {
+  try {
+    const count = await sendReminderAtHour('10h', '⏰ Rappel — Repas du jour', (name) =>
+      `${name}, vous n'avez pas encore fait votre choix ! Il vous reste encore un peu de temps.`
+    );
+    res.json({ ok: true, reminders: count });
+  } catch (e) {
+    console.error('Cron 10h error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/cron/reminder_11h', async (req, res) => {
+  try {
+    const count = await sendReminderAtHour('11h', '📧 Dernier rappel — Commandez maintenant', (name) =>
+      `Un email de rappel a été envoyé à votre adresse. C'est le le dernier rappel !`
+    );
+    res.json({ ok: true, reminders: count });
+  } catch (e) {
+    console.error('Cron 11h error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/test', async (req, res) => {
+  console.log('[TEST] /test endpoint called');
+  res.json({ success: true, message: 'Test endpoint working' });
+});
+
 if (!process.env.VERCEL) {
   app.listen(PORT, () => console.log(`🍽 FoodChooseApp → http://localhost:${PORT}`));
 }
+
+app.get('/api/test-cron', async (req, res) => {
+  console.log('[TEST] /api/test-cron called');
+  res.json({ success: true, message: 'Cron endpoint working' });
+});
+
+app.get('*', (req, res) => {
+  console.log(`[${new Date().toISOString()}] 404: ${req.path}`);
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
+
 module.exports = app;

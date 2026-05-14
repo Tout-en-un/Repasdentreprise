@@ -33,7 +33,8 @@
       "Bash(curl -s -o /dev/null -w \"employee/index: %{http_code}\\\\n\" http://localhost:3050/employee/)",
       "Bash(curl -sL http://localhost:3050/company/login)",
       "Bash(curl -s -I http://localhost:3050/company/login)",
-      "Bash(curl -s -o /dev/null -w \"employee/: %{http_code}\\\\n\" http://localhost:3050/employee/)"
+      "Bash(curl -s -o /dev/null -w \"employee/: %{http_code}\\\\n\" http://localhost:3050/employee/)",
+      "Bash(npm audit *)"
     ]
   }
 }

@@ -34,7 +34,18 @@
       "Bash(curl -sL http://localhost:3050/company/login)",
       "Bash(curl -s -I http://localhost:3050/company/login)",
       "Bash(curl -s -o /dev/null -w \"employee/: %{http_code}\\\\n\" http://localhost:3050/employee/)",
-      "Bash(npm audit *)"
+      "Bash(npm audit *)",
+      "Bash(echo \"SERVER_PID=$!\")",
+      "Bash(curl -s http://localhost:3050/test)",
+      "Bash(curl -s -X POST http://localhost:3050/api/auth/forgot-password -H 'Content-Type: application/json' -d '{\"email\":\"dalletv330@gmail.com\",\"userType\":\"company\"}')",
+      "Bash(curl -s -X POST http://localhost:3050/api/auth/company/login -H 'Content-Type: application/json' -d '{\"email\":\"dalletv330@gmail.com\",\"password\":\"Admin@123\"}')",
+      "Bash(curl -s -X POST http://localhost:3050/api/auth/restaurant/login -H 'Content-Type: application/json' -d '{\"email\":\"reactnativedjango@gmail.com\",\"password\":\"Admin@123\"}')",
+      "Bash(curl -s http://localhost:3050/api/cron/reminder_9h)",
+      "Bash(curl -s -X POST http://localhost:3050/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"dalletv330@gmail.com\",\"password\":\"Admin@123\"}')",
+      "Bash(curl -s -X POST http://localhost:3050/api/messages -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6ImNvbXBhbnkiLCJuYW1lIjoiRWwgSW1tZWthIEludGVybmF0aW9uYWwiLCJpYXQiOjE3Nzg3OTc1ODQsImV4cCI6MTc3ODgwMTE4NH0.DKfsD9SsYt59MV7pTW3mOi_BjSd6ZRlDoOrKU2BvP28' -d '{ *)",
+      "Bash(curl -s -X POST http://localhost:3050/api/messages -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6InJlc3RhdXJhbnQiLCJuYW1lIjoiRmFpemFGb29kcyIsImlhdCI6MTc3ODc5NzU4NCwiZXhwIjoxNzc4ODAxMTg0fQ.DI-ta-mBG_EXxt1OVAJOh4bmq0ZTy2ybPQfd0uqUAck' -d '{ *)",
+      "Bash(curl -s http://localhost:3050/api/cron/reminder_10h)",
+      "Bash(curl -s http://localhost:3050/api/cron/reminder_11h)"
     ]
   }
 }

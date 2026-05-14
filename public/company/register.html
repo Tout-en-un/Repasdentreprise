@@ -3,205 +3,458 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>FoodChooseApp — Inscription Entreprise</title>
-  <!-- Polices Google : Playfair Display pour les titres, DM Sans pour le corps de texte -->
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <!-- Feuille de style principale de l'application -->
   <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#E85A2A">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="/assets/images/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="FoodChooseApp">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="msapplication-TileImage" content="/assets/images/icon-144.png">
+  <meta name="msapplication-TileColor" content="#2C1810">
   <style>
-    /* Fond sombre couvrant toute la hauteur de la fenêtre, centré horizontalement et verticalement */
-    body{background:var(--brown);display:flex;align-items:center;justify-content:center;padding:24px;min-height:100vh}
-    /* Couche de dégradé radial décorative fixe (arrière-plan) */
-    .bg{position:fixed;inset:0;z-index:0;background:radial-gradient(circle at 75% 50%,rgba(232,90,42,.15),transparent 50%)}
-    /* Grille de lignes fines pour l'effet de texture de fond */
-    .grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(255,248,243,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,248,243,.03) 1px,transparent 1px);background-size:40px 40px}
-    /* Carte du formulaire d'inscription (plus large que la connexion pour accueillir plus de champs) */
-    .auth-card{position:relative;z-index:1;background:var(--cream);border-radius:22px;padding:40px;width:100%;max-width:600px;box-shadow:0 40px 80px rgba(0,0,0,.4);animation:cardIn .6s cubic-bezier(.16,1,.3,1) both}
-    /* Animation d'entrée de la carte */
-    @keyframes cardIn{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-    /* Bloc logo / en-tête de la carte */
-    .auth-logo{text-align:center;margin-bottom:28px}
-    .auth-logo .icon{font-size:40px;display:block;margin-bottom:8px}
-    .auth-logo h1{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;color:var(--brown)}
-    .auth-logo h1 span{color:var(--orange)}
-    .auth-logo p{font-size:13px;color:var(--muted);margin-top:4px}
-    /* Titre de section (séparateur visuel entre les groupes de champs) */
-    .section-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
-    /* Bloc d'affichage des erreurs (masqué par défaut) */
-    #errMsg{background:#FEE2E2;color:#991B1B;border-radius:10px;padding:12px 14px;font-size:13px;margin-top:12px;display:none;border:1px solid #FCA5A5}
-    /* Classe ajoutée dynamiquement pour rendre le message d'erreur visible */
-    #errMsg.show{display:block}
-    /* État de succès affiché après la création du compte (remplace le formulaire) */
-    .success-state{text-align:center;padding:20px 0}
-    .success-state .icon{font-size:60px;margin-bottom:14px}
-    .success-state h2{font-family:'Playfair Display',serif;font-size:22px;color:var(--brown);margin-bottom:8px}
-    .success-state p{color:var(--muted);font-size:14px;margin-bottom:20px}
-    /* Encadré informatif avec bordure orange légère */
-    .info-box{background:#FFF0EA;border:1px solid rgba(232,90,42,.2);border-radius:12px;padding:14px;margin-bottom:20px;font-size:13px;color:var(--brown)}
-    .info-box strong{color:var(--orange)}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--orange:#E85A2A;--brown:#2C1810;--cream:#FFF8F3;--muted:#8B6554;--border:#F0E6DE;--gold:#F9C74F;--success:#16a34a;--danger:#dc2626}
+    html,body{min-height:100%}
+    body{font-family:'DM Sans',sans-serif;background:var(--brown);display:flex;align-items:center;justify-content:center;padding:32px 20px;min-height:100vh}
+
+    /* Background */
+    .bg{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 75% 25%,rgba(232,90,42,.18),transparent 55%),radial-gradient(ellipse at 25% 80%,rgba(249,199,79,.08),transparent 45%)}
+    .grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(255,248,243,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,248,243,.025) 1px,transparent 1px);background-size:44px 44px}
+    .orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(1px)}
+    .orb-1{width:500px;height:500px;background:radial-gradient(circle,rgba(232,90,42,.09),transparent 70%);top:-150px;right:-150px;animation:orbF 22s ease-in-out infinite}
+    .orb-2{width:320px;height:320px;background:radial-gradient(circle,rgba(249,199,79,.07),transparent 70%);bottom:-100px;left:-100px;animation:orbF 30s ease-in-out infinite reverse}
+    @keyframes orbF{0%,100%{transform:translate(0,0)}50%{transform:translate(28px,-22px)}}
+
+    /* Card */
+    .auth-card{position:relative;z-index:1;background:var(--cream);border-radius:28px;width:100%;max-width:480px;box-shadow:0 40px 80px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.05);animation:cardIn .65s cubic-bezier(.16,1,.3,1) both;overflow:hidden}
+    @keyframes cardIn{from{opacity:0;transform:translateY(28px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+    /* Card top accent bar */
+    .card-accent{height:4px;background:linear-gradient(90deg,var(--orange),var(--gold),var(--orange));background-size:200% 100%;animation:shimmer 3s linear infinite}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+    .card-inner{padding:36px 36px 32px}
+
+    /* Header */
+    .reg-header{text-align:center;margin-bottom:28px}
+    .reg-logo{width:52px;height:52px;border-radius:14px;margin:0 auto 12px;display:block;filter:drop-shadow(0 4px 12px rgba(232,90,42,.3))}
+    .reg-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--brown);line-height:1.2}
+    .reg-title em{color:var(--orange);font-style:normal}
+    .reg-sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+
+    /* Step indicator */
+    .step-indicator{display:flex;align-items:center;gap:0;margin-bottom:28px}
+    .step-item{display:flex;align-items:center;gap:7px;flex:1}
+    .step-item:last-child{justify-content:flex-end}
+    .step-num{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted);background:white;transition:all .3s cubic-bezier(.16,1,.3,1);flex-shrink:0}
+    .step-item.active .step-num{background:var(--orange);border-color:var(--orange);color:white;box-shadow:0 0 0 4px rgba(232,90,42,.18)}
+    .step-item.done .step-num{background:var(--success);border-color:var(--success);color:white}
+    .step-label{font-size:11.5px;font-weight:600;color:var(--muted);transition:color .3s}
+    .step-item.active .step-label{color:var(--brown)}
+    .step-item.done .step-label{color:var(--success)}
+    .step-line{flex:1;height:2px;background:var(--border);margin:0 8px;border-radius:2px;position:relative;overflow:hidden}
+    .step-line::after{content:'';position:absolute;inset:0;background:var(--success);transform:scaleX(0);transform-origin:left;transition:transform .4s cubic-bezier(.16,1,.3,1)}
+    .step-line.done::after{transform:scaleX(1)}
+
+    /* Panels */
+    .panels-wrap{overflow:hidden;position:relative}
+    .panel{display:none;animation:panelIn .38s cubic-bezier(.16,1,.3,1) both}
+    .panel.active{display:block}
+    .panel.back{animation:panelInBack .38s cubic-bezier(.16,1,.3,1) both}
+    @keyframes panelIn{from{opacity:0;transform:translateX(32px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes panelInBack{from{opacity:0;transform:translateX(-32px)}to{opacity:1;transform:translateX(0)}}
+
+    /* Form elements */
+    .form-group{margin-bottom:14px;position:relative}
+    .form-group label{display:block;font-size:12px;font-weight:600;color:var(--brown);margin-bottom:6px;letter-spacing:.1px}
+    .form-group label .req{color:var(--orange);margin-left:2px}
+    .form-group label .opt{color:var(--muted);font-weight:400;font-size:11px;margin-left:4px}
+    .form-control{width:100%;padding:11px 14px;background:white;border:1.5px solid var(--border);border-radius:10px;font-size:13.5px;font-family:'DM Sans',sans-serif;color:var(--brown);transition:border-color .2s,box-shadow .2s;outline:none;-webkit-appearance:none}
+    .form-control:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(232,90,42,.1)}
+    .form-control:focus + .field-icon,
+    .form-control.valid + .field-icon{opacity:1}
+    .form-control::placeholder{color:#C8AFA2;font-size:13px}
+    .form-control.valid{border-color:#86EFAC}
+    .form-control.error{border-color:var(--danger)}
+    select.form-control{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238B6554' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:36px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+    /* Password wrap */
+    .pw-wrap{position:relative}
+    .pw-wrap .form-control{padding-right:44px}
+    .pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex;align-items:center;transition:color .2s;border-radius:6px}
+    .pw-toggle:hover{color:var(--orange)}
+    .pw-toggle svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+    /* Password strength */
+    .pw-strength{margin-top:7px}
+    .pw-strength-bar{display:flex;gap:3px;margin-bottom:4px}
+    .pw-bar-seg{flex:1;height:3px;border-radius:2px;background:var(--border);transition:background .3s}
+    .pw-bar-seg.weak{background:#FCA5A5}
+    .pw-bar-seg.medium{background:#FCD34D}
+    .pw-bar-seg.strong{background:#86EFAC}
+    .pw-bar-seg.very-strong{background:#4ADE80}
+    .pw-strength-label{font-size:11px;color:var(--muted);transition:color .3s}
+
+    /* Error message */
+    #errMsg{background:#FEF2F2;color:#991B1B;border-radius:10px;padding:11px 14px;font-size:12.5px;margin-top:2px;margin-bottom:12px;display:none;border:1px solid #FECACA;align-items:center;gap:9px;animation:errIn .25s ease both}
+    #errMsg.show{display:flex}
+    @keyframes errIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+    #errMsg svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+
+    /* Buttons */
+    .btn-primary-full{width:100%;padding:13px;background:linear-gradient(135deg,var(--orange) 0%,#C94A1A 100%);color:white;border:none;border-radius:11px;font-family:'DM Sans',sans-serif;font-size:14.5px;font-weight:600;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(232,90,42,.32);position:relative;overflow:hidden}
+    .btn-primary-full::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transition:left .5s ease}
+    .btn-primary-full:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(232,90,42,.45)}
+    .btn-primary-full:hover::before{left:100%}
+    .btn-primary-full:active{transform:translateY(0)}
+    .btn-primary-full:disabled{opacity:.65;cursor:not-allowed;transform:none}
+    .btn-primary-full svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+    .btn-outline-full{width:100%;padding:12px;background:transparent;color:var(--brown);border:1.5px solid var(--border);border-radius:11px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+    .btn-outline-full:hover{border-color:var(--orange);color:var(--orange);background:rgba(232,90,42,.04)}
+    .btn-outline-full svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+    .btns-row{display:flex;gap:10px;margin-top:18px}
+    .btns-row .btn-outline-full{flex:0 0 auto;width:auto;padding:12px 18px}
+    .btns-row .btn-primary-full{flex:1}
+
+    /* Footer */
+    .auth-footer{text-align:center;margin-top:20px;font-size:12.5px;color:var(--muted);padding-top:18px;border-top:1px solid var(--border)}
+    .auth-footer a{color:var(--orange);font-weight:600;text-decoration:none}
+    .auth-footer a:hover{text-decoration:underline}
+    .auth-footer .back-link{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);text-decoration:none;margin-top:8px;transition:color .2s}
+    .auth-footer .back-link:hover{color:var(--brown)}
+    .auth-footer .back-link svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+    /* Success */
+    .success-state{text-align:center;padding:24px 0 8px}
+    .success-icon{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#D1FAE5,#6EE7B7);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;animation:popIn .6s cubic-bezier(.34,1.56,.64,1) both;box-shadow:0 8px 24px rgba(22,163,74,.2)}
+    @keyframes popIn{from{opacity:0;transform:scale(.4) rotate(-15deg)}to{opacity:1;transform:scale(1) rotate(0)}}
+    .success-icon svg{width:36px;height:36px;stroke:#065F46;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+    .success-state h2{font-family:'Playfair Display',serif;font-size:21px;color:var(--brown);margin-bottom:8px}
+    .success-state p{color:var(--muted);font-size:13px;line-height:1.65;margin-bottom:22px}
+
+    @media(max-width:520px){.card-inner{padding:28px 22px 26px}.form-row{grid-template-columns:1fr}.auth-card{border-radius:22px}}
   </style>
 </head>
 <body>
-<!-- Couches décoratives d'arrière-plan -->
+<canvas id="particlesCanvas" style="position:fixed;inset:0;z-index:0;pointer-events:none"></canvas>
 <div class="bg"></div><div class="grid"></div>
-<!-- Conteneur des notifications toast -->
+<div class="orb orb-1"></div><div class="orb orb-2"></div>
 <div id="toastContainer"></div>
 
-<!-- Carte principale du formulaire d'inscription -->
 <div class="auth-card">
-  <!-- Section formulaire (masquée après inscription réussie) -->
-  <div id="formSection">
-    <!-- En-tête : logo et titre -->
-    <div class="auth-logo">
-      <span class="icon">🏢</span>
-      <h1>Food<span>Choose</span>App</h1>
-      <p>Créer un compte Entreprise</p>
+  <div class="card-accent"></div>
+  <div class="card-inner">
+
+    <!-- Header -->
+    <div class="reg-header">
+      <img src="/assets/images/logo.svg" alt="FoodChooseApp" class="reg-logo">
+      <div class="reg-title">Créer un compte <em>Entreprise</em></div>
+      <div class="reg-sub">Gérez les repas de vos employés facilement</div>
     </div>
 
-    <!-- Groupe de champs : informations générales de l'entreprise -->
-    <div class="section-title">🏢 Informations de l'entreprise</div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Nom de l'entreprise *</label>
-        <input class="form-control" id="coName" placeholder="Ex: SOGEMAB SARL">
+    <!-- Step indicator -->
+    <div class="step-indicator">
+      <div class="step-item active" id="stepItem1">
+        <div class="step-num" id="stepNum1">1</div>
+        <span class="step-label">Entreprise</span>
       </div>
-      <div class="form-group">
-        <label>Secteur d'activité</label>
-        <input class="form-control" id="coSector" placeholder="Banque, Industrie, Commerce...">
+      <div class="step-line" id="stepLine"></div>
+      <div class="step-item" id="stepItem2">
+        <div class="step-num" id="stepNum2">2</div>
+        <span class="step-label">Compte</span>
       </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Numéro de téléphone *</label>
-        <input class="form-control" id="coPhone" placeholder="+226 XX XX XX XX">
-      </div>
-      <div class="form-group">
-        <label>Localisation *</label>
-        <input class="form-control" id="coLocation" placeholder="Ouagadougou, Zone industrielle...">
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Adresse complète</label>
-      <input class="form-control" id="coAddress" placeholder="Rue, secteur, quartier...">
-    </div>
-    <div class="form-group">
-      <label>Adresse email *</label>
-      <input class="form-control" id="coEmail" type="email" placeholder="contact@entreprise.com">
     </div>
 
-    <!-- Groupe de champs : création du mot de passe -->
-    <div class="section-title">🔐 Mot de passe</div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Mot de passe *</label>
-        <!-- Champ mot de passe avec bascule afficher/masquer -->
-        <div class="pw-wrap">
-          <input class="form-control" id="coPwd" type="password" placeholder="Minimum 6 caractères">
-          <button class="pw-toggle" type="button">👁</button>
+    <!-- Form -->
+    <div id="formSection">
+      <div class="panels-wrap">
+
+        <!-- PANEL 1 — Informations entreprise -->
+        <div class="panel active" id="panel1">
+          <div class="form-group">
+            <label>Nom de l'entreprise <span class="req">*</span></label>
+            <input class="form-control" id="coName" placeholder="Ex : SOGEMAB SARL" autocomplete="organization">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Téléphone <span class="req">*</span></label>
+              <input class="form-control" id="coPhone" type="tel" placeholder="+226 XX XX XX XX" autocomplete="tel">
+            </div>
+            <div class="form-group">
+              <label>Ville / Localisation <span class="req">*</span></label>
+              <input class="form-control" id="coLocation" placeholder="Ouagadougou..." autocomplete="address-level2">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Secteur d'activité <span class="opt">(optionnel)</span></label>
+            <select class="form-control" id="coSector">
+              <option value="">Choisir un secteur...</option>
+              <option value="Banque / Finance">Banque / Finance</option>
+              <option value="Commerce / Distribution">Commerce / Distribution</option>
+              <option value="Industrie / Manufacture">Industrie / Manufacture</option>
+              <option value="Services / Consulting">Services / Consulting</option>
+              <option value="Administration publique">Administration publique</option>
+              <option value="ONG / Association">ONG / Association</option>
+              <option value="Santé">Santé</option>
+              <option value="Éducation">Éducation</option>
+              <option value="Technologie">Technologie</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </div>
+          <div id="errMsg1" class="err-msg" style="background:#FEF2F2;color:#991B1B;border-radius:10px;padding:10px 13px;font-size:12.5px;margin-bottom:4px;display:none;border:1px solid #FECACA;align-items:center;gap:8px">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="errTxt1"></span>
+          </div>
+          <div style="margin-top:18px">
+            <button class="btn-primary-full" onclick="goToStep2()">
+              Continuer
+              <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- PANEL 2 — Compte -->
+        <div class="panel" id="panel2">
+          <div class="form-group">
+            <label>Adresse email <span class="req">*</span></label>
+            <input class="form-control" id="coEmail" type="email" placeholder="contact@entreprise.com" autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label>Mot de passe <span class="req">*</span></label>
+            <div class="pw-wrap">
+              <input class="form-control" id="coPwd" type="password" placeholder="Minimum 6 caractères" autocomplete="new-password" oninput="checkPwStrength()">
+              <button class="pw-toggle" type="button" data-for="coPwd" onclick="togglePw(this)">
+                <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <div class="pw-strength" id="pwStrength" style="display:none">
+              <div class="pw-strength-bar">
+                <div class="pw-bar-seg" id="ps1"></div>
+                <div class="pw-bar-seg" id="ps2"></div>
+                <div class="pw-bar-seg" id="ps3"></div>
+                <div class="pw-bar-seg" id="ps4"></div>
+              </div>
+              <div class="pw-strength-label" id="pwLabel"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Confirmer le mot de passe <span class="req">*</span></label>
+            <div class="pw-wrap">
+              <input class="form-control" id="coPwd2" type="password" placeholder="Répétez le mot de passe" autocomplete="new-password">
+              <button class="pw-toggle" type="button" data-for="coPwd2" onclick="togglePw(this)">
+                <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <div id="errMsg" style="background:#FEF2F2;color:#991B1B;border-radius:10px;padding:10px 13px;font-size:12.5px;margin-bottom:4px;display:none;border:1px solid #FECACA;align-items:center;gap:8px">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="errTxt"></span>
+          </div>
+          <div class="btns-row">
+            <button class="btn-outline-full" onclick="goToStep1()">
+              <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            </button>
+            <button class="btn-primary-full" id="registerBtn" onclick="register()">
+              <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+              Créer le compte
+            </button>
+          </div>
         </div>
       </div>
-      <div class="form-group">
-        <label>Confirmer le mot de passe *</label>
-        <!-- Champ de confirmation avec bascule afficher/masquer -->
-        <div class="pw-wrap">
-          <input class="form-control" id="coPwd2" type="password" placeholder="Répétez le mot de passe">
-          <button class="pw-toggle" type="button">👁</button>
-        </div>
+
+      <div class="auth-footer">
+        Déjà un compte ? <a href="/login">Se connecter</a>
+        <br>
+        <a href="/" class="back-link">
+          <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Retour à l'accueil
+        </a>
       </div>
     </div>
 
-    <!-- Zone d'affichage des messages d'erreur de validation -->
-    <div id="errMsg"></div>
-    <!-- Bouton de soumission du formulaire d'inscription -->
-    <button class="btn btn-primary" id="registerBtn" style="width:100%;margin-top:12px;padding:14px" onclick="register()">
-      🏢 Créer le compte entreprise
-    </button>
-    <!-- Lien vers la page de connexion pour les comptes existants -->
-    <p style="text-align:center;margin-top:14px;font-size:13px;color:var(--muted)">
-      Déjà un compte ? <a href="/company/login" style="color:var(--orange)">Se connecter</a>
-    </p>
-    <!-- Lien de retour vers la page d'accueil -->
-    <p style="text-align:center;margin-top:6px"><a href="/" style="font-size:12.5px;color:var(--muted);text-decoration:none">← Retour à l'accueil</a></p>
-  </div>
+    <!-- Success state -->
+    <div id="successState" style="display:none">
+      <div class="success-state">
+        <div class="success-icon">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2>Compte créé !</h2>
+        <p>Bienvenue sur FoodChooseApp.<br>Votre espace entreprise est prêt pour<br><strong id="regEmail" style="color:var(--orange)"></strong></p>
+        <button class="btn-primary-full" onclick="window.location.href='/login'" style="max-width:280px;margin:0 auto">
+          <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Se connecter maintenant
+        </button>
+      </div>
+    </div>
 
-  <!-- État de succès : affiché après création du compte (remplace le formulaire via display:none/block) -->
-  <div id="successState" style="display:none" class="success-state">
-    <div class="icon">🎉</div>
-    <h2>Compte créé avec succès !</h2>
-    <!-- L'email enregistré est affiché dynamiquement par le script après l'inscription -->
-    <p>Un email de bienvenue a été envoyé à <strong id="regEmail" style="color:var(--orange)"></strong>. Vous pouvez maintenant vous connecter pour gérer vos employés et vos commandes.</p>
-    <a href="/company/login" class="btn btn-primary" style="width:100%;justify-content:center">Se connecter →</a>
-  </div>
-</div>
+  </div><!-- /card-inner -->
+</div><!-- /auth-card -->
 
-<!-- Utilitaires partagés : apiFetch, toast, initPasswordToggles, etc. -->
 <script src="/assets/js/utils.js"></script>
 <script>
-// Initialise les boutons bascule afficher/masquer sur tous les champs mot de passe
-initPasswordToggles();
+// Particles
+(function(){
+  const c=document.getElementById('particlesCanvas');if(!c)return;
+  const ctx=c.getContext('2d');let W,H,p=[];
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}resize();window.addEventListener('resize',resize);
+  for(let i=0;i<28;i++)p.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.5+.3,vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.2,o:Math.random()*.08+.02});
+  function draw(){ctx.clearRect(0,0,W,H);p.forEach(q=>{q.x+=q.vx;q.y+=q.vy;if(q.x<0)q.x=W;if(q.x>W)q.x=0;if(q.y<0)q.y=H;if(q.y>H)q.y=0;ctx.beginPath();ctx.arc(q.x,q.y,q.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,248,243,${q.o})`;ctx.fill();});requestAnimationFrame(draw);}draw();
+})();
 
-/**
- * Valide le formulaire et envoie la requête d'inscription de l'entreprise.
- *
- * Étapes :
- *  1. Lire et nettoyer toutes les valeurs des champs du formulaire.
- *  2. Effectuer les validations côté client (champs obligatoires, correspondance des mots de passe, longueur).
- *  3. Désactiver le bouton pour éviter les doubles soumissions.
- *  4. Appeler l'API /api/auth/company/register avec les données du formulaire.
- *  5. En cas de succès : masquer le formulaire et afficher l'état de succès avec l'email.
- *  6. En cas d'erreur : afficher le message d'erreur retourné par l'API.
- *  7. Dans tous les cas : réactiver le bouton.
- */
-async function register() {
-  // Récupération et nettoyage (trim) des valeurs de tous les champs du formulaire
+// Password toggle
+function togglePw(btn) {
+  const id = btn.getAttribute('data-for');
+  const inp = document.getElementById(id);
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.querySelector('svg').innerHTML = show
+    ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+}
+
+// Password strength
+function checkPwStrength() {
+  const pw = document.getElementById('coPwd').value;
+  const el = document.getElementById('pwStrength');
+  const label = document.getElementById('pwLabel');
+  const segs = [document.getElementById('ps1'),document.getElementById('ps2'),document.getElementById('ps3'),document.getElementById('ps4')];
+  if (!pw) { el.style.display='none'; return; }
+  el.style.display='block';
+  let score = 0;
+  if (pw.length >= 6)  score++;
+  if (pw.length >= 10) score++;
+  if (/[A-Z]/.test(pw) && /[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const levels = ['weak','medium','strong','very-strong'];
+  const labels = ['Trop court','Moyen','Bon','Excellent'];
+  const colors = ['#F87171','#FCD34D','#86EFAC','#4ADE80'];
+  segs.forEach((s,i) => { s.className='pw-bar-seg'; if(i<score) s.classList.add(levels[score-1]); });
+  label.textContent = labels[score-1] || '';
+  label.style.color = colors[score-1] || 'var(--muted)';
+}
+
+// Step navigation
+let currentStep = 1;
+
+function showErr1(msg) {
+  const el = document.getElementById('errMsg1');
+  document.getElementById('errTxt1').textContent = msg;
+  el.style.display = 'flex';
+  shakeEl(el);
+  setTimeout(() => el.style.display='none', 4000);
+}
+
+function showErr2(msg) {
+  const el = document.getElementById('errMsg');
+  document.getElementById('errTxt').textContent = msg;
+  el.style.display = 'flex';
+  shakeEl(el);
+  setTimeout(() => el.style.display='none', 4000);
+}
+
+function goToStep2() {
   const name = document.getElementById('coName').value.trim();
-  const sector = document.getElementById('coSector').value.trim();
   const phone = document.getElementById('coPhone').value.trim();
   const location = document.getElementById('coLocation').value.trim();
-  const address = document.getElementById('coAddress').value.trim();
-  const email = document.getElementById('coEmail').value.trim();
-  const pwd = document.getElementById('coPwd').value;
-  const pwd2 = document.getElementById('coPwd2').value;
+  if (!name)     return showErr1("Le nom de l'entreprise est requis");
+  if (!phone)    return showErr1("Le numéro de téléphone est requis");
+  if (!location) return showErr1("La localisation est requise");
 
-  // Référence au bloc d'erreur et réinitialisation de son état
-  const err = document.getElementById('errMsg');
-  err.classList.remove('show');
+  currentStep = 2;
+  const p1 = document.getElementById('panel1');
+  const p2 = document.getElementById('panel2');
+  p1.classList.remove('active');
+  p2.classList.remove('back');
+  p2.classList.add('active');
+  // Update step indicator
+  document.getElementById('stepItem1').classList.remove('active');
+  document.getElementById('stepItem1').classList.add('done');
+  document.getElementById('stepNum1').innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg>';
+  document.getElementById('stepItem2').classList.add('active');
+  document.getElementById('stepLine').classList.add('done');
+  // Focus email
+  setTimeout(() => document.getElementById('coEmail').focus(), 100);
+}
 
-  // Validation : champs obligatoires
-  if (!name) { err.textContent = 'Nom de l\'entreprise requis'; err.classList.add('show'); return; }
-  if (!email) { err.textContent = 'Email requis'; err.classList.add('show'); return; }
-  if (!phone) { err.textContent = 'Numéro de téléphone requis'; err.classList.add('show'); return; }
-  if (!location) { err.textContent = 'Localisation requise'; err.classList.add('show'); return; }
-  // Validation : les deux mots de passe doivent correspondre
-  if (pwd !== pwd2) { err.textContent = 'Les mots de passe ne correspondent pas'; err.classList.add('show'); return; }
-  // Validation : longueur minimale du mot de passe
-  if (pwd.length < 6) { err.textContent = 'Mot de passe trop court (min 6 caractères)'; err.classList.add('show'); return; }
+function goToStep1() {
+  currentStep = 1;
+  const p1 = document.getElementById('panel1');
+  const p2 = document.getElementById('panel2');
+  p2.classList.remove('active');
+  p1.classList.add('back');
+  // Force reflow to restart animation
+  void p1.offsetWidth;
+  p1.classList.add('active');
+  p1.classList.remove('back');
+  // Update step indicator
+  document.getElementById('stepItem1').classList.add('active');
+  document.getElementById('stepItem1').classList.remove('done');
+  document.getElementById('stepNum1').textContent = '1';
+  document.getElementById('stepItem2').classList.remove('active');
+  document.getElementById('stepLine').classList.remove('done');
+  // Focus name
+  setTimeout(() => document.getElementById('coName').focus(), 100);
+}
 
-  // Désactiver le bouton et afficher un indicateur de chargement
+// Allow Enter key to proceed
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  if (currentStep === 1) goToStep2();
+  else register();
+});
+
+// Auto-validate on blur
+['coName','coPhone','coLocation','coEmail'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('blur', function() {
+    if (this.value.trim()) this.classList.add('valid');
+    else this.classList.remove('valid');
+  });
+});
+
+async function register() {
+  const name     = document.getElementById('coName').value.trim();
+  const sector   = document.getElementById('coSector').value.trim();
+  const phone    = document.getElementById('coPhone').value.trim();
+  const location = document.getElementById('coLocation').value.trim();
+  const email    = document.getElementById('coEmail').value.trim();
+  const pwd      = document.getElementById('coPwd').value;
+  const pwd2     = document.getElementById('coPwd2').value;
+
+  if (!email)          return showErr2("L'adresse email est requise");
+  if (!email.includes('@')) return showErr2("Adresse email invalide");
+  if (pwd.length < 6)  return showErr2("Mot de passe trop court (min 6 caractères)");
+  if (pwd !== pwd2)    return showErr2("Les mots de passe ne correspondent pas");
+
   const btn = document.getElementById('registerBtn');
-  btn.disabled = true; btn.textContent = '⏳ Création...';
-
+  setLoading(btn, 'Création...');
   try {
-    // Appel API d'inscription : envoie toutes les données de l'entreprise
     await apiFetch('/api/auth/company/register', {
       method: 'POST',
-      body: JSON.stringify({ name, sector, phone, address, email, location, password: pwd })
+      body: JSON.stringify({ name, sector, phone, location, email, password: pwd })
     });
-    // Afficher l'email inscrit dans le message de confirmation
     document.getElementById('regEmail').textContent = email;
-    // Masquer le formulaire et afficher l'état de succès
     document.getElementById('formSection').style.display = 'none';
     document.getElementById('successState').style.display = 'block';
   } catch(e) {
-    // Afficher le message d'erreur renvoyé par l'API (ex. email déjà utilisé)
-    err.textContent = e.message; err.classList.add('show');
+    showErr2(e.message || "Une erreur est survenue");
   } finally {
-    // Réactiver le bouton dans tous les cas
-    btn.disabled = false; btn.textContent = '🏢 Créer le compte entreprise';
+    unsetLoading(btn, 'Créer le compte');
   }
 }
 
-// Expose function globally
 window.register = register;
+window.goToStep1 = goToStep1;
+window.goToStep2 = goToStep2;
+window.togglePw = togglePw;
+window.checkPwStrength = checkPwStrength;
+if (typeof initRipple === 'function') initRipple();
 </script>
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

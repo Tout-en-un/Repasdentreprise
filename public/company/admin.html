@@ -5,6 +5,15 @@
   <title>FoodChooseApp — Espace Entreprise</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#E85A2A">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="/assets/images/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="FoodChooseApp">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="msapplication-TileImage" content="/assets/images/icon-144.png">
+  <meta name="msapplication-TileColor" content="#2C1810">
 </head>
 <body>
 <div id="toastContainer"></div>
@@ -14,32 +23,31 @@
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <span class="logo-icon">🏢</span>
-    <div class="logo-name">Food<span>Choose</span></div>
+    <img src="/assets/images/logo.svg" alt="FoodChooseApp" class="sidebar-logo-img">
     <span class="logo-badge" id="roleLabel">Entreprise</span>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section">Tableau de bord</div>
-    <div class="nav-item active" data-page="dashboard"><span class="icon">📊</span><span>Vue d'ensemble</span></div>
-    <div class="nav-item" data-page="messages"><span class="icon">💬</span><span>Messages</span><span class="nav-badge" id="msgBadge" style="display:none">0</span></div>
+    <div class="nav-item active" data-page="dashboard"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span><span>Vue d'ensemble</span></div>
+    <div class="nav-item" data-page="messages"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span>Messages</span><span class="nav-badge" id="msgBadge" style="display:none">0</span></div>
     <div class="nav-section">Restaurants</div>
-    <div class="nav-item" data-page="allrestaurants"><span class="icon">🍽</span><span>Tous les restaurants</span></div>
-    <div class="nav-item" data-page="affiliations"><span class="icon">🤝</span><span>Mes affiliations</span></div>
+    <div class="nav-item" data-page="allrestaurants"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2c-1.67 0-5 .83-5 4v6c0 1.1.9 2 2 2v5a1 1 0 0 0 2 0v-5c1.1 0 2-.9 2-2z"/></svg></span><span>Tous les restaurants</span></div>
+    <div class="nav-item" data-page="affiliations"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span><span>Mes affiliations</span></div>
     <div class="nav-section">Commandes</div>
-    <div class="nav-item" data-page="orders"><span class="icon">🛒</span><span>Commandes du jour</span></div>
-    <div class="nav-item" data-page="validate"><span class="icon">✅</span><span>Valider & Exporter</span></div>
-    <div class="nav-item" data-page="invoices"><span class="icon">🧾</span><span>Factures</span></div>
+    <div class="nav-item" data-page="orders"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><span>Commandes du jour</span></div>
+    <div class="nav-item" data-page="validate"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span>Valider &amp; Exporter</span></div>
+    <div class="nav-item" data-page="invoices"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><span>Factures</span></div>
     <div class="nav-section">Gestion</div>
-    <div class="nav-item" data-page="employees"><span class="icon">👥</span><span>Employés</span></div>
-    <div class="nav-item" data-page="expenses"><span class="icon">💰</span><span>Dépenses</span></div>
-    <div class="nav-item" data-page="history"><span class="icon">📋</span><span>Historique</span></div>
+    <div class="nav-item" data-page="employees"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span>Employés</span></div>
+    <div class="nav-item" data-page="expenses"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span>Dépenses</span></div>
+    <div class="nav-item" data-page="history"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><polyline points="12 7 12 12 15 15"/></svg></span><span>Historique</span></div>
     <div class="nav-section">Compte</div>
-    <div class="nav-item" data-page="settings"><span class="icon">⚙️</span><span>Paramètres</span></div>
-    <button class="nav-item-logout" onclick="logout()"><span class="icon">🚪</span><span>Déconnexion</span></button>
+    <div class="nav-item" data-page="settings"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg></span><span>Paramètres</span></div>
+    <button class="nav-item-logout" onclick="logout()"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span><span>Déconnexion</span></button>
   </nav>
   <div class="sidebar-footer">
     <div class="user-card">
-      <div class="user-avatar" id="sidebarAvatar">👔</div>
+      <div class="user-avatar" id="sidebarAvatar"><img src="/assets/images/logo.svg" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>
       <div><div class="user-name" id="sidebarName">—</div><div class="user-role" id="sidebarRole">Chargé de commande</div></div>
     </div>
   </div>
@@ -52,11 +60,11 @@
       <div class="topbar-title" id="pageTitle">Vue d'ensemble</div>
     </div>
     <div class="topbar-right">
-      <a href="/" title="Accueil" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:rgba(44,24,16,.08);border:1px solid var(--border);color:var(--brown);text-decoration:none;font-size:16px;cursor:pointer;margin-right:6px">🏠</a>
-      <button onclick="logout()" title="Déconnexion" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:rgba(232,90,42,.1);border:1px solid rgba(232,90,42,.2);color:var(--orange);font-size:16px;cursor:pointer;margin-right:6px">🚪</button>
+      <a href="/" title="Accueil" class="topbar-icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></a>
+      <button onclick="logout()" title="Déconnexion" class="topbar-icon-btn danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
       <span style="font-size:12px;color:var(--muted)" id="topbarDate"></span>
       <div style="position:relative">
-        <button class="notif-btn" onclick="toggleNotifDropdown()">🔔<span class="notif-count" id="notifCount" style="display:none">0</span></button>
+        <button class="notif-btn" onclick="toggleNotifDropdown()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-count" id="notifCount" style="display:none">0</span></button>
         <div class="notif-dropdown" id="notifDropdown"></div>
       </div>
     </div>
@@ -66,17 +74,17 @@
   <!-- ═══ DASHBOARD ═══ -->
   <div class="page active" id="page-dashboard">
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-number" id="s-emp">—</div><div class="stat-label">Employés</div></div>
-      <div class="stat-card"><div class="stat-icon">🤝</div><div class="stat-number" id="s-aff">—</div><div class="stat-label">Affiliations</div></div>
-      <div class="stat-card"><div class="stat-icon">🛒</div><div class="stat-number" id="s-today">—</div><div class="stat-label">Commandes aujourd'hui</div></div>
-      <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-number" id="s-pending">—</div><div class="stat-label">En attente validation</div></div>
+      <div class="stat-card reveal" style="--reveal-delay:0s"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="stat-number" id="s-emp">—</div><div class="stat-label">Employés</div></div>
+      <div class="stat-card reveal" style="--reveal-delay:.08s"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div><div class="stat-number" id="s-aff">—</div><div class="stat-label">Affiliations</div></div>
+      <div class="stat-card reveal" style="--reveal-delay:.16s"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div><div class="stat-number" id="s-today">—</div><div class="stat-label">Commandes aujourd'hui</div></div>
+      <div class="stat-card reveal" style="--reveal-delay:.24s"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-number" id="s-pending">—</div><div class="stat-label">En attente validation</div></div>
     </div>
     <div class="page-grid">
-      <div class="card">
+      <div class="card reveal">
         <div class="card-header"><span class="card-title">🤝 Restaurants affiliés</span><button class="btn btn-primary btn-sm" onclick="switchToPage('allrestaurants')">+ Affilier</button></div>
         <div class="card-body" id="dashAffiliations"></div>
       </div>
-      <div class="card">
+      <div class="card reveal-right">
         <div class="card-header"><span class="card-title">🧾 Dernières factures</span></div>
         <div class="card-body" id="dashInvoices"></div>
       </div>
@@ -85,7 +93,7 @@
 
   <!-- ═══ ALL RESTAURANTS ═══ -->
   <div class="page" id="page-allrestaurants">
-    <div class="card">
+    <div class="card reveal">
       <div class="card-header">
         <span class="card-title">Tous les restaurants</span>
         <input class="form-control" id="restSearch" placeholder="🔍 Rechercher..." style="width:220px;font-size:13px" oninput="filterRestaurants()">
@@ -98,13 +106,13 @@
 
   <!-- ═══ AFFILIATIONS ═══ -->
   <div class="page" id="page-affiliations">
-    <div class="card" style="margin-bottom:16px">
+    <div class="card reveal" style="margin-bottom:16px">
       <div class="card-body" style="padding:12px 16px">
         <input class="form-control" id="adminDishSearch" placeholder="🔍 Rechercher un plat parmi les restaurants affiliés..." oninput="searchAdminDishes(this.value)" autocomplete="off">
         <div id="adminDishResults" style="display:none;margin-top:10px"></div>
       </div>
     </div>
-    <div class="card">
+    <div class="card reveal">
       <div class="card-header"><span class="card-title">🤝 Mes restaurants affiliés</span></div>
       <div class="card-body">
         <div class="rest-grid" id="myAffGrid"></div>
@@ -114,17 +122,23 @@
 
   <!-- ═══ ORDERS ═══ -->
   <div class="page" id="page-orders">
-    <div class="card">
+    <div class="card reveal">
       <div class="card-header">
         <span class="card-title">Commandes par période</span>
         <div class="date-filter">
-          <input type="date" id="ordersFrom" placeholder="Du" onchange="loadOrders()">
-          <span style="color:var(--muted);font-size:13px">au</span>
-          <input type="date" id="ordersTo" placeholder="Au" onchange="loadOrders()">
-          <select class="form-control" id="restFilter" style="width:160px;font-size:13px" onchange="loadOrders()"><option value="">Tous les restaurants</option></select>
-          <button class="btn btn-primary btn-sm" onclick="loadOrders()">🔍 Rechercher</button>
-          <button class="btn btn-outline btn-sm" onclick="exportCompanyOrdersPDF()">⬇️ PDF</button>
-          <button class="btn btn-outline btn-sm" onclick="printCompanyOrders()">🖨️ Imprimer</button>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <label style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Du</label>
+            <input type="text" class="form-control date-mask" id="ordersFrom" placeholder="JJ/MM/AAAA" maxlength="10" style="width:120px;font-size:13px">
+          </div>
+          <span style="color:var(--muted);font-size:13px;align-self:flex-end;padding-bottom:2px">au</span>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <label style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Au</label>
+            <input type="text" class="form-control date-mask" id="ordersTo" placeholder="JJ/MM/AAAA" maxlength="10" style="width:120px;font-size:13px">
+          </div>
+          <select class="form-control" id="restFilter" style="width:160px;font-size:13px;align-self:flex-end" onchange="loadOrders()"><option value="">Tous les restaurants</option></select>
+          <button class="btn btn-primary btn-sm" style="align-self:flex-end" onclick="loadOrders()">🔍 Rechercher</button>
+          <button class="btn btn-outline btn-sm" style="align-self:flex-end" onclick="exportCompanyOrdersPDF()">⬇️ PDF</button>
+          <button class="btn btn-outline btn-sm" style="align-self:flex-end" onclick="printCompanyOrders()">🖨️ Imprimer</button>
         </div>
       </div>
       <div class="card-body" id="ordersBody"></div>
@@ -133,15 +147,21 @@
 
   <!-- ═══ VALIDATE ═══ -->
   <div class="page" id="page-validate">
-    <div class="card">
+    <div class="card reveal">
       <div class="card-header">
         <span class="card-title">✅ Valider les commandes</span>
         <div class="date-filter">
-          <input type="date" id="validateFrom" placeholder="Du" onchange="previewValidate()">
-          <span style="color:var(--muted);font-size:13px">au</span>
-          <input type="date" id="validateTo" placeholder="Au" onchange="previewValidate()">
-          <button class="btn btn-success" onclick="validateOrders()">✅ Valider toutes</button>
-          <button class="btn btn-outline btn-sm" onclick="exportOrdersPDF()">⬇️ PDF</button>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <label style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Du</label>
+            <input type="text" class="form-control date-mask" id="validateFrom" placeholder="JJ/MM/AAAA" maxlength="10" style="width:120px;font-size:13px">
+          </div>
+          <span style="color:var(--muted);font-size:13px;align-self:flex-end;padding-bottom:2px">au</span>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <label style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Au</label>
+            <input type="text" class="form-control date-mask" id="validateTo" placeholder="JJ/MM/AAAA" maxlength="10" style="width:120px;font-size:13px">
+          </div>
+          <button class="btn btn-success" style="align-self:flex-end" onclick="validateOrders()">✅ Valider toutes</button>
+          <button class="btn btn-outline btn-sm" style="align-self:flex-end" onclick="exportOrdersPDF()">⬇️ PDF</button>
         </div>
       </div>
       <div class="card-body" id="validateBody">
@@ -179,8 +199,8 @@
           </div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-header"><span class="card-title">Créer un employé</span></div>
+      <div class="card reveal-right">
+        <div class="card-header"><span class="card-title">➕ Créer un employé</span></div>
         <div class="card-body">
           <div class="form-group"><label>Prénom *</label><input class="form-control" id="newEmpFn" placeholder="Prénom" oninput="autoGenerateId()"></div>
           <div class="form-group"><label>Nom *</label><input class="form-control" id="newEmpLn" placeholder="Nom de famille" oninput="autoGenerateId()"></div>
@@ -202,10 +222,10 @@
   <!-- ═══ EXPENSES ═══ -->
   <div class="page" id="page-expenses">
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-number" id="expW">—</div><div class="stat-label">Dépenses semaine (FCFA)</div></div>
-      <div class="stat-card"><div class="stat-icon">📆</div><div class="stat-number" id="expM">—</div><div class="stat-label">Dépenses mois (FCFA)</div></div>
+      <div class="stat-card reveal" style="--reveal-delay:0s"><div class="stat-icon">📅</div><div class="stat-number" id="expW">—</div><div class="stat-label">Dépenses semaine (FCFA)</div></div>
+      <div class="stat-card reveal" style="--reveal-delay:.08s"><div class="stat-icon">📆</div><div class="stat-number" id="expM">—</div><div class="stat-label">Dépenses mois (FCFA)</div></div>
     </div>
-    <div class="card">
+    <div class="card reveal">
       <div class="card-header">
         <span class="card-title">Évolution des dépenses</span>
         <select id="expPeriod" class="form-control" style="width:160px;font-size:13px" onchange="loadExpenses()">
@@ -226,15 +246,21 @@
 
   <!-- ═══ HISTORY ═══ -->
   <div class="page" id="page-history">
-    <div class="card">
+    <div class="card reveal">
       <div class="card-header">
         <span class="card-title">📋 Historique des consommations</span>
         <div class="date-filter">
-          <input type="date" id="histFrom" placeholder="Du">
-          <span style="color:var(--muted);font-size:13px">au</span>
-          <input type="date" id="histTo" placeholder="Au">
-          <input class="form-control" id="histEmpId" placeholder="ID employé" style="width:130px;font-size:13px">
-          <button class="btn btn-primary btn-sm" onclick="loadHistory()">🔍 Rechercher</button>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <label style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Du</label>
+            <input type="text" class="form-control date-mask" id="histFrom" placeholder="JJ/MM/AAAA" maxlength="10" style="width:120px;font-size:13px">
+          </div>
+          <span style="color:var(--muted);font-size:13px;align-self:flex-end;padding-bottom:2px">au</span>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <label style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Au</label>
+            <input type="text" class="form-control date-mask" id="histTo" placeholder="JJ/MM/AAAA" maxlength="10" style="width:120px;font-size:13px">
+          </div>
+          <input class="form-control" id="histEmpId" placeholder="ID employé" style="width:130px;font-size:13px;align-self:flex-end">
+          <button class="btn btn-primary btn-sm" style="align-self:flex-end" onclick="loadHistory()">🔍 Rechercher</button>
         </div>
       </div>
       <div class="card-body">
@@ -252,12 +278,19 @@
   <div class="page" id="page-messages">
     <div class="chat-layout">
       <div class="chat-sidebar" id="adminChatSidebar">
-        <div style="padding:12px 14px;border-bottom:1px solid var(--border);font-weight:600;font-size:13px;color:var(--brown)">Conversations</div>
+        <div style="padding:12px 14px;border-bottom:1px solid var(--border);font-weight:600;font-size:13px;color:var(--brown);display:flex;align-items:center;gap:7px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Conversations
+        </div>
         <div id="adminConvList"></div>
       </div>
       <div class="chat-main" id="adminChatMain">
         <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted)">
-          <div style="text-align:center"><div style="font-size:36px;margin-bottom:10px">💬</div>Sélectionnez un restaurant</div>
+          <div class="empty-state">
+            <span class="icon">💬</span>
+            <div style="font-size:15px;font-weight:600;color:var(--brown);margin-bottom:4px">Aucune conversation ouverte</div>
+            <div style="font-size:12.5px;color:var(--muted)">Sélectionnez un restaurant dans la liste</div>
+          </div>
         </div>
       </div>
     </div>
@@ -266,16 +299,19 @@
   <!-- ═══ SETTINGS ═══ -->
   <div class="page" id="page-settings">
     <div class="page-grid" style="max-width:800px">
-      <div class="card">
+      <div class="card reveal">
         <div class="card-header"><span class="card-title">🖼 Photo / Logo</span></div>
-        <div class="card-body" style="text-align:center">
-          <div class="user-avatar" id="settingsPhotoPreview" style="width:90px;height:90px;font-size:36px;margin:0 auto 14px;border-radius:14px">🏢</div>
-          <label class="btn btn-primary btn-sm" style="cursor:pointer">📷 Choisir
+        <div class="card-body" style="text-align:center;padding:24px">
+          <div style="width:100px;height:100px;border-radius:50%;border:3px solid var(--orange);padding:3px;margin:0 auto 16px;box-shadow:0 0 0 4px rgba(232,90,42,.12)">
+            <div class="user-avatar" id="settingsPhotoPreview" style="width:100%;height:100%;font-size:36px;border-radius:50%">🏢</div>
+          </div>
+          <label class="btn btn-primary btn-sm" style="cursor:pointer">📷 Choisir un logo
             <input type="file" accept="image/*" id="settingsPhotoInput" style="display:none" onchange="handleSettingsPhoto(this)">
           </label>
+          <div style="font-size:11px;color:var(--muted);margin-top:8px">PNG, JPG ou SVG — affiché dans la sidebar</div>
         </div>
       </div>
-      <div id="pwCardCompany" class="card">
+      <div id="pwCardCompany" class="card reveal-right">
         <div class="card-header"><span class="card-title">🔐 Changer le mot de passe</span></div>
         <div class="card-body">
           <div class="form-group">
@@ -343,6 +379,50 @@ if (!token || role !== 'company') window.location.href = '/company/login';
 function logout() { localStorage.clear(); window.location.href = '/'; }
 
 document.addEventListener('DOMContentLoaded', function() {
+
+// ── Date helpers ──────────────────────────────────────
+function parseFrDate(str) {
+  if (!str || str.length < 10) return '';
+  const parts = str.split('/');
+  if (parts.length !== 3) return '';
+  const [d, m, y] = parts;
+  if (!d || !m || !y || y.length < 4) return '';
+  return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+}
+window.parseFrDate = parseFrDate;
+
+function todayFrStr() {
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+window.todayFrStr = todayFrStr;
+
+function initDateMask() {
+  document.querySelectorAll('input.date-mask').forEach(inp => {
+    if (inp._dateMaskInit) return;
+    inp._dateMaskInit = true;
+    inp.addEventListener('input', function() {
+      let v = this.value.replace(/\D/g,'');
+      if (v.length > 8) v = v.slice(0,8);
+      let out = '';
+      if (v.length >= 1) out = v.slice(0,2);
+      if (v.length >= 3) out += '/' + v.slice(2,4);
+      if (v.length >= 5) out += '/' + v.slice(4,8);
+      this.value = out;
+    });
+    inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace') {
+        const v = this.value;
+        if (v.endsWith('/')) { this.value = v.slice(0,-1); e.preventDefault(); }
+      }
+    });
+  });
+}
+window.initDateMask = initDateMask;
+
 const adminName = localStorage.getItem('fc_name') || '—';
 document.getElementById('sidebarName').textContent = adminName.substring(0,22);
 document.getElementById('sidebarRole').textContent = 'Entreprise';
@@ -362,11 +442,13 @@ function switchToPage(page) {
   if (navItem) navItem.classList.add('active');
   const pg = document.getElementById(`page-${page}`);
   if (pg) pg.classList.add('active');
+  const titles = { dashboard:'Vue d\'ensemble', allrestaurants:'Tous les restaurants', affiliations:'Mes affiliations', orders:'Commandes du jour', validate:'Valider & Exporter', invoices:'Factures', employees:'Employés', expenses:'Dépenses', history:'Historique', messages:'Messages', settings:'Paramètres' };
+  document.getElementById('pageTitle').textContent = titles[page] || page;
   if (page === 'dashboard') loadDashboard();
   else if (page === 'allrestaurants') loadAllRestaurants();
   else if (page === 'affiliations') loadAffiliations();
-  else if (page === 'orders') { document.getElementById('ordersFrom').value = todayStr(); document.getElementById('ordersTo').value = todayStr(); loadOrders(); }
-  else if (page === 'validate') { document.getElementById('validateFrom').value = todayStr(); document.getElementById('validateTo').value = todayStr(); previewValidate(); }
+  else if (page === 'orders') { const td = todayFrStr(); document.getElementById('ordersFrom').value = td; document.getElementById('ordersTo').value = td; initDateMask(); loadOrders(); }
+  else if (page === 'validate') { const td = todayFrStr(); document.getElementById('validateFrom').value = td; document.getElementById('validateTo').value = td; initDateMask(); previewValidate(); }
   else if (page === 'invoices') loadInvoices();
   else if (page === 'employees') loadEmployees();
   else if (page === 'expenses') loadExpenses();
@@ -377,6 +459,7 @@ function switchToPage(page) {
 
 try { initSidebar(); } catch(e) { console.error('initSidebar:', e); }
 try { initPasswordToggles(); } catch(e) { console.error('initPasswordToggles:', e); }
+initDateMask();
 
 // Direct click handlers for nav items
 document.querySelectorAll('.nav-item[data-page]').forEach(item => {
@@ -559,8 +642,8 @@ async function deaffiliateRest(id, name) {
 
 // ── Orders ────────────────────────────────────────────
 async function loadOrders() {
-  const from = document.getElementById('ordersFrom').value;
-  const to = document.getElementById('ordersTo').value;
+  const from = parseFrDate(document.getElementById('ordersFrom').value) || document.getElementById('ordersFrom').value;
+  const to = parseFrDate(document.getElementById('ordersTo').value) || document.getElementById('ordersTo').value;
   const restId = document.getElementById('restFilter').value;
 
   let url = '/api/admin/orders?';
@@ -618,8 +701,8 @@ async function loadOrders() {
 }
 
 function exportCompanyOrdersPDF() {
-  const from = document.getElementById('ordersFrom').value;
-  const to = document.getElementById('ordersTo').value;
+  const from = parseFrDate(document.getElementById('ordersFrom').value) || document.getElementById('ordersFrom').value;
+  const to = parseFrDate(document.getElementById('ordersTo').value) || document.getElementById('ordersTo').value;
   if (!from || !to) { toast('Veuillez sélectionner les dates de début et de fin', 'error'); return; }
   fetch(`/api/admin/orders/export-pdf?from=${from}&to=${to}`, { headers: { Authorization: `Bearer ${token}` } })
     .then(r => r.blob()).then(blob => { const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`commandes_${from}_${to}.pdf`; a.click(); URL.revokeObjectURL(url); })
@@ -627,8 +710,8 @@ function exportCompanyOrdersPDF() {
 }
 
 function printCompanyOrders() {
-  const from = document.getElementById('ordersFrom').value;
-  const to = document.getElementById('ordersTo').value;
+  const from = parseFrDate(document.getElementById('ordersFrom').value) || document.getElementById('ordersFrom').value;
+  const to = parseFrDate(document.getElementById('ordersTo').value) || document.getElementById('ordersTo').value;
   if (!from || !to) { toast('Veuillez sélectionner les dates de début et de fin', 'error'); return; }
   fetch(`/api/admin/orders/export-pdf?from=${from}&to=${to}`, { headers: { Authorization: `Bearer ${token}` } })
     .then(r => r.blob()).then(blob => { const url=URL.createObjectURL(blob); const w=window.open(url); if(w) w.onload=()=>w.print(); })
@@ -637,8 +720,8 @@ function printCompanyOrders() {
 
 // ── Validate ──────────────────────────────────────────
 async function previewValidate() {
-  const from = document.getElementById('validateFrom').value;
-  const to = document.getElementById('validateTo').value;
+  const from = parseFrDate(document.getElementById('validateFrom').value) || document.getElementById('validateFrom').value;
+  const to = parseFrDate(document.getElementById('validateTo').value) || document.getElementById('validateTo').value;
   let url = '/api/admin/orders?';
   
   if (from && to) {
@@ -682,8 +765,8 @@ async function previewValidate() {
 }
 
 async function validateOrders() {
-  const from = document.getElementById('validateFrom').value;
-  const to = document.getElementById('validateTo').value;
+  const from = parseFrDate(document.getElementById('validateFrom').value) || document.getElementById('validateFrom').value;
+  const to = parseFrDate(document.getElementById('validateTo').value) || document.getElementById('validateTo').value;
   const date = from || todayStr();
   if (!confirm(`Valider toutes les commandes du ${date} ?`)) return;
   try {
@@ -694,11 +777,11 @@ async function validateOrders() {
 }
 
 function exportOrdersPDF() {
-  const from = document.getElementById('validateFrom').value;
-  const to = document.getElementById('validateTo').value;
-  
+  const from = parseFrDate(document.getElementById('validateFrom').value) || document.getElementById('validateFrom').value;
+  const to = parseFrDate(document.getElementById('validateTo').value) || document.getElementById('validateTo').value;
+
   if (!from || !to) { toast('Veuillez sélectionner les dates de début et de fin', 'error'); return; }
-  
+
   fetch(`/api/admin/orders/export-pdf?from=${from}&to=${to}`, { headers: { Authorization: `Bearer ${token}` } })
     .then(r => r.blob()).then(blob => { const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`commandes_${from}_${to}.pdf`; a.click(); URL.revokeObjectURL(url); })
     .catch(()=>toast('Erreur PDF','error'));
@@ -736,12 +819,8 @@ function downloadInvoice(id) {
   window.open(`/api/admin/invoices/${id}/pdf?token=${token}`, '_blank');
 }
 function printInvoice(id) {
-  window.open(`/api/admin/invoices/${id}/pdf?token=${token}`, '_blank');
-}
-
-function printInvoice(id) {
   fetch(`/api/admin/invoices/${id}/pdf`, { headers: { Authorization: `Bearer ${token}` } })
-    .then(r=>r.blob()).then(blob=>{ const url=URL.createObjectURL(blob); const w=window.open(url); w.onload=()=>w.print(); });
+    .then(r=>r.blob()).then(blob=>{ const url=URL.createObjectURL(blob); const w=window.open(url); if(w) w.onload=()=>w.print(); });
 }
 
 // ── Employees ─────────────────────────────────────────
@@ -764,14 +843,14 @@ async function loadEmployees() {
 }
 
 let empCounter = 1;
-let idManuallyEdited = false;
+window.idManuallyEdited = false;
 
 function removeDiacritics(str) {
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 }
 
 function autoGenerateId() {
-  if (idManuallyEdited) return;
+  if (window.idManuallyEdited) return;
   const fn = removeDiacritics(document.getElementById('newEmpFn').value.trim());
   const ln = removeDiacritics(document.getElementById('newEmpLn').value.trim());
   if (!fn && !ln) { document.getElementById('newEmpId').value = ''; return; }
@@ -852,8 +931,8 @@ async function loadExpenses() {
 
 // ── History ───────────────────────────────────────────
 async function loadHistory() {
-  const from = document.getElementById('histFrom').value;
-  const to = document.getElementById('histTo').value;
+  const from = parseFrDate(document.getElementById('histFrom').value) || document.getElementById('histFrom').value;
+  const to = parseFrDate(document.getElementById('histTo').value) || document.getElementById('histTo').value;
   const empId = document.getElementById('histEmpId').value.trim();
   try {
     let url = '/api/admin/history?';
@@ -1154,6 +1233,7 @@ async function changeCompanyPassword() {
   window.loadOrders = loadOrders;
   window.loadHistory = loadHistory;
   window.searchAdminDishes = searchAdminDishes;
+  window.filterRestaurants = filterRestaurants;
   window.toggleNotifDropdown = toggleNotifDropdown;
   window.markNotifRead = markNotifRead;
   window.loadInvoices = loadInvoices;
@@ -1180,7 +1260,11 @@ window.confirmInvoice = confirmInvoice;
   window.openRestDetail = openRestDetail;
   window.openAdminFileUpload = openAdminFileUpload;
   window.clearAdminFile = clearAdminFile;
+  window.initDateMask = initDateMask;
+  window.parseFrDate = parseFrDate;
+  window.todayFrStr = todayFrStr;
 }); // end DOMContentLoaded
 </script>
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>FoodChooseApp — Connexion</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#E85A2A">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="/assets/images/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="FoodChooseApp">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="msapplication-TileImage" content="/assets/images/icon-144.png">
+  <meta name="msapplication-TileColor" content="#2C1810">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--orange:#E85A2A;--brown:#2C1810;--cream:#FFF8F3;--muted:#8B6554;--border:#F0E6DE;--gold:#F9C74F}
+    html,body{height:100%;overflow:hidden}
+    body{font-family:'DM Sans',sans-serif;background:var(--brown);display:flex;align-items:stretch;min-height:100vh}
+
+    /* ── Split layout ─── */
+    .split-wrap{display:flex;width:100%;min-height:100vh}
+
+    /* ── Left panel ─── */
+    .split-left{flex:0 0 44%;background:linear-gradient(145deg,#1a0e08,var(--brown));display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 40px;position:relative;overflow:hidden}
+    .split-left::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 40%,rgba(232,90,42,.22),transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(249,199,79,.08),transparent 50%)}
+    .left-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,248,243,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,248,243,.025) 1px,transparent 1px);background-size:44px 44px}
+    .left-orb{position:absolute;border-radius:50%;filter:blur(2px);pointer-events:none}
+    .left-orb-1{width:320px;height:320px;background:radial-gradient(circle,rgba(232,90,42,.12),transparent 70%);top:-80px;right:-80px;animation:orbF1 20s ease-in-out infinite}
+    .left-orb-2{width:220px;height:220px;background:radial-gradient(circle,rgba(249,199,79,.07),transparent 70%);bottom:-60px;left:-60px;animation:orbF2 25s ease-in-out infinite}
+    @keyframes orbF1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(25px,-20px) scale(1.06)}}
+    @keyframes orbF2{0%,100%{transform:translate(0,0)}50%{transform:translate(-20px,25px)}}
+    .left-content{position:relative;z-index:1;text-align:center;max-width:320px}
+    .left-logo{width:80px;height:80px;border-radius:20px;margin:0 auto 24px;filter:drop-shadow(0 8px 24px rgba(232,90,42,.3));animation:logoFloat 4s ease-in-out infinite}
+    @keyframes logoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    .left-title{font-family:'Playfair Display',serif;font-size:30px;font-weight:900;color:var(--cream);line-height:1.2;margin-bottom:10px}
+    .left-title span{color:var(--orange)}
+    .left-sub{font-size:13.5px;color:rgba(255,248,243,.48);line-height:1.7;margin-bottom:36px}
+    .left-features{display:flex;flex-direction:column;gap:12px;text-align:left;width:100%}
+    .lf-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(255,248,243,.05);border:1px solid rgba(255,248,243,.07);border-radius:12px;animation:lfIn .6s cubic-bezier(.16,1,.3,1) both}
+    .lf-item:nth-child(1){animation-delay:.2s}
+    .lf-item:nth-child(2){animation-delay:.3s}
+    .lf-item:nth-child(3){animation-delay:.4s}
+    @keyframes lfIn{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}
+    .lf-icon{width:36px;height:36px;border-radius:10px;background:rgba(232,90,42,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .lf-icon svg{width:18px;height:18px;stroke:var(--orange);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .lf-text{font-size:12.5px;color:rgba(255,248,243,.55);line-height:1.45}
+    .lf-text strong{color:var(--cream);display:block;font-size:13px;font-weight:600}
+
+    /* ── Right panel ─── */
+    .split-right{flex:1;background:var(--cream);display:flex;align-items:center;justify-content:center;padding:40px 28px;overflow-y:auto}
+    .auth-inner{width:100%;max-width:380px}
+    .auth-header{margin-bottom:32px;animation:formIn .7s cubic-bezier(.16,1,.3,1) both}
+    @keyframes formIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    .auth-header h2{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;color:var(--brown);margin-bottom:6px}
+    .auth-header p{font-size:13.5px;color:var(--muted)}
+    .form-group{margin-bottom:18px;animation:formIn .6s cubic-bezier(.16,1,.3,1) both}
+    .form-group:nth-child(1){animation-delay:.08s}
+    .form-group:nth-child(2){animation-delay:.14s}
+    .form-group:nth-child(3){animation-delay:.20s}
+    .form-group label{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--brown);margin-bottom:7px;letter-spacing:.3px}
+    .form-group label svg{width:13px;height:13px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .form-control{width:100%;padding:11px 14px;background:white;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--brown);transition:all .2s;outline:none}
+    .form-control:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(232,90,42,.12)}
+    .form-control::placeholder{color:#C4A898}
+    .pw-wrap{position:relative}
+    .pw-wrap .form-control{padding-right:44px}
+    .pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex;align-items:center;justify-content:center;transition:color .2s}
+    .pw-toggle:hover{color:var(--orange)}
+    .pw-toggle svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .btn-submit{width:100%;padding:14px;background:linear-gradient(135deg,var(--orange),#D14D22);color:white;border:none;border-radius:11px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all .25s;margin-top:6px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(232,90,42,.3);animation:formIn .6s .25s both}
+    .btn-submit::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);transition:left .45s ease}
+    .btn-submit:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(232,90,42,.45)}
+    .btn-submit:hover::before{left:100%}
+    .btn-submit:disabled{opacity:.7;cursor:not-allowed;transform:none}
+    .btn-submit svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+    #errMsg{background:#FEE2E2;color:#991B1B;border-radius:10px;padding:11px 14px;font-size:13px;margin-top:10px;display:none;border:1px solid #FCA5A5;align-items:center;gap:8px}
+    #errMsg.show{display:flex}
+    #errMsg svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+    .auth-divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+    .auth-links{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;animation:formIn .6s .3s both}
+    .auth-links a{font-size:12.5px;color:var(--muted);text-decoration:none;transition:color .2s}
+    .auth-links a:hover{color:var(--orange)}
+
+    /* forgot modal */
+    #forgotModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+    .forgot-box{background:var(--cream);border-radius:20px;padding:32px;width:100%;max-width:400px;margin:20px;box-shadow:0 24px 60px rgba(0,0,0,.3);animation:formIn .4s cubic-bezier(.16,1,.3,1) both}
+    .forgot-box h3{font-family:'Playfair Display',serif;color:var(--brown);margin-bottom:6px;display:flex;align-items:center;gap:8px;font-size:20px}
+    .forgot-box h3 svg{width:20px;height:20px;stroke:var(--orange);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+    /* Mobile: stack vertically */
+    @media(max-width:768px){
+      html,body{overflow:auto}
+      .split-wrap{flex-direction:column}
+      .split-left{flex:0 0 auto;padding:32px 28px;min-height:auto}
+      .left-features{display:none}
+      .split-right{padding:32px 24px}
+    }
+  </style>
+</head>
+<body>
+<canvas id="particlesCanvas" style="position:fixed;inset:0;z-index:0;pointer-events:none"></canvas>
+<div id="toastContainer"></div>
+
+<div class="split-wrap">
+  <!-- ─── Left branding panel ─── -->
+  <div class="split-left">
+    <div class="left-grid"></div>
+    <div class="left-orb left-orb-1"></div>
+    <div class="left-orb left-orb-2"></div>
+    <div class="left-content">
+      <img src="/assets/images/logo.svg" alt="FoodChooseApp" class="left-logo">
+      <div class="left-title">Food<span>Choose</span>App</div>
+      <p class="left-sub">La plateforme qui simplifie la gestion des repas d'entreprise</p>
+      <div class="left-features">
+        <div class="lf-item">
+          <div class="lf-icon">
+            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          </div>
+          <div class="lf-text"><strong>Gestion entreprise</strong>Commandes et suivi des dépenses</div>
+        </div>
+        <div class="lf-item">
+          <div class="lf-icon">
+            <svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2c-1.67 0-5 .83-5 4v6c0 1.1.9 2 2 2v5a1 1 0 0 0 2 0v-5c1.1 0 2-.9 2-2z"/></svg>
+          </div>
+          <div class="lf-text"><strong>Restaurants partenaires</strong>Menus frais livrés à vos équipes</div>
+        </div>
+        <div class="lf-item">
+          <div class="lf-icon">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <div class="lf-text"><strong>Rapports automatiques</strong>Factures et statistiques en temps réel</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Right form panel ─── -->
+  <div class="split-right">
+    <div class="auth-inner">
+      <div class="auth-header">
+        <h2>Bon retour</h2>
+        <p>Connectez-vous à votre espace</p>
+      </div>
+
+      <div class="form-group">
+        <label>
+          <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Email
+        </label>
+        <input class="form-control" type="email" id="email" placeholder="email@exemple.com" autocomplete="email" onkeydown="if(event.key==='Enter')login()">
+      </div>
+
+      <div class="form-group">
+        <label>
+          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Mot de passe
+        </label>
+        <div class="pw-wrap">
+          <input class="form-control" type="password" id="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+          <button class="pw-toggle" type="button" id="pwToggleBtn">
+            <svg id="eyeIcon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <button class="btn-submit" id="loginBtn" onclick="login()">
+        <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Se connecter
+      </button>
+      <div id="errMsg">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="errTxt"></span>
+      </div>
+
+      <hr class="auth-divider">
+      <div class="auth-links">
+        <a href="#" id="forgotLink">Mot de passe oublié ?</a>
+        <a href="/">← Retour à l'accueil</a>
+      </div>
+      <p style="text-align:center;margin-top:18px;font-size:13px;color:var(--muted);animation:formIn .6s .35s both">
+        Pas de compte ?
+        <a href="#" onclick="event.preventDefault();openRoleModal()" style="color:var(--orange);font-weight:600;text-decoration:none;margin-left:4px">S'inscrire</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Role picker modal -->
+<div id="roleModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(6px);padding:20px">
+  <div style="background:var(--cream);border-radius:24px;padding:36px;width:100%;max-width:440px;box-shadow:0 40px 80px rgba(0,0,0,.45);animation:formIn .4s cubic-bezier(.16,1,.3,1) both">
+    <h2 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--brown);text-align:center;margin-bottom:6px">Créer un compte</h2>
+    <p style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:28px">Choisissez votre type de compte</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+      <a href="/company/register" style="border:2px solid var(--border);border-radius:16px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .25s;background:white;text-decoration:none;display:block">
+        <div style="width:50px;height:50px;border-radius:14px;background:rgba(232,90,42,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        </div>
+        <div style="font-size:15px;font-weight:700;color:var(--brown);margin-bottom:4px">Entreprise</div>
+        <div style="font-size:12px;color:var(--muted)">Gérez les repas de vos employés</div>
+      </a>
+      <a href="/restaurant/register" style="border:2px solid var(--border);border-radius:16px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .25s;background:white;text-decoration:none;display:block">
+        <div style="width:50px;height:50px;border-radius:14px;background:rgba(232,90,42,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2c-1.67 0-5 .83-5 4v6c0 1.1.9 2 2 2v5a1 1 0 0 0 2 0v-5c1.1 0 2-.9 2-2z"/></svg>
+        </div>
+        <div style="font-size:15px;font-weight:700;color:var(--brown);margin-bottom:4px">Restaurant</div>
+        <div style="font-size:12px;color:var(--muted)">Proposez vos menus aux entreprises</div>
+      </a>
+    </div>
+    <button onclick="closeRoleModal()" style="width:100%;padding:12px;background:none;border:1.5px solid var(--border);border-radius:11px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);cursor:pointer;transition:all .2s">Annuler</button>
+  </div>
+</div>
+
+<!-- Forgot password modal -->
+<div id="forgotModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div class="forgot-box">
+    <h3>
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Mot de passe oublié
+    </h3>
+    <div id="fp-step1">
+      <p style="font-size:13px;color:var(--muted);margin:10px 0 16px">Entrez votre email pour recevoir un code OTP.</p>
+      <div class="form-group"><label>Email</label><input class="form-control" id="fp-email" type="email" placeholder="votre@email.com"></div>
+      <div id="fp-err" style="color:#dc2626;font-size:13px;margin-bottom:10px;display:none"></div>
+      <button class="btn-submit" onclick="fpSendOtp()">
+        <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Envoyer le code
+      </button>
+    </div>
+    <div id="fp-step2" style="display:none">
+      <p style="font-size:13px;color:var(--muted);margin:10px 0 16px">Entrez le code à 6 chiffres reçu par email.</p>
+      <div class="form-group"><label>Code OTP</label><input class="form-control" id="fp-otp" placeholder="000000" maxlength="6" style="letter-spacing:8px;font-size:22px;text-align:center;font-family:monospace"></div>
+      <div id="fp-err2" style="color:#dc2626;font-size:13px;margin-bottom:10px;display:none"></div>
+      <button class="btn-submit" onclick="fpVerifyOtp()">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Vérifier le code
+      </button>
+    </div>
+    <div id="fp-step3" style="display:none">
+      <p style="font-size:13px;color:var(--muted);margin:10px 0 16px">Définissez votre nouveau mot de passe.</p>
+      <div class="form-group"><label>Nouveau mot de passe</label><div class="pw-wrap"><input class="form-control" type="password" id="fp-pwd" placeholder="Minimum 6 caractères"><button class="pw-toggle" type="button"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+      <div class="form-group"><label>Confirmer</label><div class="pw-wrap"><input class="form-control" type="password" id="fp-pwd2" placeholder="Répétez"><button class="pw-toggle" type="button"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+      <div id="fp-err3" style="color:#dc2626;font-size:13px;margin-bottom:10px;display:none"></div>
+      <button class="btn-submit" onclick="fpResetPassword()">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Changer le mot de passe
+      </button>
+    </div>
+    <button onclick="closeForgotModal()" style="width:100%;margin-top:12px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif">Annuler</button>
+  </div>
+</div>
+
+<script src="/assets/js/utils.js"></script>
+<script>
+const AUTH_KEYS = ['fc_token','fc_role','fc_admin_token','fc_admin_name','fc_co_token','fc_name','fc_id','fc_employeeId'];
+function jwtOk(t) {
+  try { return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).exp * 1000 > Date.now(); }
+  catch { return false; }
+}
+function clearAuth() { AUTH_KEYS.forEach(k => localStorage.removeItem(k)); }
+(function() {
+  const token = localStorage.getItem('fc_token');
+  const role  = localStorage.getItem('fc_role');
+  if (!token || !role || !jwtOk(token)) { clearAuth(); return; }
+  if (role === 'admin')      window.location.replace('/admin');
+  else if (role === 'company')    window.location.replace('/company/admin');
+  else if (role === 'restaurant') window.location.replace('/restaurant/dashboard');
+  else if (role === 'employee')   window.location.replace('/employee');
+})();
+
+// Page load bar
+(function(){
+  const bar = document.createElement('div'); bar.id='pageLoadBar'; bar.style.cssText='width:0%;opacity:1';
+  document.body.prepend(bar); let p=0;
+  const t=setInterval(()=>{p=Math.min(p+Math.random()*18+5,88);bar.style.width=p+'%';},160);
+  window.addEventListener('load',()=>{clearInterval(t);bar.style.width='100%';setTimeout(()=>{bar.style.opacity='0';setTimeout(()=>bar.remove(),400);},200);},{once:true});
+})();
+
+// Password toggle
+document.getElementById('pwToggleBtn').addEventListener('click', function() {
+  const inp = document.getElementById('password');
+  const icon = document.getElementById('eyeIcon');
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  icon.innerHTML = show
+    ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+});
+
+// Forgot modal
+let _fpType = null;
+function openForgotModal(type) {
+  _fpType = type;
+  ['fp-step1','fp-step2','fp-step3'].forEach((id,i) => document.getElementById(id).style.display = i===0?'block':'none');
+  ['fp-err','fp-err2','fp-err3'].forEach(id => { const el=document.getElementById(id); el.style.display='none'; el.textContent=''; });
+  document.getElementById('fp-email').value=''; document.getElementById('fp-otp').value='';
+  document.getElementById('fp-pwd').value=''; document.getElementById('fp-pwd2').value='';
+  document.getElementById('forgotModal').style.display='flex';
+  document.querySelectorAll('.forgot-box .pw-toggle').forEach(btn => {
+    btn.addEventListener('click', function(){
+      const inp = this.previousElementSibling || this.parentElement.querySelector('input');
+      if (inp && inp.type) inp.type = inp.type === 'password' ? 'text' : 'password';
+    });
+  });
+}
+function closeForgotModal() { document.getElementById('forgotModal').style.display='none'; }
+document.getElementById('forgotLink').addEventListener('click', e => { e.preventDefault(); openForgotModal(null); });
+
+async function fpSendOtp() {
+  const email = document.getElementById('fp-email').value.trim();
+  const errEl = document.getElementById('fp-err');
+  errEl.style.display='none';
+  if (!email) { errEl.textContent='Email requis'; errEl.style.display='block'; shakeEl(errEl); return; }
+  try {
+    const id = await apiFetch('/api/auth/identify', { method:'POST', body: JSON.stringify({ email }) });
+    _fpType = id.userType;
+  } catch(e) { errEl.textContent='Aucun compte trouvé pour cet email'; errEl.style.display='block'; shakeEl(errEl); return; }
+  const btn = document.querySelector('#fp-step1 .btn-submit');
+  setLoading(btn, 'Envoi...');
+  try {
+    await apiFetch('/api/auth/forgot-password', { method:'POST', body: JSON.stringify({ email, userType: _fpType }) });
+    document.getElementById('fp-step1').style.display='none';
+    document.getElementById('fp-step2').style.display='block';
+    toast('Code envoyé !','success');
+  } catch(e) { errEl.textContent=e.message; errEl.style.display='block'; shakeEl(errEl); }
+  finally { unsetLoading(btn, 'Envoyer le code'); }
+}
+
+async function fpVerifyOtp() {
+  const email = document.getElementById('fp-email').value.trim();
+  const otp = document.getElementById('fp-otp').value.trim();
+  const errEl = document.getElementById('fp-err2');
+  errEl.style.display='none';
+  if (otp.length !== 6) { errEl.textContent='Code à 6 chiffres requis'; errEl.style.display='block'; shakeEl(errEl); return; }
+  const btn = document.querySelector('#fp-step2 .btn-submit');
+  setLoading(btn, 'Vérification...');
+  try {
+    await apiFetch('/api/auth/verify-otp', { method:'POST', body: JSON.stringify({ email, userType: _fpType, otp }) });
+    document.getElementById('fp-step2').style.display='none';
+    document.getElementById('fp-step3').style.display='block';
+  } catch(e) { errEl.textContent=e.message; errEl.style.display='block'; shakeEl(errEl); }
+  finally { unsetLoading(btn, 'Vérifier le code'); }
+}
+
+async function fpResetPassword() {
+  const email = document.getElementById('fp-email').value.trim();
+  const otp = document.getElementById('fp-otp').value.trim();
+  const pwd = document.getElementById('fp-pwd').value;
+  const pwd2 = document.getElementById('fp-pwd2').value;
+  const errEl = document.getElementById('fp-err3');
+  errEl.style.display='none';
+  if (pwd !== pwd2) { errEl.textContent='Les mots de passe ne correspondent pas'; errEl.style.display='block'; shakeEl(errEl); return; }
+  if (pwd.length < 6) { errEl.textContent='Minimum 6 caractères'; errEl.style.display='block'; shakeEl(errEl); return; }
+  const btn = document.querySelector('#fp-step3 .btn-submit');
+  setLoading(btn, 'Changement...');
+  try {
+    await apiFetch('/api/auth/reset-password', { method:'POST', body: JSON.stringify({ email, userType: _fpType, otp, newPassword: pwd }) });
+    toast('Mot de passe changé ! Connectez-vous.','success');
+    closeForgotModal();
+  } catch(e) { errEl.textContent=e.message; errEl.style.display='block'; shakeEl(errEl); }
+  finally { unsetLoading(btn, 'Changer le mot de passe'); }
+}
+
+async function login() {
+  const email = document.getElementById('email').value.trim();
+  const pwd = document.getElementById('password').value;
+  const err = document.getElementById('errMsg');
+  const errTxt = document.getElementById('errTxt');
+  err.classList.remove('show');
+  if (!email) { errTxt.textContent='Email requis'; err.classList.add('show'); shakeEl(err); return; }
+  if (!pwd) { errTxt.textContent='Mot de passe requis'; err.classList.add('show'); shakeEl(err); return; }
+  const btn = document.getElementById('loginBtn');
+  setLoading(btn, 'Connexion...');
+  try {
+    const data = await apiFetch('/api/auth/login', { method:'POST', body: JSON.stringify({ email, password: pwd }) });
+    localStorage.setItem('fc_token', data.token);
+    localStorage.setItem('fc_role', data.role);
+    localStorage.setItem('fc_name', data.name);
+    let dest = '/';
+    if (data.role === 'admin') {
+      localStorage.setItem('fc_admin_token', data.token);
+      localStorage.setItem('fc_admin_name', data.name);
+      localStorage.setItem('fc_id', data.id);
+      dest = '/admin';
+    } else if (data.role === 'company') {
+      localStorage.setItem('fc_co_token', data.token);
+      localStorage.setItem('fc_id', data.id);
+      dest = '/company/admin';
+    } else if (data.role === 'restaurant') {
+      localStorage.setItem('fc_id', data.id);
+      dest = '/restaurant/dashboard';
+    } else if (data.role === 'employee') {
+      localStorage.setItem('fc_id', data.companyId);
+      localStorage.setItem('fc_employeeId', data.employeeId);
+      dest = '/employee';
+    }
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg> Connexion réussie !';
+    btn.style.background = 'var(--success)';
+    btn.style.transform = 'scale(1.02)';
+    document.querySelector('.split-right').style.background = '#f0fdf4';
+    setTimeout(() => window.location.href = dest, 600);
+  } catch(e2) {
+    errTxt.textContent = e2.message; err.classList.add('show'); shakeEl(err);
+    unsetLoading(btn, '<svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Se connecter');
+  }
+}
+
+// Particles
+(function(){
+  const canvas = document.getElementById('particlesCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W,H,particles=[];
+  function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;}
+  resize(); window.addEventListener('resize',resize);
+  for(let i=0;i<25;i++) particles.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.5+.3,vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.2,o:Math.random()*.08+.02});
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,248,243,${p.o})`;ctx.fill();});
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+window.login=login;
+function openRoleModal(){const m=document.getElementById('roleModal');m.style.display='flex';}
+function closeRoleModal(){document.getElementById('roleModal').style.display='none';}
+document.getElementById('roleModal').addEventListener('click',function(e){if(e.target===this)closeRoleModal();});
+window.openRoleModal=openRoleModal;window.closeRoleModal=closeRoleModal;
+window.fpSendOtp=fpSendOtp;
+window.fpVerifyOtp=fpVerifyOtp;
+window.fpResetPassword=fpResetPassword;
+window.openForgotModal=openForgotModal;
+window.closeForgotModal=closeForgotModal;
+if(typeof initRipple==='function')initRipple();
+</script>
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
+</body>
+</html>

@@ -9,7 +9,7 @@ const API = '';
 // ─── Auth helpers ─────────────────────────────────────
 // On a plusieurs types d'utilisateurs (admin, resto, co-admin, client), chacun avec son propre token.
 // Cette fonction essaie chacun dans l'ordre et renvoie le premier trouvé — pratique pour les appels génériques.
-function getToken() { return localStorage.getItem('fc_token') || localStorage.getItem('fc_admin_token') || localStorage.getItem('fc_rest_token') || localStorage.getItem('fc_co_token'); }
+function getToken() { return localStorage.getItem('fc_token') || localStorage.getItem('fc_admin_token') || localStorage.getItem('fc_co_token'); }
 
 // Construit les headers HTTP qu'on envoie à chaque requête.
 // On accepte un token en paramètre pour les cas où on veut forcer un compte précis,
@@ -45,34 +45,40 @@ function toast(msg, type = 'info') {
   const icons = { success: '✅', error: '❌', info: 'ℹ️' };
   t.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
   c.appendChild(t);
-  // On supprime le toast après 3,8 secondes — assez long pour être lu, assez court pour ne pas gêner
-  setTimeout(() => t.remove(), 3800);
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, 3500);
 }
 
 // ─── Notification sound ───────────────────────────────
-// On génère le son directement dans le navigateur via l'API Web Audio,
-// sans avoir besoin de charger un fichier audio externe.
-// Ça évite une requête réseau et ça marche même hors connexion.
+// AudioContext unique et global, créé au premier geste utilisateur
+// pour respecter la politique autoplay de Chrome.
+let audioCtx = null;
+function ensureAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+// On init dès le premier clic/touch pour débloquer l'audio
+document.addEventListener('click', ensureAudioCtx, { once: true });
+document.addEventListener('touchstart', ensureAudioCtx, { once: true });
+
 function playSound(type = 'notif') {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if (ctx.state === 'suspended') ctx.resume();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    if (!audioCtx || audioCtx.state === 'suspended') return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(audioCtx.destination);
     if (type === 'message') {
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.08);
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      osc.frequency.setValueAtTime(660, audioCtx.currentTime + 0.08);
     } else {
-      osc.frequency.setValueAtTime(700, ctx.currentTime);
-      osc.frequency.setValueAtTime(900, ctx.currentTime + 0.1);
-      osc.frequency.setValueAtTime(700, ctx.currentTime + 0.2);
+      osc.frequency.setValueAtTime(700, audioCtx.currentTime);
+      osc.frequency.setValueAtTime(900, audioCtx.currentTime + 0.1);
+      osc.frequency.setValueAtTime(700, audioCtx.currentTime + 0.2);
     }
-    gain.gain.setValueAtTime(0.2, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.4);
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.4);
   } catch(e) {}
 }
 
@@ -87,7 +93,7 @@ let notifPollInterval = null;
 // puis toutes les 6 secondes pour rester à jour sans surcharger le serveur.
 function initNotifications(targetType, targetId) {
   if (!targetType) targetType = localStorage.getItem('fc_role');
-  if (!targetId) targetId = localStorage.getItem('fc_id') || localStorage.getItem('fc_rest_id') || localStorage.getItem('fc_co_id');
+  if (!targetId) targetId = localStorage.getItem('fc_id');
   loadNotifications();
   notifPollInterval = setInterval(loadNotifications, 6000);
 }
@@ -102,11 +108,14 @@ async function loadNotifications() {
     const unread = items.filter(n => !n.read).length;
     const badge = document.getElementById('notifCount');
     if (badge) {
+      if (unread > 0 && unread !== lastNotifCount) {
+        badge.classList.remove('pop');
+        void badge.offsetWidth;
+        badge.classList.add('pop');
+      }
       badge.textContent = unread;
-      // On masque complètement le badge quand tout est lu, pour ne pas attirer l'attention inutilement
       badge.style.display = unread > 0 ? 'flex' : 'none';
     }
-    // On joue un son uniquement si le nombre a augmenté — pas à chaque refresh
     if (unread > lastNotifCount && lastNotifCount >= 0) playSound('notif');
     lastNotifCount = unread;
     renderNotifDropdown(items);
@@ -164,25 +173,32 @@ function initSidebar() {
 }
 
 // ─── Navigation ───────────────────────────────────────
-// Gère le système de navigation entre "pages" (qui sont en fait des sections affichées/cachées par CSS).
-// On reçoit une callback onSwitch pour que chaque page puisse réagir au changement (ex: charger des données).
 function initNav(defaultPage, onSwitch) {
   document.querySelectorAll('.nav-item[data-page]').forEach(item => {
     item.addEventListener('click', () => {
       const page = item.dataset.page;
-      // On retire l'état actif de tous les items avant d'en activer un seul — propre et sans effet de bord
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      item.classList.add('active');
-      const pg = document.getElementById(`page-${page}`);
-      if (pg) pg.classList.add('active');
-      // Met à jour le titre de la page dans le header pour que l'utilisateur sache où il est
-      const tb = document.getElementById('pageTitle');
-      if (tb) tb.textContent = item.querySelector('span:not(.icon):not(.nav-badge)')?.textContent.trim() || item.textContent.trim();
-      // Sur mobile, on ferme automatiquement la sidebar quand on navigue — sinon elle resterait ouverte par-dessus le contenu
-      document.getElementById('sidebar')?.classList.remove('open');
-      document.getElementById('sidebarOverlay')?.classList.remove('open');
-      if (onSwitch) onSwitch(page);
+      const currentPg = document.querySelector('.page.active:not(.leaving)');
+      const nextPg    = document.getElementById(`page-${page}`);
+      const doSwitch = () => {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active', 'leaving'));
+        item.classList.add('active');
+        if (nextPg) nextPg.classList.add('active');
+        const tb = document.getElementById('pageTitle');
+        if (tb) tb.textContent = item.querySelector('span:not(.icon):not(.nav-badge)')?.textContent.trim() || item.textContent.trim();
+        document.getElementById('sidebar')?.classList.remove('open');
+        document.getElementById('sidebarOverlay')?.classList.remove('open');
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        document.querySelector('.topbar')?.classList.remove('topbar-hidden');
+        setTimeout(initScrollReveal, 40);
+        if (onSwitch) onSwitch(page);
+      };
+      if (currentPg && nextPg && currentPg !== nextPg) {
+        currentPg.classList.add('leaving');
+        setTimeout(doSwitch, 170);
+      } else {
+        doSwitch();
+      }
     });
   });
 }
@@ -465,15 +481,382 @@ function renderStars(score, max = 5) {
   return '⭐'.repeat(score) + '☆'.repeat(max - score); // Étoiles pleines pour la note, vides pour le reste
 }
 
+  // ─── Button ripple effect ────────────────────────────
+function initRipple() {
+  document.querySelectorAll('.btn-primary:not([data-ripple])').forEach(btn => {
+    btn.setAttribute('data-ripple', '1');
+    btn.addEventListener('click', function(e) {
+      const rect = this.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      ripple.style.width = ripple.style.height = size + 'px';
+      ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+      ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+      this.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
+    });
+  });
+}
+
+// ─── Shake helper ────────────────────────────────────
+function shakeEl(el) { el.classList.add('shake'); setTimeout(() => el.classList.remove('shake'), 400); }
+
+// ─── Button loading state ────────────────────────────
+function setLoading(btn, label) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> ' + label; }
+function unsetLoading(btn, label) { btn.disabled = false; btn.innerHTML = label; }
+
 // ─── Drink labels ─────────────────────────────────────
 // Correspondance entre les codes stockés en base et les labels affichés à l'utilisateur.
 // Évite de stocker des labels en clair en base et permet de les changer facilement.
 const DRINK_LABELS = { lipton:'🍵 Lipton', cafeine:'☕ Caféine', both:'🍵☕ Les deux' };
 
 // Ferme tous les dropdowns de notifications quand l'utilisateur clique ailleurs sur la page.
-// Sans ça, le dropdown resterait ouvert indéfiniment si on ne reclique pas sur le bouton.
 document.addEventListener('click', (e) => {
   if (!e.target.closest('.notif-btn') && !e.target.closest('.notif-dropdown')) {
     document.querySelectorAll('.notif-dropdown').forEach(d => d.classList.remove('open'));
   }
+});
+
+// ══════════════════════════════════════════════════════
+// ANIMATION UTILITIES
+// ══════════════════════════════════════════════════════
+
+// ─── Page load progress bar ──────────────────────────
+// Crée et anime une barre de progression en haut de page dès que utils.js est chargé.
+function initPageLoadBar() {
+  if (document.getElementById('pageLoadBar')) return;
+  const bar = document.createElement('div');
+  bar.id = 'pageLoadBar';
+  bar.style.cssText = 'width:0%;opacity:1';
+  document.body.prepend(bar);
+  let p = 0;
+  const t = setInterval(() => { p = Math.min(p + Math.random() * 15 + 5, 88); bar.style.width = p + '%'; }, 160);
+  const done = () => {
+    clearInterval(t);
+    bar.style.width = '100%';
+    setTimeout(() => { bar.style.opacity = '0'; setTimeout(() => bar.remove(), 400); }, 200);
+  };
+  if (document.readyState === 'complete') done();
+  else window.addEventListener('load', done, { once: true });
+}
+
+// ─── Number counter animation ────────────────────────
+// Anime un nombre de 0 vers sa valeur cible avec un easing smooth.
+function countUp(el, end, onDone, duration = 650) {
+  const startTime = performance.now();
+  const endNum = Math.round(end);
+  if (endNum <= 0) { if (onDone) onDone(); return; }
+  function step(now) {
+    const progress = Math.min((now - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(eased * endNum).toLocaleString('fr-FR');
+    if (progress < 1) requestAnimationFrame(step);
+    else { el.textContent = endNum.toLocaleString('fr-FR'); if (onDone) onDone(); }
+  }
+  requestAnimationFrame(step);
+}
+
+// ─── Auto-animate .stat-number via MutationObserver ──
+// Observe tous les éléments .stat-number et déclenche countUp dès qu'une valeur numérique arrive.
+// Marche automatiquement sur tous les dashboards sans modifier leur code.
+function initStatCounters() {
+  const targets = document.querySelectorAll('.stat-number');
+  if (!targets.length) return;
+  const animating = new WeakSet();
+  const obs = new MutationObserver(mutations => {
+    mutations.forEach(m => {
+      const el = m.target;
+      if (animating.has(el)) return;
+      const text = el.textContent.trim();
+      const num = parseInt(text.replace(/[\s  ,.]/g, ''));
+      if (isNaN(num) || num <= 0) return;
+      animating.add(el);
+      const origColor = el.style.color;
+      el.style.transition = 'color .3s ease';
+      el.style.color = 'var(--orange)';
+      countUp(el, num, () => {
+        animating.delete(el);
+        setTimeout(() => { el.style.color = origColor || ''; }, 300);
+      });
+    });
+  });
+  targets.forEach(el => obs.observe(el, { childList: true, subtree: true }));
+}
+
+// ─── Scroll reveal via IntersectionObserver ──────────
+// Re-callable : observe uniquement les éléments pas encore visibles.
+function initScrollReveal() {
+  const sel = '.reveal:not(.visible), .reveal-left:not(.visible), .reveal-right:not(.visible), .reveal-scale:not(.visible)';
+  const els = document.querySelectorAll(sel);
+  if (!els.length) return;
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+    });
+  }, { threshold: 0.05, rootMargin: '0px 0px -20px 0px' });
+  els.forEach(el => obs.observe(el));
+}
+
+// ─── Floating particles canvas ────────────────────────
+// Génère de petites particules flottantes sur un <canvas id="particlesCanvas">.
+function initParticles() {
+  const canvas = document.getElementById('particlesCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  window.addEventListener('resize', resize); resize();
+  const pts = Array.from({ length: 45 }, () => ({
+    x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+    r: Math.random() * 1.8 + 0.4,
+    vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35,
+    o: Math.random() * 0.35 + 0.08
+  }));
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pts.forEach(p => {
+      p.x = (p.x + p.vx + canvas.width)  % canvas.width;
+      p.y = (p.y + p.vy + canvas.height) % canvas.height;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(232,90,42,${p.o})`; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// ─── Mouse parallax for decorative orbs ──────────────
+function initParallaxOrbs() {
+  const orb1 = document.querySelector('.orb-1');
+  const orb2 = document.querySelector('.orb-2');
+  if (!orb1 && !orb2) return;
+  document.addEventListener('mousemove', (e) => {
+    const x = (e.clientX / window.innerWidth  - 0.5);
+    const y = (e.clientY / window.innerHeight - 0.5);
+    if (orb1) orb1.style.transform = `translate(${x * 35}px, ${y * 25}px)`;
+    if (orb2) orb2.style.transform = `translate(${x * -25}px, ${y * -18}px)`;
+  }, { passive: true });
+}
+
+// ─── Scroll progress bar ─────────────────────────────
+function initScrollProgress() {
+  if (document.getElementById('scrollProgressBar')) return;
+  const bar = document.createElement('div');
+  bar.id = 'scrollProgressBar';
+  document.body.appendChild(bar);
+  const update = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = max > 1 ? Math.min((window.scrollY / max) * 100, 100) : 0;
+    bar.style.width = pct + '%';
+    bar.style.opacity = pct > 0.5 ? '1' : '0';
+  };
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update, { passive: true });
+}
+
+// ─── Topbar compact + hide-on-scroll ─────────────────
+function initTopbarScroll() {
+  const tb = document.querySelector('.topbar');
+  if (!tb) return;
+  let lastY = 0;
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    tb.classList.toggle('topbar-scrolled', y > 8);
+    if (y > 140) {
+      if (y > lastY + 5) tb.classList.add('topbar-hidden');
+      else if (y < lastY - 5) tb.classList.remove('topbar-hidden');
+    } else {
+      tb.classList.remove('topbar-hidden');
+    }
+    lastY = y;
+  }, { passive: true });
+}
+
+// ─── 3D card tilt (event delegation on .card) ────────
+function initCardTilt() {
+  document.addEventListener('mousemove', (e) => {
+    const card = e.target.closest?.('.card');
+    if (!card || card.closest('.modal')) return;
+    const rect = card.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width  - 0.5) * 7;
+    const y = ((e.clientY - rect.top)  / rect.height - 0.5) * -5;
+    card.style.setProperty('--tilt-x', `${x}deg`);
+    card.style.setProperty('--tilt-y', `${y}deg`);
+  }, { passive: true });
+  document.addEventListener('mouseout', (e) => {
+    const card = e.target.closest?.('.card');
+    if (!card || card.closest('.modal') || card.contains(e.relatedTarget)) return;
+    card.style.removeProperty('--tilt-x');
+    card.style.removeProperty('--tilt-y');
+  }, { passive: true });
+}
+
+// ─── Magnetic buttons (subtle cursor-follow) ─────────
+function initMagneticButtons() {
+  document.addEventListener('mousemove', (e) => {
+    const btn = e.target.closest?.('.btn-primary:not([disabled])');
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width  - 0.5) * 10;
+    const y = ((e.clientY - rect.top)  / rect.height - 0.5) * 6;
+    btn.classList.remove('magnetic-reset');
+    btn.style.transform = `translate(${x}px, ${y}px) translateY(-1px)`;
+    btn.style.transition = 'transform .1s ease';
+  }, { passive: true });
+  document.addEventListener('mouseout', (e) => {
+    const btn = e.target.closest?.('.btn-primary:not([disabled])');
+    if (!btn || btn.contains(e.relatedTarget)) return;
+    btn.style.transform = '';
+    btn.classList.add('magnetic-reset');
+    setTimeout(() => btn.classList.remove('magnetic-reset'), 400);
+  }, { passive: true });
+}
+
+// ─── Animated modal close ─────────────────────────────
+function closeModal(overlay) {
+  if (!overlay) return;
+  const modal = overlay.querySelector('.modal');
+  if (modal) modal.classList.add('closing');
+  overlay.classList.add('closing');
+  setTimeout(() => {
+    overlay.classList.remove('open', 'closing');
+    if (modal) modal.classList.remove('closing');
+  }, 280);
+}
+
+// ─── PWA Install Prompt ───────────────────────────────────
+let _deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+  showInstallBanner();
+});
+
+window.addEventListener('appinstalled', () => {
+  hideInstallBanner();
+  _deferredInstallPrompt = null;
+  toast('FoodChooseApp installée avec succès !', 'success');
+});
+
+function showInstallBanner() {
+  if (document.getElementById('pwaInstallBanner')) return;
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'pwaInstallBanner';
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+      <img src="/assets/images/icon-72.png" alt="" style="width:40px;height:40px;border-radius:10px;flex-shrink:0">
+      <div style="min-width:0">
+        <div style="font-weight:600;font-size:13.5px;color:#2C1810">Installer FoodChooseApp</div>
+        <div style="font-size:11.5px;color:#8B6554;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Accès rapide depuis votre écran d'accueil</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button id="pwaInstallBtn" style="padding:8px 16px;background:linear-gradient(135deg,#E85A2A,#C94A1A);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Installer</button>
+      <button id="pwaInstallClose" style="padding:8px 10px;background:transparent;border:1.5px solid #F0E6DE;border-radius:8px;color:#8B6554;cursor:pointer;font-size:18px;line-height:1;font-family:inherit">×</button>
+    </div>`;
+  banner.style.cssText = 'position:fixed;bottom:16px;left:16px;right:16px;max-width:480px;margin:0 auto;background:#FFF8F3;border:1.5px solid #F0E6DE;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(44,24,16,.18);z-index:9999;animation:pwaSlideUp .4s cubic-bezier(.16,1,.3,1) both';
+
+  if (!document.getElementById('pwaInstallStyle')) {
+    const s = document.createElement('style');
+    s.id = 'pwaInstallStyle';
+    s.textContent = '@keyframes pwaSlideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}@keyframes pwaSlideDown{to{opacity:0;transform:translateY(24px)}}';
+    document.head.appendChild(s);
+  }
+
+  document.body.appendChild(banner);
+
+  document.getElementById('pwaInstallBtn').addEventListener('click', async () => {
+    if (!_deferredInstallPrompt) return;
+    _deferredInstallPrompt.prompt();
+    const { outcome } = await _deferredInstallPrompt.userChoice;
+    if (outcome === 'accepted') hideInstallBanner();
+    _deferredInstallPrompt = null;
+  });
+
+  document.getElementById('pwaInstallClose').addEventListener('click', () => {
+    hideInstallBanner();
+    sessionStorage.setItem('pwaInstallDismissed', '1');
+  });
+
+  // Auto-hide after 12 seconds
+  setTimeout(hideInstallBanner, 12000);
+}
+
+function hideInstallBanner() {
+  const b = document.getElementById('pwaInstallBanner');
+  if (!b) return;
+  b.style.animation = 'pwaSlideDown .3s ease forwards';
+  setTimeout(() => b.remove(), 320);
+}
+
+// ─── Service Worker registration with update detection ────
+function initServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('/sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const worker = reg.installing;
+      worker.addEventListener('statechange', () => {
+        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+          showUpdateBanner(reg);
+        }
+      });
+    });
+  }).catch(() => {});
+}
+
+function showUpdateBanner(reg) {
+  if (document.getElementById('pwaUpdateBanner')) return;
+  const b = document.createElement('div');
+  b.id = 'pwaUpdateBanner';
+  b.innerHTML = `<span style="flex:1;font-size:13px;color:#2C1810">✨ Mise à jour disponible</span><button onclick="applyUpdate()" style="padding:7px 14px;background:linear-gradient(135deg,#E85A2A,#C94A1A);color:white;border:none;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit">Actualiser</button><button onclick="this.closest('#pwaUpdateBanner').remove()" style="padding:7px;background:transparent;border:none;color:#8B6554;cursor:pointer;font-size:18px;font-family:inherit">×</button>`;
+  b.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);width:calc(100%-32px);max-width:420px;background:#FFF8F3;border:1.5px solid #F0E6DE;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 28px rgba(44,24,16,.18);z-index:9999;animation:pwaSlideDown2 .4s cubic-bezier(.16,1,.3,1) both';
+  const s2 = document.createElement('style');
+  s2.textContent = '@keyframes pwaSlideDown2{from{opacity:0;transform:translateX(-50%) translateY(-16px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+  document.head.appendChild(s2);
+  document.body.appendChild(b);
+  window._pwaReg = reg;
+}
+
+window.applyUpdate = function() {
+  if (window._pwaReg?.waiting) {
+    window._pwaReg.waiting.postMessage({ type: 'SKIP_WAITING' });
+  }
+  window.location.reload();
+};
+
+// ─── Online/Offline indicator ─────────────────────────────
+function initNetworkIndicator() {
+  function update() {
+    const online = navigator.onLine;
+    let ind = document.getElementById('networkIndicator');
+    if (online) { if (ind) ind.remove(); return; }
+    if (!ind) {
+      ind = document.createElement('div');
+      ind.id = 'networkIndicator';
+      ind.innerHTML = '📶 Hors ligne — certaines fonctionnalités sont limitées';
+      ind.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#2C1810;color:#FFF8F3;text-align:center;font-size:12.5px;padding:9px 16px;z-index:9998;animation:pwaSlideUp .3s ease both';
+      document.body.appendChild(ind);
+    }
+  }
+  window.addEventListener('online',  update);
+  window.addEventListener('offline', update);
+  update();
+}
+
+// ─── Universal page init (auto-run on DOMContentLoaded) ─
+document.addEventListener('DOMContentLoaded', () => {
+  initStatCounters();
+  initScrollReveal();
+  initParticles();
+  initParallaxOrbs();
+  initPageLoadBar();
+  initCardTilt();
+  initMagneticButtons();
+  initScrollProgress();
+  initTopbarScroll();
+  initServiceWorker();
+  initNetworkIndicator();
 });

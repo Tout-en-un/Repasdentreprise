@@ -40,6 +40,11 @@ body { font-family: 'DM Sans', sans-serif; background: #F5EDE6; color: var(--tex
 .hamburger svg { width: 22px; height: 22px; }
 .content { padding: 20px 24px; }
 
+/* ─── Logo images ────────────────────────────────────── */
+.auth-logo-img { width: 150px; max-width: 100%; height: auto; display: block; margin: 0 auto 12px; }
+.sidebar-logo-img { width: 80px; max-width: 100%; height: auto; display: block; margin-bottom: 6px; border-radius: 14px; }
+.hero-logo-img { width: 220px; max-width: 75%; height: auto; display: block; margin: 0 auto 20px; border-radius: 20px; }
+
 /* ─── Sidebar components ─────────────────────────────── */
 .sidebar-logo { padding: 24px 20px 18px; border-bottom: 1px solid rgba(255,248,243,.08); }
 .sidebar-logo .logo-icon { font-size: 26px; margin-bottom: 5px; display: block; }
@@ -52,10 +57,22 @@ body { font-family: 'DM Sans', sans-serif; background: #F5EDE6; color: var(--tex
   display: flex; align-items: center; gap: 11px; padding: 10px 20px;
   cursor: pointer; color: rgba(255,248,243,.55); font-size: 13.5px; font-weight: 500;
   transition: all .2s; border-left: 3px solid transparent; user-select: none;
+  animation: slideInLeft .4s cubic-bezier(.34,1.56,.64,1) both;
 }
+.nav-item:nth-child(1) { animation-delay: .03s; }
+.nav-item:nth-child(2) { animation-delay: .06s; }
+.nav-item:nth-child(3) { animation-delay: .09s; }
+.nav-item:nth-child(4) { animation-delay: .12s; }
+.nav-item:nth-child(5) { animation-delay: .15s; }
+.nav-item:nth-child(6) { animation-delay: .18s; }
+.nav-item:nth-child(7) { animation-delay: .21s; }
+.nav-item:nth-child(8) { animation-delay: .24s; }
+.nav-item:nth-child(9) { animation-delay: .27s; }
+.nav-item:nth-child(10) { animation-delay: .30s; }
 .nav-item .icon { font-size: 17px; width: 20px; text-align: center; flex-shrink: 0; }
-.nav-item:hover { color: var(--cream); background: rgba(255,248,243,.05); }
-.nav-item.active { color: var(--cream); background: rgba(232,90,42,.15); border-left-color: var(--orange); }
+.nav-item:hover { color: var(--cream); background: rgba(255,248,243,.08); }
+.nav-item:hover .icon { animation: wiggle .4s ease; }
+.nav-item.active { color: var(--cream); background: rgba(232,90,42,.15); border-left-color: var(--orange); animation: pulseGlow 2s ease-in-out infinite; }
 .nav-badge { margin-left: auto; background: var(--orange); color: white; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 20px; min-width: 18px; text-align: center; }
 .sidebar-footer { padding: 14px 20px; border-top: 1px solid rgba(255,248,243,.08); }
 .user-card { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; }
@@ -67,25 +84,34 @@ body { font-family: 'DM Sans', sans-serif; background: #F5EDE6; color: var(--tex
 .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .user-name { font-size: 12.5px; font-weight: 600; color: var(--cream); line-height: 1.2; }
 .user-role { font-size: 11px; color: var(--muted); }
-.nav-item-logout { display: flex; align-items: center; gap: 12px; padding: 11px 20px; cursor: pointer; color: var(--orange); font-size: 13.5px; font-weight: 500; font-family: 'DM Sans', sans-serif; transition: background .2s; border: none; width: 100%; background: none; text-align: left; border-top: 1px solid rgba(255,248,243,.08); margin-top: 4px; }
-.nav-item-logout:hover { background: rgba(232,90,42,.15); }
+.nav-item-logout { display: flex; align-items: center; gap: 12px; padding: 11px 20px; cursor: pointer; color: var(--orange); font-size: 13.5px; font-weight: 500; font-family: 'DM Sans', sans-serif; transition: all .2s; border: none; width: 100%; background: none; text-align: left; border-top: 1px solid rgba(255,248,243,.08); margin-top: 4px; }
+.nav-item-logout:hover { background: rgba(232,90,42,.15); transform: translateX(4px); }
+.nav-item-logout:hover .icon { animation: wiggle .4s ease; }
 .nav-item-logout .icon { font-size: 18px; width: 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
 /* ─── Pages ──────────────────────────────────────────── */
 .page { display: none; }
-.page.active { display: block; animation: pageIn .3s ease both; }
-@keyframes pageIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; } }
+.page.active { display: block; animation: pageIn .4s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes pageIn { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
 /* ─── Cards ──────────────────────────────────────────── */
-.card { background: var(--cream); border-radius: 14px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; }
+.card { background: var(--cream); border-radius: 14px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; animation: bounceIn .5s cubic-bezier(.34,1.56,.64,1) both; }
+.card:nth-child(2) { animation-delay: .1s; }
+.card:nth-child(3) { animation-delay: .2s; }
 .card-header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
 .card-title { font-size: 14px; font-weight: 600; color: var(--brown); }
 .card-body { padding: 16px 20px; }
 
 /* ─── Stats grid ─────────────────────────────────────── */
 .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 22px; }
-.stat-card { background: var(--cream); border-radius: 14px; padding: 18px; border: 1px solid var(--border); }
-.stat-icon { font-size: 22px; margin-bottom: 8px; }
+.stat-card { background: var(--cream); border-radius: 14px; padding: 18px; border: 1px solid var(--border); animation: bounceIn .5s cubic-bezier(.34,1.56,.64,1) both; }
+.stat-card:nth-child(1) { animation-delay: .05s; }
+.stat-card:nth-child(2) { animation-delay: .12s; }
+.stat-card:nth-child(3) { animation-delay: .19s; }
+.stat-card:nth-child(4) { animation-delay: .26s; }
+.stat-card:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 12px 28px rgba(0,0,0,.08); transition: all .3s cubic-bezier(.34,1.56,.64,1); }
+.stat-icon { font-size: 22px; margin-bottom: 8px; display: inline-block; }
+.stat-card:hover .stat-icon { animation: wiggle .4s ease; }
 .stat-number { font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 700; color: var(--brown); line-height: 1; }
 .stat-label { font-size: 11px; color: var(--muted); margin-top: 5px; font-weight: 500; text-transform: uppercase; letter-spacing: .4px; }
 
@@ -228,6 +254,44 @@ tr:hover td { background: rgba(232,90,42,.02); }
 .toast.error { border-left: 4px solid var(--danger); }
 .toast.info { border-left: 4px solid var(--orange); }
 @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes bounceIn { 0% { opacity: 0; transform: scale(.9) translateY(16px); } 60% { transform: scale(1.03) translateY(-3px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes slideInLeft { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
+@keyframes pulseGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(232,90,42,.3); } 50% { box-shadow: 0 0 0 8px rgba(232,90,42,0); } }
+
+/* ─── Auth page background orbs ─────────────────────── */
+.auth-orb{position:fixed;border-radius:50%;filter:blur(60px);z-index:0;pointer-events:none}
+.auth-orb-1{width:280px;height:280px;background:rgba(232,90,42,.1);top:-80px;right:-60px;animation:orbFloat1 20s ease-in-out infinite}
+.auth-orb-2{width:220px;height:220px;background:rgba(249,199,79,.08);bottom:-60px;left:-50px;animation:orbFloat2 25s ease-in-out infinite}
+@keyframes orbFloat1{0%,100%{transform:translate(0,0) rotate(0deg)}33%{transform:translate(40px,-30px) rotate(120deg)}66%{transform:translate(-20px,20px) rotate(240deg)}}
+@keyframes orbFloat2{0%,100%{transform:translate(0,0) rotate(0deg)}33%{transform:translate(-30px,40px) rotate(120deg)}66%{transform:translate(20px,-20px) rotate(240deg)}}
+
+/* ─── Auth field slide-in animation ─────────────────── */
+.auth-card .form-group{animation:fieldSlide .5s cubic-bezier(.16,1,.3,1) both}
+.auth-card .form-group:nth-child(1){animation-delay:.08s}
+.auth-card .form-group:nth-child(2){animation-delay:.14s}
+.auth-card .form-group:nth-child(3){animation-delay:.2s}
+.auth-card .form-group:nth-child(4){animation-delay:.26s}
+.auth-card .form-group:nth-child(5){animation-delay:.32s}
+.auth-card .form-group:nth-child(6){animation-delay:.38s}
+@keyframes fieldSlide{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── Shake animation on error ──────────────────────── */
+@keyframes shake{0%,100%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-4px)}20%,40%,60%,80%{transform:translateX(4px)}}
+.shake{animation:shake .4s ease;display:block!important}
+
+/* ─── Button ripple effect ──────────────────────────── */
+.btn-primary{position:relative;overflow:hidden}
+.btn-primary .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.25);transform:scale(0);animation:rippleAnim .6s ease-out;pointer-events:none}
+@keyframes rippleAnim{to{transform:scale(4);opacity:0}}
+
+/* ─── Loading spinner ───────────────────────────────── */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── Success checkmark pop ─────────────────────────── */
+@keyframes checkPop{0%{transform:scale(0) rotate(-30deg);opacity:0}60%{transform:scale(1.3) rotate(5deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+.success-state .icon{animation:checkPop .5s cubic-bezier(.34,1.56,.64,1) both}
 
 /* ─── Date filter ────────────────────────────────────── */
 .date-filter { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -318,3 +382,577 @@ tr:hover td { background: rgba(232,90,42,.02); }
   .order-banner { flex-direction: column; align-items: flex-start; }
   .rest-grid { grid-template-columns: 1fr; }
 }
+
+/* ─── PWA Safe Area ─────────────────────────────────── */
+.sidebar { padding-top: env(safe-area-inset-top, 0); }
+.main { padding-bottom: env(safe-area-inset-bottom, 0); }
+.content { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0)); }
+
+/* ══════════════════════════════════════════════════════
+   ANIMATION SYSTEM v2
+   ══════════════════════════════════════════════════════ */
+
+/* ─── Page load progress bar ────────────────────────── */
+#pageLoadBar {
+  position: fixed; top: 0; left: 0; height: 3px; z-index: 99999;
+  background: linear-gradient(90deg, var(--orange), var(--gold), var(--orange));
+  background-size: 200% 100%;
+  animation: loadBarShimmer 1.2s linear infinite;
+  border-radius: 0 3px 3px 0;
+  transition: width .25s ease, opacity .4s ease;
+  box-shadow: 0 0 10px rgba(232,90,42,.5);
+}
+@keyframes loadBarShimmer { 0%{background-position:0%} 100%{background-position:200%} }
+
+/* ─── Skeleton Loaders ───────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, #f0e6de 25%, #fdf5ef 50%, #f0e6de 75%);
+  background-size: 400% 100%;
+  animation: skeletonShimmer 1.6s ease infinite;
+  border-radius: 6px;
+  display: block;
+}
+@keyframes skeletonShimmer { 0%{background-position:100% 50%} 100%{background-position:-100% 50%} }
+.sk-line { height: 13px; border-radius: 4px; margin-bottom: 8px; }
+.sk-line.w-full { width: 100%; }
+.sk-line.w-3\/4  { width: 75%; }
+.sk-line.w-1\/2  { width: 50%; }
+.sk-line.w-1\/3  { width: 33%; }
+.sk-title { height: 22px; width: 45%; border-radius: 5px; margin-bottom: 12px; }
+.sk-block { border-radius: 12px; margin-bottom: 12px; }
+.sk-avatar { border-radius: 50%; flex-shrink: 0; }
+
+/* ─── Scroll reveal ──────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity .55s ease, transform .55s cubic-bezier(.16,1,.3,1);
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-left  { opacity: 0; transform: translateX(-22px); transition: opacity .5s ease, transform .5s cubic-bezier(.16,1,.3,1); }
+.reveal-left.visible  { opacity: 1; transform: translateX(0); }
+.reveal-right { opacity: 0; transform: translateX(22px);  transition: opacity .5s ease, transform .5s cubic-bezier(.16,1,.3,1); }
+.reveal-right.visible { opacity: 1; transform: translateX(0); }
+.reveal-delay-1 { transition-delay: .1s !important; }
+.reveal-delay-2 { transition-delay: .2s !important; }
+.reveal-delay-3 { transition-delay: .3s !important; }
+.reveal-delay-4 { transition-delay: .4s !important; }
+
+/* ─── Enhanced button interactions ──────────────────── */
+.btn:not(:disabled):active { transform: scale(.95) !important; transition: transform .08s ease !important; }
+.btn-primary:not(:disabled):hover { box-shadow: 0 6px 22px rgba(232,90,42,.38); }
+.btn-primary:not(:disabled) { transition: background .2s, transform .2s, box-shadow .2s; }
+
+/* ─── Staggered table row reveals ───────────────────── */
+@keyframes rowIn { from { opacity:0; transform:translateY(7px); } to { opacity:1; transform:translateY(0); } }
+tbody tr { animation: rowIn .32s cubic-bezier(.16,1,.3,1) both; }
+tbody tr:nth-child(1)  { animation-delay:.03s; }
+tbody tr:nth-child(2)  { animation-delay:.07s; }
+tbody tr:nth-child(3)  { animation-delay:.11s; }
+tbody tr:nth-child(4)  { animation-delay:.15s; }
+tbody tr:nth-child(5)  { animation-delay:.19s; }
+tbody tr:nth-child(6)  { animation-delay:.23s; }
+tbody tr:nth-child(7)  { animation-delay:.27s; }
+tbody tr:nth-child(8)  { animation-delay:.31s; }
+tbody tr:nth-child(9)  { animation-delay:.35s; }
+tbody tr:nth-child(10) { animation-delay:.39s; }
+
+/* ─── Enhanced stat card hover ───────────────────────── */
+.stat-card {
+  cursor: default;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease, border-color .3s ease;
+}
+.stat-card:hover {
+  transform: translateY(-5px) scale(1.025) !important;
+  box-shadow: 0 18px 40px rgba(232,90,42,.13), 0 0 0 1px rgba(232,90,42,.18) !important;
+  border-color: rgba(232,90,42,.25) !important;
+}
+.stat-number { transition: color .3s ease; }
+.stat-card:hover .stat-number { color: var(--orange); }
+
+/* ─── Form control enhanced focus ────────────────────── */
+.form-control { transition: border-color .2s ease, box-shadow .2s ease, transform .15s cubic-bezier(.34,1.56,.64,1); }
+.form-control:focus {
+  border-color: var(--orange) !important;
+  box-shadow: 0 0 0 3px rgba(232,90,42,.13), 0 2px 10px rgba(232,90,42,.07) !important;
+  transform: translateY(-1px);
+}
+
+/* ─── Topbar entrance ────────────────────────────────── */
+.topbar { animation: topbarIn .45s cubic-bezier(.16,1,.3,1) both; }
+@keyframes topbarIn { from{opacity:0;transform:translateY(-14px)} to{opacity:1;transform:translateY(0)} }
+
+/* ─── Sidebar logo entrance ──────────────────────────── */
+.sidebar-logo { animation: fadeDown .5s cubic-bezier(.16,1,.3,1) .1s both; }
+@keyframes fadeDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+
+/* ─── Nav badge pulse animation ─────────────────────── */
+.nav-badge { animation: badgePop .45s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes badgePop { from{transform:scale(0) rotate(-10deg)} to{transform:scale(1) rotate(0)} }
+
+/* ─── Content section reveal ────────────────────────── */
+.content > .stats-grid { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) .05s both; }
+.content > .card       { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) .1s  both; }
+.content > .page-grid  { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) .1s  both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+
+/* ─── Modal enhanced entrance ───────────────────────── */
+.modal-overlay.open { animation: backdropIn .22s ease both; }
+@keyframes backdropIn { from{opacity:0} to{opacity:1} }
+
+/* ─── Rest card hover ────────────────────────────────── */
+.rest-card {
+  transition: border-color .2s, transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease;
+}
+.rest-card:hover {
+  border-color: var(--orange) !important;
+  transform: translateY(-4px) scale(1.015) !important;
+  box-shadow: 0 14px 32px rgba(232,90,42,.13) !important;
+}
+
+/* ─── Menu card hover ────────────────────────────────── */
+.menu-card { transition: all .22s cubic-bezier(.34,1.56,.64,1); }
+.menu-card:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 8px 20px rgba(0,0,0,.06); }
+
+/* ─── Notification bell ring ─────────────────────────── */
+.notif-btn { transition: color .2s, transform .2s; }
+.notif-btn:hover { color: var(--orange) !important; animation: bellRing .5s ease; }
+@keyframes bellRing {
+  0%,100%{transform:rotate(0)}
+  15%{transform:rotate(14deg)}
+  30%{transform:rotate(-12deg)}
+  45%{transform:rotate(9deg)}
+  60%{transform:rotate(-6deg)}
+  75%{transform:rotate(3deg)}
+}
+
+/* ─── Step indicator fill animation ─────────────────── */
+.step { position: relative; overflow: hidden; transition: background .3s ease; }
+.step.done {
+  background: linear-gradient(90deg, var(--orange), #f5965f) !important;
+  box-shadow: 0 2px 8px rgba(232,90,42,.3);
+  animation: stepFill .4s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes stepFill { from{transform:scaleX(0);transform-origin:left} to{transform:scaleX(1)} }
+
+/* ─── Auth card entrance ─────────────────────────────── */
+.auth-card { animation: cardSpring .65s cubic-bezier(.16,1,.3,1) both !important; }
+@keyframes cardSpring {
+  0%   { opacity:0; transform:translateY(32px) scale(.95); }
+  60%  { opacity:1; transform:translateY(-4px) scale(1.01); }
+  100% { opacity:1; transform:translateY(0) scale(1); }
+}
+
+/* ─── Success icon animation ─────────────────────────── */
+.success-state .icon { display: block; animation: successBounce .7s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes successBounce {
+  0%   { opacity:0; transform:scale(0) rotate(-20deg); }
+  60%  { transform:scale(1.25) rotate(5deg); }
+  100% { opacity:1; transform:scale(1) rotate(0); }
+}
+
+/* ─── Card subtle hover ──────────────────────────────── */
+.card { transition: box-shadow .25s ease, transform .25s ease; }
+.card:hover { box-shadow: 0 6px 22px rgba(0,0,0,.06); }
+
+/* ─── Orange underline on card titles ───────────────── */
+.card-title::after {
+  content: '';
+  display: block;
+  width: 0;
+  height: 2px;
+  background: var(--orange);
+  border-radius: 2px;
+  transition: width .35s cubic-bezier(.16,1,.3,1);
+  margin-top: 3px;
+}
+.card:hover .card-title::after { width: 100%; }
+
+/* ─── Input label float on focus (where applicable) ─── */
+.form-group:focus-within label { color: var(--orange); transition: color .2s; }
+
+/* ─── Particles canvas ───────────────────────────────── */
+#particlesCanvas {
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none; opacity: .6;
+}
+
+/* ─── Hero text shimmer ──────────────────────────────── */
+@keyframes textGlow {
+  0%,100% { text-shadow: 0 0 20px rgba(232,90,42,.0); }
+  50%     { text-shadow: 0 0 30px rgba(232,90,42,.25), 0 0 60px rgba(232,90,42,.1); }
+}
+.hero h1 span { animation: textGlow 3s ease-in-out infinite; }
+
+/* ─── CTA button pulse ───────────────────────────────── */
+@keyframes ctaPulse {
+  0%,100% { box-shadow: 0 4px 20px rgba(232,90,42,.35); }
+  50%     { box-shadow: 0 4px 30px rgba(232,90,42,.6), 0 0 0 8px rgba(232,90,42,.08); }
+}
+.btn-cta-primary { animation: ctaPulse 2.5s ease-in-out infinite; }
+.btn-cta-primary:hover { animation: none; }
+
+/* ─── Feature card hover ─────────────────────────────── */
+.feat {
+  transition: background .25s ease, border-color .25s ease, transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+.feat:hover {
+  background: rgba(255,248,243,.1) !important;
+  border-color: rgba(232,90,42,.25) !important;
+  transform: translateY(-4px);
+}
+.feat:hover .feat-icon { display: block; animation: wiggle .4s ease; }
+
+/* ─── Role card hover ────────────────────────────────── */
+.role-card {
+  transition: border-color .2s, background .2s, transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease;
+}
+.role-card:hover {
+  border-color: var(--orange) !important;
+  background: #fff8f5 !important;
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 28px rgba(232,90,42,.18) !important;
+}
+
+/* ─── Table row hover highlight ─────────────────────── */
+tr { transition: background .15s ease; }
+tr:hover td { background: rgba(232,90,42,.03) !important; }
+
+/* ─── Badge entrance ─────────────────────────────────── */
+.badge, .tag { animation: badgeFade .3s ease both; }
+@keyframes badgeFade { from{opacity:0;transform:scale(.85)} to{opacity:1;transform:scale(1)} }
+
+/* ═══ ENHANCED ANIMATIONS & ICONS ═══ */
+
+/* ─── New keyframes ──────────────────────────────────── */
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+@keyframes shimmerBg { from{background-position:200% 0} to{background-position:-200% 0} }
+@keyframes countUp { from{opacity:0;transform:translateY(14px) scale(.95)} to{opacity:1;transform:translateY(0) scale(1)} }
+@keyframes gradientFlow { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+@keyframes glowPulse { 0%,100%{box-shadow:0 0 0 0 rgba(232,90,42,.25)} 50%{box-shadow:0 0 0 7px rgba(232,90,42,0)} }
+@keyframes rowEnter { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
+@keyframes cardFloat { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-4px) scale(1.005)} }
+@keyframes iconSpin { to{transform:rotate(360deg)} }
+@keyframes gradientBorder { 0%,100%{border-color:var(--orange)} 50%{border-color:var(--gold)} }
+
+/* ─── Skeleton loaders ───────────────────────────────── */
+.skeleton { background:linear-gradient(90deg,#f0e6de 25%,#ffe8d6 50%,#f0e6de 75%);background-size:200% 100%;animation:shimmerBg 1.5s ease-in-out infinite;border-radius:8px;color:transparent!important;pointer-events:none }
+.skeleton-line { height:13px;border-radius:5px;margin-bottom:8px }
+.skeleton-title { height:20px;width:55%;border-radius:6px;margin-bottom:14px }
+.skeleton-btn { height:34px;width:110px;border-radius:9px }
+.skeleton-avatar { width:38px;height:38px;border-radius:50% }
+.skeleton-stat { height:56px;border-radius:10px }
+
+/* ─── Stat card accents ──────────────────────────────── */
+.stat-card { position:relative;overflow:hidden;transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s ease }
+.stat-card::after { content:'';position:absolute;top:-24px;right:-24px;width:90px;height:90px;border-radius:50%;opacity:.07;pointer-events:none }
+.stat-card:nth-child(1)::after { background:var(--orange) }
+.stat-card:nth-child(2)::after { background:var(--gold) }
+.stat-card:nth-child(3)::after { background:var(--success) }
+.stat-card:nth-child(4)::after { background:var(--info) }
+.stat-card:hover { transform:translateY(-4px) scale(1.015);box-shadow:0 16px 32px rgba(0,0,0,.1) }
+.stat-card:nth-child(1):hover::after { opacity:.15 }
+.stat-card:nth-child(2):hover::after { opacity:.15 }
+.stat-card:nth-child(3):hover::after { opacity:.15 }
+.stat-card:nth-child(4):hover::after { opacity:.15 }
+.stat-number.animated { animation:countUp .55s cubic-bezier(.34,1.56,.64,1) both }
+
+/* ─── Stat icon SVG sizing ───────────────────────────── */
+.stat-icon { display:flex;align-items:center;margin-bottom:10px }
+.stat-icon svg { width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round }
+.stat-card:nth-child(1) .stat-icon svg { stroke:var(--orange) }
+.stat-card:nth-child(2) .stat-icon svg { stroke:#D97706 }
+.stat-card:nth-child(3) .stat-icon svg { stroke:var(--success) }
+.stat-card:nth-child(4) .stat-icon svg { stroke:var(--info) }
+
+/* ─── Table row stagger ──────────────────────────────── */
+tbody tr { animation:rowEnter .3s ease both }
+tbody tr:nth-child(1){animation-delay:.03s} tbody tr:nth-child(2){animation-delay:.06s}
+tbody tr:nth-child(3){animation-delay:.09s} tbody tr:nth-child(4){animation-delay:.12s}
+tbody tr:nth-child(5){animation-delay:.15s} tbody tr:nth-child(6){animation-delay:.18s}
+tbody tr:nth-child(7){animation-delay:.21s} tbody tr:nth-child(8){animation-delay:.24s}
+tbody tr:nth-child(9){animation-delay:.27s} tbody tr:nth-child(10){animation-delay:.30s}
+
+/* ─── Card hover ─────────────────────────────────────── */
+.card { transition:box-shadow .25s ease,transform .25s ease }
+.card:hover { box-shadow:0 10px 30px rgba(44,24,16,.08) }
+
+/* ─── Button shimmer ─────────────────────────────────── */
+.btn-primary { position:relative;overflow:hidden }
+.btn-primary::before { content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);transition:left .45s ease;pointer-events:none }
+.btn-primary:hover::before { left:100% }
+
+/* ─── Topbar icon buttons (SVG-ready) ────────────────── */
+.topbar-icon-btn { display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:rgba(44,24,16,.05);cursor:pointer;transition:all .2s;color:var(--brown);text-decoration:none;flex-shrink:0 }
+.topbar-icon-btn:hover { background:rgba(232,90,42,.1);border-color:rgba(232,90,42,.3);color:var(--orange);transform:translateY(-1px) }
+.topbar-icon-btn svg { width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round }
+.topbar-icon-btn.danger { background:rgba(232,90,42,.08);border-color:rgba(232,90,42,.2);color:var(--orange) }
+.topbar-icon-btn.danger:hover { background:rgba(232,90,42,.2);transform:translateY(-1px) }
+
+/* ─── Sidebar nav icon SVG sizing ────────────────────── */
+.nav-item .icon, .nav-item-logout .icon { display:flex;align-items:center;justify-content:center;width:20px;flex-shrink:0 }
+.nav-item .icon svg, .nav-item-logout .icon svg { width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round }
+
+/* ─── Bell pulse when notifs exist ──────────────────── */
+.notif-btn { transition:color .2s,transform .2s }
+.notif-btn:hover { transform:scale(1.1) }
+.notif-btn svg { width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block }
+
+/* ─── Page load bar gradient ─────────────────────────── */
+#pageLoadBar { position:fixed;top:0;left:0;height:3px;z-index:9999;background:linear-gradient(90deg,var(--orange),var(--gold),var(--orange));background-size:200% 100%;border-radius:0 3px 3px 0;box-shadow:0 0 10px rgba(232,90,42,.55);transition:width .2s ease,opacity .4s ease;animation:gradientFlow 2s ease infinite }
+
+/* ─── Float utility ──────────────────────────────────── */
+.float-anim { animation:float 4s ease-in-out infinite }
+.float-anim:nth-child(2){animation-delay:-1.3s}
+.float-anim:nth-child(3){animation-delay:-2.6s}
+
+/* ─── Rest card & menu card hover ────────────────────── */
+.rest-card { transition:border-color .2s,transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s ease }
+.menu-card { transition:border-color .2s,background .2s,transform .2s }
+.menu-card:hover { transform:translateY(-2px);box-shadow:0 6px 18px rgba(232,90,42,.1) }
+
+/* ─── Hist icon float on hover ───────────────────────── */
+.hist-item { transition:background .15s }
+.hist-item:hover { background:rgba(232,90,42,.03);border-radius:10px }
+.hist-item:hover .hist-icon { animation:float .5s ease }
+
+/* ─── Staggered page-grid cards ─────────────────────── */
+.page-grid > .card:nth-child(1){animation-delay:.05s}
+.page-grid > .card:nth-child(2){animation-delay:.12s}
+.page-grid-sidebar > .card:nth-child(1){animation-delay:.05s}
+.page-grid-sidebar > .card:nth-child(2){animation-delay:.15s}
+
+/* ─── Sidebar active gradient ────────────────────────── */
+.nav-item.active { background:linear-gradient(90deg,rgba(232,90,42,.2),rgba(232,90,42,.06));border-left-color:var(--orange);animation:none }
+.nav-item.active .icon svg { filter:drop-shadow(0 0 4px rgba(232,90,42,.5)) }
+
+/* ══════════════════════════════════════════════════════
+   ANIMATION SYSTEM v4 — Micro-interactions & Polish
+   ══════════════════════════════════════════════════════ */
+
+/* ─── Toast: progress bar + smooth exit ─────────────── */
+.toast { position:relative; overflow:hidden; }
+.toast::after {
+  content:''; position:absolute; bottom:0; left:0;
+  width:100%; height:2px;
+  background:rgba(255,255,255,.32);
+  transform-origin:left;
+  animation:toastProgress 3.5s linear forwards;
+}
+@keyframes toastProgress { to { transform:scaleX(0); } }
+@keyframes toastOut { to { opacity:0; transform:translateX(26px) scale(.95); } }
+.toast.out { animation:toastOut .28s ease forwards !important; }
+
+/* ─── Stat icon gentle float ─────────────────────────── */
+.stat-icon { animation:iconFloat 3.8s ease-in-out infinite; }
+@keyframes iconFloat { 0%,100%{transform:translateY(0)} 45%{transform:translateY(-5px) rotate(-2deg)} 75%{transform:translateY(-2px) rotate(1.5deg)} }
+.stat-card:hover .stat-icon { animation:wiggle .4s ease !important; }
+
+/* ─── Notification badge: bounce on new notifs ───────── */
+@keyframes badgeBounce {
+  0%   { transform:scale(1); }
+  25%  { transform:scale(1.6) rotate(-10deg); }
+  55%  { transform:scale(.85) rotate(5deg); }
+  75%  { transform:scale(1.15) rotate(-3deg); }
+  100% { transform:scale(1) rotate(0); }
+}
+.notif-count.pop { animation:badgeBounce .5s cubic-bezier(.34,1.56,.64,1) !important; }
+
+/* ─── Page exit transition ───────────────────────────── */
+@keyframes pageOut { to { opacity:0; transform:translateY(-10px) scale(.985); } }
+.page.leaving { animation:pageOut .17s ease forwards; pointer-events:none; overflow:hidden; }
+
+/* ─── Rest-grid staggered card entrance ──────────────── */
+.rest-grid .rest-card { animation:fadeUp .4s cubic-bezier(.16,1,.3,1) both; }
+.rest-grid .rest-card:nth-child(1){animation-delay:.04s}
+.rest-grid .rest-card:nth-child(2){animation-delay:.09s}
+.rest-grid .rest-card:nth-child(3){animation-delay:.14s}
+.rest-grid .rest-card:nth-child(4){animation-delay:.19s}
+.rest-grid .rest-card:nth-child(5){animation-delay:.24s}
+.rest-grid .rest-card:nth-child(6){animation-delay:.29s}
+.rest-grid .rest-card:nth-child(7){animation-delay:.34s}
+.rest-grid .rest-card:nth-child(8){animation-delay:.39s}
+.rest-grid .rest-card:nth-child(9){animation-delay:.44s}
+
+/* ─── User avatar heartbeat ──────────────────────────── */
+.user-avatar { animation:avatarBeat 5s ease-in-out infinite; }
+@keyframes avatarBeat {
+  0%,100% { box-shadow:0 0 0 0 rgba(232,90,42,0); }
+  50%     { box-shadow:0 0 0 5px rgba(232,90,42,.18); }
+}
+
+/* ─── Modal close animation (via JS closeModal()) ────── */
+@keyframes modalOut { to { opacity:0; transform:scale(.92) translateY(16px); } }
+@keyframes overlayOut { to { opacity:0; } }
+.modal.closing { animation:modalOut .22s ease forwards !important; pointer-events:none; }
+.modal-overlay.closing { animation:overlayOut .28s ease forwards; }
+
+/* ─── 3D card tilt (JS-driven via CSS vars) ──────────── */
+.card:not(.modal *) {
+  --tilt-x: 0deg; --tilt-y: 0deg;
+  transition:transform .12s ease, box-shadow .25s ease;
+}
+.card:not(.modal *):hover {
+  transform:perspective(900px) rotateX(var(--tilt-y)) rotateY(var(--tilt-x));
+}
+
+/* ─── Magnetic button return spring ─────────────────── */
+.btn-primary.magnetic-reset {
+  transition:transform .35s cubic-bezier(.34,1.56,.64,1), background .2s, box-shadow .2s !important;
+}
+
+/* ─── Input focus label glow ─────────────────────────── */
+.form-group:focus-within > label {
+  color:var(--orange);
+  text-shadow:0 0 8px rgba(232,90,42,.2);
+  transition:color .2s, text-shadow .2s;
+}
+
+/* ─── Nav item icon hover scale ──────────────────────── */
+.nav-item:hover .icon { transform:scale(1.15); transition:transform .2s cubic-bezier(.34,1.56,.64,1); }
+.nav-item.active .icon { transform:scale(1.1); }
+
+/* ─── Scroll-to-top button spin on hover ─────────────── */
+#scrollTopBtn:hover { animation:iconSpin .4s ease; }
+
+/* ─── Table row: highlight on hover with left accent ─── */
+tbody tr { position:relative; }
+tbody tr:hover td:first-child { border-left:2px solid rgba(232,90,42,.35); padding-left:10px; }
+tbody tr:hover td { transition:background .12s ease, padding .12s ease; }
+
+/* ══════════════════════════════════════════════════════
+   SCROLL SYSTEMS
+   ══════════════════════════════════════════════════════ */
+
+/* ─── Scroll progress bar ────────────────────────────── */
+#scrollProgressBar {
+  position: fixed; top: 0; left: 0;
+  height: 2px; width: 0%; z-index: 9998;
+  background: linear-gradient(90deg, var(--orange), var(--gold), var(--orange));
+  background-size: 200% 100%;
+  animation: loadBarShimmer 2.5s linear infinite;
+  box-shadow: 0 0 6px rgba(232,90,42,.5);
+  border-radius: 0 2px 2px 0;
+  transition: width .12s linear, opacity .25s ease;
+  opacity: 0; pointer-events: none;
+}
+
+/* ─── Topbar scroll states ───────────────────────────── */
+.topbar {
+  transition: box-shadow .28s ease, background .28s ease,
+              transform .32s cubic-bezier(.16,1,.3,1);
+}
+.topbar.topbar-scrolled {
+  box-shadow: 0 4px 22px rgba(44,24,16,.1);
+  background: rgba(255,248,243,.97);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.topbar.topbar-hidden { transform: translateY(-100%); }
+
+/* ─── Custom scrollbars (webkit) ─────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(44,24,16,.14); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(232,90,42,.42); }
+.sidebar-nav::-webkit-scrollbar { width: 3px; }
+.chat-messages::-webkit-scrollbar { width: 4px; }
+* { scrollbar-width: thin; scrollbar-color: rgba(44,24,16,.14) transparent; }
+
+/* ─── Sticky table headers ───────────────────────────── */
+.table-wrap th {
+  position: sticky; top: 0; z-index: 3;
+  background: #F9F1EB;
+  box-shadow: 0 1px 0 var(--border);
+}
+
+/* ─── Scroll-to-top button spring entrance ───────────── */
+#scrollTopBtn.visible { animation: scrollBtnIn .38s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes scrollBtnIn {
+  from { opacity:0; transform:translateY(18px) scale(.7); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+
+/* ─── Reveal variant: scale-up ───────────────────────── */
+.reveal-scale {
+  opacity: 0; transform: scale(.94);
+  transition: opacity .5s ease, transform .5s cubic-bezier(.34,1.56,.64,1);
+}
+.reveal-scale.visible { opacity: 1; transform: scale(1); }
+
+/* ─── Extra stagger helpers ──────────────────────────── */
+.reveal-delay-5 { transition-delay: .5s !important; }
+.reveal-delay-6 { transition-delay: .6s !important; }
+
+/* ─── Scroll snap for full-page landing sections ─────── */
+.snap-container { scroll-snap-type: y mandatory; overflow-y: scroll; height: 100vh; }
+.snap-section   { scroll-snap-align: start; }
+
+/* ─── Smooth html scroll ─────────────────────────────── */
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* ─── CSS variable reveal delay ──────────────────────── */
+.reveal, .reveal-left, .reveal-right, .reveal-scale {
+  transition-delay: var(--reveal-delay, 0s);
+}
+
+/* ─── Date mask input ────────────────────────────────── */
+input.date-mask {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em;
+}
+input.date-mask::placeholder { color: var(--muted); opacity: .6; }
+
+/* ─── Drag-drop file zone hover ──────────────────────── */
+label#wpDropZone:hover {
+  border-color: var(--orange);
+  background: rgba(232,90,42,.04);
+}
+
+/* ─── Ratings summary stats mini ────────────────────── */
+#ratingSummary .stats-grid .stat-card {
+  padding: 12px 14px;
+}
+#ratingSummary .stats-grid .stat-number {
+  font-size: 22px;
+}
+
+/* ─── Order filter bar ───────────────────────────────── */
+#page-orders .card-body > div:first-child input.date-mask,
+#page-orders .card-body > div:first-child select {
+  height: 38px;
+}
+
+/* ─── Weekly invoice items header ───────────────────── */
+#wiItemsEditor > div:first-child {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+
+/* ─── Dashboard page transition enhancement ──────────── */
+.page { transition: opacity .18s ease; }
+.page:not(.active) { display: none; }
+
+/* ─── Stat card color variants ───────────────────────── */
+.stat-card:nth-child(1) { border-top: 3px solid var(--orange); }
+.stat-card:nth-child(2) { border-top: 3px solid var(--gold); }
+.stat-card:nth-child(3) { border-top: 3px solid #86EFAC; }
+.stat-card:nth-child(4) { border-top: 3px solid #93C5FD; }
+
+/* ─── Better empty states ────────────────────────────── */
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; gap: 10px; color: var(--muted); font-size: 13.5px; }
+.empty-state .icon { font-size: 36px; opacity: .5; }
+
+/* ─── Rest grid card hover ───────────────────────────── */
+.rest-card { background: white; border: 1.5px solid var(--border); border-radius: 14px; padding: 16px; transition: all .25s cubic-bezier(.16,1,.3,1); cursor: pointer; }
+.rest-card:hover { border-color: var(--orange); box-shadow: 0 8px 24px rgba(232,90,42,.12); transform: translateY(-2px); }
+
+/* ─── Chat improvements ──────────────────────────────── */
+.conv-item { padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .15s; }
+.conv-item:hover { background: rgba(232,90,42,.05); }
+.conv-item.active-conv { background: rgba(232,90,42,.08); border-left: 3px solid var(--orange); }

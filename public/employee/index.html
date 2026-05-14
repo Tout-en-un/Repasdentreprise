@@ -13,31 +13,21 @@
 
   <!-- Feuille de style principale partagée par toute l'application -->
   <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#E85A2A">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="/assets/images/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="FoodChooseApp">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="msapplication-TileImage" content="/assets/images/icon-144.png">
+  <meta name="msapplication-TileColor" content="#2C1810">
 
   <!-- ═══════════════════════════════════════════════════════════════
-       STYLES LOCAUX SPÉCIFIQUES À LA PAGE EMPLOYÉ
+        STYLES LOCAUX SPÉCIFIQUES À LA PAGE EMPLOYÉ
        Complètent main.css avec des composants propres à cet écran
   ═══════════════════════════════════════════════════════════════ -->
   <style>
-    /* Écran de connexion : couvre toute la fenêtre, fond marron */
-    .login-screen{position:fixed;inset:0;background:var(--brown);display:flex;align-items:center;justify-content:center;padding:20px;z-index:1000}
-    /* Décoration de fond : dégradé radial orangé subtil */
-    .bg-deco{position:fixed;inset:0;z-index:0;background:radial-gradient(circle at 30% 50%,rgba(232,90,42,.12),transparent 50%)}
-    /* Grille décorative en arrière-plan de l'écran de login */
-    .grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(255,248,243,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,248,243,.03) 1px,transparent 1px);background-size:40px 40px}
-    /* Carte de formulaire d'authentification avec animation d'entrée */
-    .auth-card{position:relative;z-index:1;background:var(--cream);border-radius:22px;padding:40px;width:100%;max-width:420px;box-shadow:0 40px 80px rgba(0,0,0,.4);animation:cardIn .6s cubic-bezier(.16,1,.3,1) both}
-    /* Animation : la carte monte légèrement depuis le bas */
-    @keyframes cardIn{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-    /* Logo dans la carte d'authentification */
-    .auth-logo{text-align:center;margin-bottom:28px}
-    .auth-logo .icon{font-size:38px;display:block;margin-bottom:8px}
-    .auth-logo h1{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;color:var(--brown)}
-    .auth-logo h1 span{color:var(--orange)}
-    /* Bloc d'erreur de connexion : rouge discret, caché par défaut */
-    #loginErr{background:#FEE2E2;color:#991B1B;border-radius:10px;padding:12px 14px;font-size:13px;margin-top:10px;display:none;border:1px solid #FCA5A5}
-    /* Classe .show rend visible le bloc d'erreur */
-    #loginErr.show{display:block}
     /* Grille des restaurants : 3 colonnes par défaut */
     .rest-list{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
     /* Bouton/carte cliquable représentant un restaurant */
@@ -74,88 +64,9 @@
 <div id="toastContainer"></div>
 
 <!-- ═══════════════════════════════════════════════════════════════
-     ÉCRAN DE CONNEXION EMPLOYÉ
-     Affiché en position:fixed par-dessus tout le reste.
-     Masqué dès que l'authentification réussit (showApp).
-═══════════════════════════════════════════════════════════════ -->
-<div class="login-screen" id="loginScreen">
-  <!-- Éléments décoratifs du fond (dégradé + grille) -->
-  <div class="bg-deco"></div><div class="grid"></div>
-
-  <!-- Carte de connexion centrale -->
-  <div class="auth-card">
-
-    <!-- Logo et titre de l'espace employé -->
-    <div class="auth-logo">
-      <span class="icon">👤</span>
-      <h1>Food<span>Choose</span>App</h1>
-      <p>Espace Employé</p>
-    </div>
-
-    <!-- Champ : identifiant employé (ex. EMP-001) -->
-    <div class="form-group">
-      <label>Identifiant employé</label>
-      <input class="form-control" id="empIdInput" placeholder="EMP-001">
-    </div>
-
-    <!-- Champ : mot de passe avec touche Entrée pour soumettre -->
-    <div class="form-group">
-      <label>Mot de passe</label>
-      <div class="pw-wrap">
-        <input class="form-control" type="password" id="empPwdInput" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginEmployee()">
-        <!-- Bouton œil pour afficher/masquer le mot de passe (géré par initPasswordToggles) -->
-        <button class="pw-toggle" type="button">👁</button>
-      </div>
-    </div>
-
-    <!-- Bouton principal de connexion — appelle loginEmployee() -->
-    <button class="btn btn-primary" id="empLoginBtn" style="width:100%;padding:14px;margin-top:8px" onclick="loginEmployee()">Se connecter</button>
-
-    <!-- Zone d'affichage des erreurs de connexion (masquée par défaut) -->
-    <div id="loginErr"></div>
-
-    <!-- Lien vers la procédure de mot de passe oublié -->
-    <p style="text-align:center;margin-top:12px;font-size:13px">
-      <a href="#" style="color:var(--orange)" onclick="openForgotModal('employee')">Mot de passe oublié ?</a>
-    </p>
-
-    <!-- Lien de retour vers la page d'accueil principale -->
-    <p style="text-align:center;margin-top:8px"><a href="/" style="font-size:12.5px;color:var(--muted);text-decoration:none">← Retour à l'accueil</a></p>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════
-     MODAL : MOT DE PASSE OUBLIÉ
-     Processus en 3 étapes :
-       Étape 1 — Saisie de l'email → envoi d'un code OTP
-       Étape 2 — Vérification du code OTP à 6 chiffres
-       Étape 3 — Définition du nouveau mot de passe
-     Masqué par défaut (display:none), ouvert par openForgotModal()
-═══════════════════════════════════════════════════════════════ -->
-<div id="forgotModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1100;align-items:center;justify-content:center">
-  <div style="background:var(--cream);border-radius:18px;padding:32px;width:100%;max-width:400px;margin:20px;box-shadow:0 24px 60px rgba(0,0,0,.3)">
-    <h3 style="font-family:'Playfair Display',serif;color:var(--brown);margin-bottom:6px">🔑 Mot de passe oublié</h3>
-
-    <!-- ÉTAPE 1 : saisie de l'email et envoi du code OTP -->
-    <div id="fp-step1"><p style="font-size:13px;color:var(--muted);margin-bottom:16px">Entrez votre email pour recevoir un code OTP.</p><div class="form-group"><label>Email</label><input class="form-control" id="fp-email" type="email" placeholder="votre@email.com"></div><div id="fp-err" style="color:#dc2626;font-size:13px;margin-bottom:10px;display:none"></div><button class="btn btn-primary" style="width:100%" onclick="fpSendOtp()">📧 Envoyer le code</button></div>
-
-    <!-- ÉTAPE 2 : saisie du code OTP reçu par email (6 chiffres) -->
-    <div id="fp-step2" style="display:none"><p style="font-size:13px;color:var(--muted);margin-bottom:16px">Entrez le code à 6 chiffres reçu par email.</p><div class="form-group"><label>Code OTP</label><input class="form-control" id="fp-otp" placeholder="000000" maxlength="6" style="letter-spacing:6px;font-size:22px;text-align:center;font-family:monospace"></div><div id="fp-err2" style="color:#dc2626;font-size:13px;margin-bottom:10px;display:none"></div><button class="btn btn-primary" style="width:100%" onclick="fpVerifyOtp()">✅ Vérifier le code</button></div>
-
-    <!-- ÉTAPE 3 : saisie et confirmation du nouveau mot de passe -->
-    <div id="fp-step3" style="display:none"><p style="font-size:13px;color:var(--muted);margin-bottom:16px">Définissez votre nouveau mot de passe.</p><div class="form-group"><label>Nouveau mot de passe</label><div class="pw-wrap"><input class="form-control" type="password" id="fp-pwd" placeholder="Minimum 6 caractères"><button class="pw-toggle" type="button">👁</button></div></div><div class="form-group"><label>Confirmer</label><div class="pw-wrap"><input class="form-control" type="password" id="fp-pwd2" placeholder="Répétez"><button class="pw-toggle" type="button">👁</button></div></div><div id="fp-err3" style="color:#dc2626;font-size:13px;margin-bottom:10px;display:none"></div><button class="btn btn-primary" style="width:100%" onclick="fpResetPassword()">🔐 Changer le mot de passe</button></div>
-
-    <!-- Bouton pour fermer/annuler le modal -->
-    <button onclick="closeForgotModal()" style="width:100%;margin-top:12px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px">Annuler</button>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════
      APPLICATION PRINCIPALE
-     Masquée au chargement (display:none).
-     Rendue visible par showApp() après connexion réussie.
 ═══════════════════════════════════════════════════════════════ -->
-<div id="appScreen" style="display:none">
+<div id="appScreen">
 <div class="app-layout">
 
 <!-- ─────────────────────────────────────────────────────────────
@@ -175,8 +86,7 @@
 
   <!-- Logo et badge "Employé" dans la sidebar -->
   <div class="sidebar-logo">
-    <span class="logo-icon">👤</span>
-    <div class="logo-name">Food<span>Choose</span></div>
+    <img src="/assets/images/logo.svg" alt="FoodChooseApp" class="sidebar-logo-img">
     <span class="logo-badge">Employé</span>
   </div>
 
@@ -185,25 +95,25 @@
     <!-- Section : Mon repas -->
     <div class="nav-section">Mon repas</div>
     <!-- Page de choix du repas du jour (active par défaut) -->
-    <div class="nav-item active" data-page="meal"><span class="icon">🍽</span><span>Choisir mon repas</span></div>
+    <div class="nav-item active" data-page="meal"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2c-1.67 0-5 .83-5 4v6c0 1.1.9 2 2 2v5a1 1 0 0 0 2 0v-5c1.1 0 2-.9 2-2z"/></svg></span><span>Choisir mon repas</span></div>
 
     <!-- Section : Mon compte -->
     <div class="nav-section">Mon compte</div>
     <!-- Page historique des commandes passées -->
-    <div class="nav-item" data-page="history"><span class="icon">📋</span><span>Mon historique</span></div>
+    <div class="nav-item" data-page="history"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><polyline points="12 7 12 12 15 15"/></svg></span><span>Mon historique</span></div>
     <!-- Page des notes attribuées aux repas -->
-    <div class="nav-item" data-page="ratings"><span class="icon">⭐</span><span>Mes notes</span></div>
+    <div class="nav-item" data-page="ratings"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span><span>Mes notes</span></div>
     <!-- Page profil : photo et changement de mot de passe -->
-    <div class="nav-item" data-page="profile"><span class="icon">⚙️</span><span>Mon profil</span></div>
+    <div class="nav-item" data-page="profile"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg></span><span>Mon profil</span></div>
     <!-- Bouton de déconnexion — appelle logoutEmp() -->
-    <button class="nav-item-logout" onclick="logoutEmp()"><span class="icon">🚪</span><span>Déconnexion</span></button>
+    <button class="nav-item-logout" onclick="logoutEmp()"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span><span>Déconnexion</span></button>
   </nav>
 
   <!-- Pied de sidebar : avatar et nom de l'employé connecté -->
   <div class="sidebar-footer">
     <div class="user-card">
       <!-- Avatar : affiche l'emoji par défaut ou la photo de profil -->
-      <div class="user-avatar" id="sidebarAvatar">👤</div>
+      <div class="user-avatar" id="sidebarAvatar"><img src="/assets/images/logo.svg" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>
       <div>
         <!-- Nom complet de l'employé (mis à jour par showApp / loadEmpProfile) -->
         <div class="user-name" id="sidebarName">—</div>
@@ -232,11 +142,12 @@
       <div class="topbar-title" id="pageTitle">Choisir mon repas</div>
     </div>
     <div class="topbar-right">
+      <a href="/" title="Accueil" class="topbar-icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></a>
       <!-- Date du jour affichée en français (ex. "vendredi 10 avril") -->
       <span id="topDate" style="font-size:12px;color:var(--muted)"></span>
       <!-- Cloche de notifications avec compteur de messages non lus -->
       <div style="position:relative">
-        <button class="notif-btn" onclick="toggleNotifDropdown()">🔔<span class="notif-count" id="notifCount" style="display:none">0</span></button>
+        <button class="notif-btn" onclick="toggleNotifDropdown()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-count" id="notifCount" style="display:none">0</span></button>
         <!-- Dropdown des notifications (rempli par initNotifications) -->
         <div class="notif-dropdown" id="notifDropdown"></div>
       </div>
@@ -261,7 +172,7 @@
   <div class="page active" id="page-meal">
 
     <!-- Barre de recherche de plats par nom (recherche live avec debounce) -->
-    <div class="card" style="margin-bottom:16px">
+    <div class="card reveal" style="margin-bottom:16px">
       <div class="card-body" style="padding:12px 16px">
         <input class="form-control" id="dishSearch" placeholder="🔍 Rechercher un plat..." oninput="searchDishes(this.value)" autocomplete="off">
         <!-- Résultats de recherche injectés dynamiquement, masqués par défaut -->
@@ -293,7 +204,7 @@
          Masquée quand un restaurant est sélectionné.
     ───────────────────────────────────────────────────────────────── -->
     <div id="restaurantSelectionView">
-      <div class="card">
+      <div class="card reveal">
         <div class="card-header"><span class="card-title">🍽 Restaurants disponibles</span></div>
         <div class="card-body">
           <!-- Liste des restaurants (remplie par loadRestaurants) -->
@@ -321,7 +232,7 @@
       <div class="menu-grid" id="menuGrid"></div>
 
       <!-- Carte de préférence de boisson (Lipton / Caféine / Les deux) -->
-      <div class="card" style="margin-top:18px">
+      <div class="card reveal" style="margin-top:18px">
         <div class="card-header"><span class="card-title">🥤 Préférence boisson</span></div>
         <div class="card-body" style="display:flex;gap:14px;flex-wrap:wrap">
           <!-- Option Lipton -->
@@ -340,7 +251,7 @@
       </div>
 
       <!-- Aperçu du menu sélectionné + bouton de validation de commande -->
-      <div id="selectedMenuPreview" style="display:none;margin-top:14px" class="card">
+      <div id="selectedMenuPreview" style="display:none;margin-top:14px" class="card reveal-scale">
         <div class="card-body" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
           <div>
             <div style="font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Menu sélectionné</div>
@@ -361,7 +272,7 @@
        Affiche toutes les commandes passées de l'employé avec actions.
   ═══════════════════════════════════════════════════════════════ -->
   <div class="page" id="page-history">
-    <div class="card">
+    <div class="card reveal">
       <div class="card-header">
         <span class="card-title">Mon historique</span>
         <div style="display:flex;gap:8px">
@@ -381,7 +292,7 @@
        Affiche un accès rapide pour noter le repas du jour.
   ═══════════════════════════════════════════════════════════════ -->
   <div class="page" id="page-ratings">
-    <div class="card">
+    <div class="card reveal">
       <div class="card-header"><span class="card-title">⭐ Mes notes de plats</span></div>
       <!-- Contenu injecté par loadRatingsPage() -->
       <div class="card-body" id="ratingsList">
@@ -401,7 +312,7 @@
     <div class="page-grid">
 
       <!-- Carte : photo de profil -->
-      <div class="card">
+      <div class="card reveal-scale">
         <div class="card-header"><span class="card-title">Ma photo de profil</span></div>
         <div class="card-body" style="text-align:center">
           <!-- Aperçu circulaire de la photo (emoji par défaut ou image uploadée) -->
@@ -418,7 +329,7 @@
       </div>
 
       <!-- Carte : changement de mot de passe -->
-      <div class="card">
+      <div class="card reveal-right">
         <div class="card-header"><span class="card-title">Changer mon mot de passe</span></div>
         <div class="card-body">
           <!-- Bloc d'informations de profil (nom, ID, email) — rempli par loadEmpProfile() -->
@@ -517,6 +428,8 @@ var selectedMenuId = null;
 var currentRating = 0;
 var dishSearchTimer = null;
 var _fpType = 'employee';
+var selectedMenuData = null;
+var currentRateOrder = null;
 
 // ══════════════════════════════════════════════════════════════════════════
 // FONCTIONS AUTHENTIFICATION
@@ -524,61 +437,9 @@ var _fpType = 'employee';
 
 function logoutEmp() { localStorage.clear(); window.location.href = '/'; }
 
-function openForgotModal(type) { 
-  _fpType = type; 
-  ['fp-step1','fp-step2','fp-step3'].forEach((id,i) => document.getElementById(id).style.display = i === 0 ? 'block' : 'none'); 
-  ['fp-err','fp-err2','fp-err3'].forEach(id => { const el = document.getElementById(id); el.style.display = 'none'; el.textContent = ''; }); 
-  document.getElementById('fp-email').value = ''; 
-  document.getElementById('fp-otp').value = ''; 
-  document.getElementById('fp-pwd').value = ''; 
-  document.getElementById('fp-pwd2').value = ''; 
-  const m = document.getElementById('forgotModal'); 
-  m.style.display = 'flex'; 
-  initPasswordToggles(); 
-}
-
-function closeForgotModal() { document.getElementById('forgotModal').style.display = 'none'; }
-
-async function fpSendOtp() { 
-  const email = document.getElementById('fp-email').value.trim(); 
-  const errEl = document.getElementById('fp-err'); 
-  errEl.style.display = 'none'; 
-  if (!email) { errEl.textContent = 'Email requis'; errEl.style.display = 'block'; return; } 
-  try { 
-    await apiFetch('/api/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email, userType: _fpType }) }); 
-    document.getElementById('fp-step1').style.display = 'none'; 
-    document.getElementById('fp-step2').style.display = 'block'; 
-    toast('Code envoyé !', 'success'); 
-  } catch(e) { errEl.textContent = e.message; errEl.style.display = 'block'; } 
-}
-
-async function fpVerifyOtp() { 
-  const email = document.getElementById('fp-email').value.trim(); 
-  const otp = document.getElementById('fp-otp').value.trim(); 
-  const errEl = document.getElementById('fp-err2'); 
-  errEl.style.display = 'none'; 
-  if (otp.length !== 6) { errEl.textContent = 'Code à 6 chiffres requis'; errEl.style.display = 'block'; return; } 
-  try { 
-    await apiFetch('/api/auth/verify-otp', { method: 'POST', body: JSON.stringify({ email, userType: _fpType, otp }) }); 
-    document.getElementById('fp-step2').style.display = 'none'; 
-    document.getElementById('fp-step3').style.display = 'block'; 
-  } catch(e) { errEl.textContent = e.message; errEl.style.display = 'block'; } 
-}
-
-async function fpResetPassword() { 
-  const email = document.getElementById('fp-email').value.trim(); 
-  const otp = document.getElementById('fp-otp').value.trim(); 
-  const pwd = document.getElementById('fp-pwd').value; 
-  const pwd2 = document.getElementById('fp-pwd2').value; 
-  const errEl = document.getElementById('fp-err3'); 
-  errEl.style.display = 'none'; 
-  if (pwd !== pwd2) { errEl.textContent = 'Les mots de passe ne correspondent pas'; errEl.style.display = 'block'; return; } 
-  if (pwd.length < 6) { errEl.textContent = 'Minimum 6 caractères'; errEl.style.display = 'block'; return; } 
-  try { 
-    await apiFetch('/api/auth/reset-password', { method: 'POST', body: JSON.stringify({ email, userType: _fpType, otp, newPassword: pwd }) }); 
-    toast('Mot de passe changé ! Connectez-vous.', 'success'); 
-    closeForgotModal(); 
-  } catch(e) { errEl.textContent = e.message; errEl.style.display = 'block'; } 
+// ── Redirection si non connecté ──────────────────────────
+if (!empToken || localStorage.getItem('fc_role') !== 'employee') {
+  window.location.href = '/employee/login';
 }
 
 // ── Initialisations au chargement de la page ──────────────────────
@@ -590,83 +451,26 @@ initPasswordToggles();
 // Affiche la date du jour en français dans la barre supérieure
 document.getElementById('topDate').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long'});
 
-// ── Auto-login si un token valide est déjà présent en localStorage ──
-// Si le rôle stocké est 'employee', on passe directement à l'application
-if (empToken && localStorage.getItem('fc_role') === 'employee') {
-  showApp();
-}
-
-// ══════════════════════════════════════════════════════════════════
-// MODULE : MOT DE PASSE OUBLIÉ (PROCÉDURE OTP EN 3 ÉTAPES)
-// ══════════════════════════════════════════════════════════════════
-
-async function fpSendOtp() { const email=document.getElementById('fp-email').value.trim(); const errEl=document.getElementById('fp-err'); errEl.style.display='none'; if(!email){errEl.textContent='Email requis';errEl.style.display='block';return;} try{ await apiFetch('/api/auth/forgot-password',{method:'POST',body:JSON.stringify({email,userType:_fpType})}); document.getElementById('fp-step1').style.display='none'; document.getElementById('fp-step2').style.display='block'; toast('Code envoyé !','success'); }catch(e){errEl.textContent=e.message;errEl.style.display='block';} }
-
-async function fpVerifyOtp() { const email=document.getElementById('fp-email').value.trim(); const otp=document.getElementById('fp-otp').value.trim(); const errEl=document.getElementById('fp-err2'); errEl.style.display='none'; if(otp.length!==6){errEl.textContent='Code à 6 chiffres requis';errEl.style.display='block';return;} try{ await apiFetch('/api/auth/verify-otp',{method:'POST',body:JSON.stringify({email,userType:_fpType,otp})}); document.getElementById('fp-step2').style.display='none'; document.getElementById('fp-step3').style.display='block'; }catch(e){errEl.textContent=e.message;errEl.style.display='block';} }
-
-async function fpResetPassword() { const email=document.getElementById('fp-email').value.trim(); const otp=document.getElementById('fp-otp').value.trim(); const pwd=document.getElementById('fp-pwd').value; const pwd2=document.getElementById('fp-pwd2').value; const errEl=document.getElementById('fp-err3'); errEl.style.display='none'; if(pwd!==pwd2){errEl.textContent='Les mots de passe ne correspondent pas';errEl.style.display='block';return;} if(pwd.length<6){errEl.textContent='Minimum 6 caractères';errEl.style.display='block';return;} try{ await apiFetch('/api/auth/reset-password',{method:'POST',body:JSON.stringify({email,userType:_fpType,otp,newPassword:pwd})}); toast('Mot de passe changé ! Connectez-vous.','success'); closeForgotModal(); }catch(e){errEl.textContent=e.message;errEl.style.display='block';} }
-
-// MODULE : AUTHENTIFICATION
-// ══════════════════════════════════════════════════════════════════
+// ── Initialisation de l'application ────────────────────
+showApp();
 
 /**
- * loginEmployee — Authentifie l'employé avec son identifiant et mot de passe.
- * Valide les champs côté client, puis envoie les identifiants à l'API.
- * Appel API : POST /api/auth/employee/login
- * En cas de succès : stocke le token JWT en localStorage et lance showApp().
- * En cas d'échec : affiche le message d'erreur dans #loginErr.
- */
-async function loginEmployee() {
-  // Récupération des valeurs saisies
-  const empId = document.getElementById('empIdInput').value.trim();
-  const pwd = document.getElementById('empPwdInput').value;
-  const err = document.getElementById('loginErr');
-  err.classList.remove('show');
-
-  // Validation côté client : les deux champs sont obligatoires
-  if (!empId || !pwd) { err.textContent = 'Tous les champs sont requis'; err.classList.add('show'); return; }
-
-  // Désactivation du bouton pendant la requête (évite les doubles soumissions)
-  const btn = document.getElementById('empLoginBtn');
-  btn.disabled = true; btn.textContent = '⏳ Connexion...';
-
-  try {
-    // Envoi des identifiants à l'API d'authentification employé
-    const data = await apiFetch('/api/auth/employee/login', { method: 'POST', body: JSON.stringify({ employeeId: empId, password: pwd }) });
-
-    // Persistance du token et des informations de session en localStorage
-    localStorage.setItem('fc_token', data.token);
-    localStorage.setItem('fc_role', 'employee');
-    localStorage.setItem('fc_name', data.name);
-    localStorage.setItem('fc_id', data.companyId);
-
-    // Mise à jour de la variable globale du token
-    empToken = data.token;
-
-    // Basculement vers l'application principale
-    showApp();
-  } catch(e) {
-    // Affichage de l'erreur retournée par l'API
-    err.textContent = e.message; err.classList.add('show');
-  } finally {
-    // Réactivation du bouton dans tous les cas
-    btn.disabled = false; btn.textContent = 'Se connecter';
-  }
-}
-
-/**
- * showApp — Masque l'écran de login et affiche l'application principale.
- * Initialise la sidebar, la navigation entre pages, la page repas
+ * showApp — Initialise la sidebar, la navigation entre pages, la page repas
  * et le système de notifications en temps réel.
  */
 function showApp() {
-  // Masque l'écran de login, révèle l'application
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('appScreen').style.display = 'block';
 
   // Affiche le nom de l'employé dans la sidebar
   const name = localStorage.getItem('fc_name') || '—';
   document.getElementById('sidebarName').textContent = name;
+  // Affiche l'ID employé dans la sidebar
+  document.getElementById('sidebarId').textContent = localStorage.getItem('fc_employeeId') || '—';
+  // Charge la photo de profil de l'employé
+  apiFetch('/api/employee/profile', {}, empToken).then(p => {
+    if (p.photo_url) {
+      document.getElementById('sidebarAvatar').innerHTML = `<img src="${p.photo_url}" style="width:100%;height:100%;object-fit:cover">`;
+    }
+  }).catch(()=>{});
 
   // Initialise le comportement de la sidebar (hamburger, overlay mobile)
   try { initSidebar(); } catch(e) { console.error('initSidebar:', e); }
@@ -1064,8 +868,10 @@ async function loadEmpHistory() {
  * @param {number} id - Identifiant de l'entrée d'historique à supprimer
  */
 async function delHistItem(id) {
-  await apiFetch(`/api/employee/history/${id}`, { method: 'DELETE' }, empToken);
-  loadEmpHistory(); // Rafraîchit la liste
+  try {
+    await apiFetch(`/api/employee/history/${id}`, { method: 'DELETE' }, empToken);
+    loadEmpHistory();
+  } catch(e) { toast('Erreur suppression', 'error'); }
 }
 
 /**
@@ -1074,11 +880,12 @@ async function delHistItem(id) {
  * Rafraîchit la liste après suppression.
  */
 async function clearHistory() {
-  // Confirmation avant suppression massive
   if (!confirm('Vider tout l\'historique ?')) return;
-  await apiFetch('/api/employee/history', { method: 'DELETE' }, empToken);
-  toast('Historique vidé', 'info');
-  loadEmpHistory(); // Rafraîchit la liste (affichera l'état vide)
+  try {
+    await apiFetch('/api/employee/history', { method: 'DELETE' }, empToken);
+    toast('Historique vidé', 'info');
+    loadEmpHistory();
+  } catch(e) { toast('Erreur', 'error'); }
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1273,11 +1080,8 @@ async function submitRating() {
 }
 
 // Expose toutes les fonctions appelées depuis les handlers onclick/oninput du HTML
-window.loginEmployee = loginEmployee;
 window.showApp = showApp;
 window.logoutEmp = logoutEmp;
-window.openForgotModal = openForgotModal;
-window.closeForgotModal = closeForgotModal;
 window.searchDishes = searchDishes;
 window.goToRestaurantMenu = goToRestaurantMenu;
 window.initMealPage = initMealPage;
@@ -1297,13 +1101,11 @@ window.loadRatingsPage = loadRatingsPage;
 window.loadEmpProfile = loadEmpProfile;
 window.handleEmpPhoto = handleEmpPhoto;
 window.changePassword = changePassword;
-window.fpSendOtp = fpSendOtp;
-window.fpVerifyOtp = fpVerifyOtp;
-window.fpResetPassword = fpResetPassword;
 window.initNotifications = initNotifications;
 window.toggleNotifDropdown = toggleNotifDropdown;
 window.searchDishes = searchDishes;
 });
 </script>
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

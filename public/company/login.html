@@ -3,319 +3,244 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>FoodChooseApp — Connexion Entreprise</title>
-  <!-- Polices Google : Playfair Display pour les titres, DM Sans pour le corps de texte -->
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <!-- Feuille de style principale de l'application -->
   <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#E85A2A">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="/assets/images/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="FoodChooseApp">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="msapplication-TileImage" content="/assets/images/icon-144.png">
+  <meta name="msapplication-TileColor" content="#2C1810">
   <style>
-    /* Fond sombre couvrant toute la hauteur de la fenêtre, centré horizontalement et verticalement */
-    body{background:var(--brown);display:flex;align-items:center;justify-content:center;padding:20px;min-height:100vh}
-    /* Couche de dégradé radial décorative en position fixe (arrière-plan) */
-    .bg{position:fixed;inset:0;z-index:0;background:radial-gradient(circle at 75% 50%,rgba(232,90,42,.15),transparent 50%)}
-    /* Grille de lignes fines en position fixe pour l'effet de texture d'arrière-plan */
-    .grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(255,248,243,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,248,243,.03) 1px,transparent 1px);background-size:40px 40px}
-    /* Carte principale de la page d'authentification, centrée au-dessus de l'arrière-plan */
-    .auth-card{position:relative;z-index:1;background:var(--cream);border-radius:22px;padding:40px;width:100%;max-width:440px;box-shadow:0 40px 80px rgba(0,0,0,.4);animation:cardIn .6s cubic-bezier(.16,1,.3,1) both}
-    /* Animation d'entrée de la carte : glissement vers le haut avec léger agrandissement */
-    @keyframes cardIn{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-    /* Bloc logo / en-tête centré en haut de la carte */
-    .auth-logo{text-align:center;margin-bottom:26px}
-    .auth-logo .icon{font-size:38px;display:block;margin-bottom:8px}
-    .auth-logo h1{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;color:var(--brown)}
-    .auth-logo h1 span{color:var(--orange)}
-    /* Role tabs */
-    /* Onglets de sélection du rôle disposés en grille à 2 colonnes */
-    .role-tabs{display:grid;grid-template-columns:1fr 1fr;gap:0;background:#F0E6DE;border-radius:12px;padding:4px;margin-bottom:24px}
-    /* Style de base d'un onglet de rôle (inactif) */
-    .role-tab{padding:10px;text-align:center;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-radius:10px;transition:all .2s}
-    /* Style de l'onglet actif : fond clair, texte sombre, légère ombre portée */
-    .role-tab.active{background:var(--cream);color:var(--brown);box-shadow:0 2px 6px rgba(0,0,0,.08)}
-    .role-tab .tab-icon{display:block;font-size:18px;margin-bottom:3px}
-    /* Forms */
-    /* Formulaire de connexion masqué par défaut */
-    .login-form{display:none}
-    /* Formulaire actif affiché avec animation fondu/glissement */
-    .login-form.active{display:block;animation:fadeIn .3s ease}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
-    /* Bloc d'affichage des erreurs de connexion (masqué par défaut) */
-    #errMsg{background:#FEE2E2;color:#991B1B;border-radius:10px;padding:12px 14px;font-size:13px;margin-top:10px;display:none;border:1px solid #FCA5A5}
-    /* Classe ajoutée dynamiquement pour rendre le message d'erreur visible */
-    #errMsg.show{display:block}
-    /* Encadré d'indice informatif (connexion entreprise) */
-    .admin-hint{background:#FFF0EA;border:1px solid rgba(232,90,42,.2);border-radius:10px;padding:11px 14px;font-size:12px;color:var(--brown);margin-bottom:16px}
-    .admin-hint strong{color:var(--orange)}
-    /* Improved form styling */
-    .form-group{position:relative;margin-bottom:18px}
-    .form-group label{display:block;font-size:12px;font-weight:600;color:var(--brown);margin-bottom:6px;letter-spacing:.3px}
-    .form-control:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(232,90,42,.15);outline:none}
-    .btn-primary{transition:all .2s;position:relative;overflow:hidden}
-    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(232,90,42,.3)}
-    .btn-primary:active{transform:translateY(0)}
-    .btn-primary:disabled{opacity:.7;cursor:not-allowed;transform:none}
-    .input-icon{position:relative}
-    .input-icon .form-control{padding-left:40px}
-    .input-icon .input-icon-span{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;opacity:.5}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--orange:#E85A2A;--brown:#2C1810;--cream:#FFF8F3;--muted:#8B6554;--border:#F0E6DE;--gold:#F9C74F;--success:#16a34a}
+    html,body{min-height:100%}
+    body{font-family:'DM Sans',sans-serif;background:var(--brown);display:flex;align-items:center;justify-content:center;padding:32px 20px;min-height:100vh}
+
+    /* Background */
+    .bg{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 75% 25%,rgba(232,90,42,.18),transparent 55%),radial-gradient(ellipse at 25% 80%,rgba(249,199,79,.08),transparent 45%)}
+    .grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(255,248,243,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,248,243,.025) 1px,transparent 1px);background-size:44px 44px}
+    .orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(1px)}
+    .orb-1{width:500px;height:500px;background:radial-gradient(circle,rgba(232,90,42,.09),transparent 70%);top:-150px;right:-150px;animation:orbF 22s ease-in-out infinite}
+    .orb-2{width:320px;height:320px;background:radial-gradient(circle,rgba(249,199,79,.07),transparent 70%);bottom:-100px;left:-100px;animation:orbF 30s ease-in-out infinite reverse}
+    @keyframes orbF{0%,100%{transform:translate(0,0)}50%{transform:translate(28px,-22px)}}
+
+    /* Card */
+    .auth-card{position:relative;z-index:1;background:var(--cream);border-radius:28px;width:100%;max-width:440px;box-shadow:0 40px 80px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.05);animation:cardIn .65s cubic-bezier(.16,1,.3,1) both;overflow:hidden}
+    @keyframes cardIn{from{opacity:0;transform:translateY(28px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+    /* Card top accent bar */
+    .card-accent{height:4px;background:linear-gradient(90deg,var(--orange),var(--gold),var(--orange));background-size:200% 100%;animation:shimmer 3s linear infinite}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+    .card-inner{padding:36px 36px 32px}
+
+    /* Header */
+    .auth-header{text-align:center;margin-bottom:28px;animation:formIn .6s cubic-bezier(.16,1,.3,1) both}
+    @keyframes formIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .auth-logo{width:56px;height:56px;border-radius:14px;margin:0 auto 12px;display:block;filter:drop-shadow(0 4px 12px rgba(232,90,42,.3))}
+    .space-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(232,90,42,.12);color:var(--orange);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:12px;border:1px solid rgba(232,90,42,.2);letter-spacing:.3px}
+    .auth-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:900;color:var(--brown);line-height:1.2;margin-bottom:5px}
+    .auth-sub{font-size:12.5px;color:var(--muted)}
+
+    /* Form */
+    .form-group{margin-bottom:16px;animation:formIn .6s cubic-bezier(.16,1,.3,1) both}
+    .form-group:nth-child(1){animation-delay:.08s}
+    .form-group:nth-child(2){animation-delay:.14s}
+    .form-group label{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--brown);margin-bottom:7px;letter-spacing:.3px}
+    .form-group label svg{width:13px;height:13px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .form-control{width:100%;padding:11px 14px;background:white;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--brown);transition:all .2s;outline:none}
+    .form-control:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(232,90,42,.12)}
+    .form-control::placeholder{color:#C4A898}
+    .pw-wrap{position:relative}
+    .pw-wrap .form-control{padding-right:44px}
+    .pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex;align-items:center;justify-content:center;transition:color .2s}
+    .pw-toggle:hover{color:var(--orange)}
+    .pw-toggle svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+    /* Button */
+    .btn-submit{width:100%;padding:14px;background:linear-gradient(135deg,var(--orange),#D14D22);color:white;border:none;border-radius:11px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all .25s;margin-top:6px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(232,90,42,.3);animation:formIn .6s .22s both}
+    .btn-submit::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);transition:left .45s ease}
+    .btn-submit:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(232,90,42,.45)}
+    .btn-submit:hover::before{left:100%}
+    .btn-submit:disabled{opacity:.7;cursor:not-allowed;transform:none}
+    .btn-submit svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+
+    /* Error */
+    #errMsg{background:#FEE2E2;color:#991B1B;border-radius:10px;padding:11px 14px;font-size:13px;margin-top:10px;display:none;border:1px solid #FCA5A5;align-items:center;gap:8px}
+    #errMsg.show{display:flex}
+    #errMsg svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+
+    /* Footer links */
+    .auth-divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+    .auth-links{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;animation:formIn .6s .3s both}
+    .auth-links a{font-size:12.5px;color:var(--muted);text-decoration:none;transition:color .2s}
+    .auth-links a:hover{color:var(--orange)}
+    .auth-register{text-align:center;margin-top:16px;font-size:13px;color:var(--muted);animation:formIn .6s .35s both}
+    .auth-register a{color:var(--orange);font-weight:600;text-decoration:none;margin-left:4px}
+    .auth-register a:hover{text-decoration:underline}
+
+    @media(max-width:480px){.card-inner{padding:28px 22px 26px}.auth-card{border-radius:22px}}
   </style>
 </head>
 <body>
-<!-- Couche de dégradé décorative (arrière-plan) -->
+<canvas id="particlesCanvas" style="position:fixed;inset:0;z-index:0;pointer-events:none"></canvas>
 <div class="bg"></div><div class="grid"></div>
-<!-- Conteneur des notifications toast (messages temporaires) -->
+<div class="orb orb-1"></div><div class="orb orb-2"></div>
 <div id="toastContainer"></div>
 
-<!-- Carte centrale d'authentification -->
 <div class="auth-card">
-  <!-- En-tête : icône et nom de l'application -->
-  <div class="auth-logo">
-    <span class="icon">🏢</span>
-    <h1>Food<span>Choose</span>App</h1>
-    <p>Espace Entreprise</p>
-  </div>
+  <div class="card-accent"></div>
+  <div class="card-inner">
 
-  <!-- Onglet de connexion entreprise -->
-  <div class="role-tabs">
-    <div class="role-tab active" id="tab-company" onclick="switchTab('company')">
-      <span class="tab-icon">🏢</span>Entreprise
+    <!-- Header -->
+    <div class="auth-header">
+      <img src="/assets/images/logo.svg" alt="FoodChooseApp" class="auth-logo">
+      <div class="space-badge">🏢 Espace Entreprise</div>
+      <div class="auth-title">Connexion Entreprise</div>
+      <div class="auth-sub">Accédez à votre espace de gestion des repas</div>
     </div>
-  </div>
 
-  <!-- Company login -->
-  <!-- Formulaire de connexion pour le compte Entreprise -->
-  <div class="login-form active" id="form-company">
+    <!-- Email -->
     <div class="form-group">
-      <label>Adresse email</label>
-      <div class="input-icon">
-        <input class="form-control" type="email" id="coEmail" placeholder="contact@entreprise.com" onkeydown="if(event.key==='Enter')loginCompany()">
-      </div>
+      <label>
+        <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Adresse email
+      </label>
+      <input class="form-control" type="email" id="email" placeholder="contact@entreprise.com" autocomplete="email" onkeydown="if(event.key==='Enter')login()">
     </div>
+
+    <!-- Password -->
     <div class="form-group">
-      <label>Mot de passe</label>
-      <!-- Champ mot de passe avec bouton bascule afficher/masquer -->
+      <label>
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Mot de passe
+      </label>
       <div class="pw-wrap">
-        <input class="form-control" type="password" id="coPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginCompany()">
-        <button class="pw-toggle" type="button">👁</button>
+        <input class="form-control" type="password" id="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+        <button class="pw-toggle" type="button" id="pwToggleBtn">
+          <svg id="eyeIcon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
       </div>
     </div>
-    <!-- Bouton de soumission de la connexion entreprise -->
-    <button class="btn btn-primary" id="coBtnLogin" style="width:100%;padding:14px;margin-top:8px" onclick="loginCompany()">
+
+    <button class="btn-submit" id="loginBtn" onclick="login()">
+      <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
       Se connecter
     </button>
-  </div>
 
-  <!-- Zone d'affichage des messages d'erreur -->
-  <div id="errMsg"></div>
-  <!-- Lien vers la procédure de mot de passe oublié -->
-  <p style="text-align:center;margin-top:12px;font-size:13px">
-    <a href="#" style="color:var(--orange)" onclick="openForgotModal('company')">Mot de passe oublié ?</a>
-  </p>
-  <!-- Séparateur horizontal -->
-  <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
-  <!-- Lien vers la page d'inscription entreprise -->
-  <p style="text-align:center;font-size:13px;color:var(--muted)">
-    Pas encore de compte ? <a href="/company/register" style="color:var(--orange)">Inscrire l'entreprise</a>
-  </p>
-  <!-- Lien de retour vers la page d'accueil -->
-  <p style="text-align:center;margin-top:8px"><a href="/" style="font-size:12.5px;color:var(--muted);text-decoration:none">← Retour à l'accueil</a></p>
-</div>
+    <div id="errMsg">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="errTxt"></span>
+    </div>
 
-<!-- FORGOT PASSWORD MODAL -->
-<!-- Fenêtre modale de réinitialisation du mot de passe (masquée par défaut) -->
-<div id="forgotModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;display:none;align-items:center;justify-content:center">
-  <div style="background:var(--cream);border-radius:18px;padding:32px;width:100%;max-width:400px;margin:20px;box-shadow:0 24px 60px rgba(0,0,0,.3)">
-    <h3 style="font-family:'Playfair Display',serif;color:var(--brown);margin-bottom:6px">🔑 Mot de passe oublié</h3>
-    <!-- Step 1: email -->
-    <!-- Étape 1 : saisie de l'adresse email pour recevoir le code OTP -->
-    <div id="fp-step1">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Entrez votre email pour recevoir un code OTP.</p>
-      <div class="form-group"><label>Email</label><input class="form-control" id="fp-email" type="email" placeholder="votre@email.com"></div>
-      <div id="fp-err" style="color:#dc2626;font-size:13px;margin-bottom:10px;display:none"></div>
-      <button class="btn btn-primary" style="width:100%" onclick="fpSendOtp()">📧 Envoyer le code</button>
+    <hr class="auth-divider">
+    <div class="auth-links">
+      <a href="/">← Retour à l'accueil</a>
     </div>
-    <!-- Step 2: OTP -->
-    <!-- Étape 2 : saisie du code OTP à 6 chiffres reçu par email -->
-    <div id="fp-step2" style="display:none">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Entrez le code à 6 chiffres reçu par email.</p>
-      <div class="form-group"><label>Code OTP</label><input class="form-control" id="fp-otp" placeholder="000000" maxlength="6" style="letter-spacing:6px;font-size:22px;text-align:center;font-family:monospace"></div>
-      <div id="fp-err2" style="color:#dc2626;font-size:13px;margin-bottom:10px;display:none"></div>
-      <button class="btn btn-primary" style="width:100%" onclick="fpVerifyOtp()">✅ Vérifier le code</button>
-    </div>
-    <!-- Step 3: new password -->
-    <!-- Étape 3 : saisie et confirmation du nouveau mot de passe -->
-    <div id="fp-step3" style="display:none">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Définissez votre nouveau mot de passe.</p>
-      <div class="form-group"><label>Nouveau mot de passe</label><div class="pw-wrap"><input class="form-control" type="password" id="fp-pwd" placeholder="Minimum 6 caractères"><button class="pw-toggle" type="button">👁</button></div></div>
-      <div class="form-group"><label>Confirmer</label><div class="pw-wrap"><input class="form-control" type="password" id="fp-pwd2" placeholder="Répétez"><button class="pw-toggle" type="button">👁</button></div></div>
-      <div id="fp-err3" style="color:#dc2626;font-size:13px;margin-bottom:10px;display:none"></div>
-      <button class="btn btn-primary" style="width:100%" onclick="fpResetPassword()">🔐 Changer le mot de passe</button>
-    </div>
-    <!-- Bouton pour fermer la modale sans effectuer d'action -->
-    <button onclick="closeForgotModal()" style="width:100%;margin-top:12px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px">Annuler</button>
-  </div>
-</div>
+    <p class="auth-register">
+      Pas encore de compte ?
+      <a href="/company/register">S'inscrire</a>
+    </p>
 
-<!-- Utilitaires partagés : apiFetch, toast, initPasswordToggles, etc. -->
+  </div><!-- /card-inner -->
+</div><!-- /auth-card -->
+
 <script src="/assets/js/utils.js"></script>
 <script>
-// Initialise les boutons bascule afficher/masquer sur tous les champs mot de passe de la page
-initPasswordToggles();
+// Redirect if already logged in as company
+(function() {
+  const token = localStorage.getItem('fc_token');
+  const role  = localStorage.getItem('fc_role');
+  if (token && role === 'company') {
+    try {
+      const exp = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).exp;
+      if (exp * 1000 > Date.now()) { window.location.replace('/company/admin'); return; }
+    } catch(e) {}
+  }
+})();
 
-// ── Mot de passe oublié ───────────────────────────────
+// Password toggle
+document.getElementById('pwToggleBtn').addEventListener('click', function() {
+  const inp = document.getElementById('password');
+  const icon = document.getElementById('eyeIcon');
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  icon.innerHTML = show
+    ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+});
 
-// Type d'utilisateur en cours de réinitialisation (toujours 'company' dans cette page)
-let _fpType = 'company';
-
-/**
- * Ouvre la modale de réinitialisation du mot de passe.
- * Remet tous les champs à zéro, masque les étapes 2 et 3,
- * affiche l'étape 1, puis rend la modale visible.
- * @param {string} type - Type d'utilisateur ('company')
- */
-function openForgotModal(type) {
-  _fpType = type;
-  // Afficher uniquement l'étape 1, masquer les autres
-  ['fp-step1','fp-step2','fp-step3'].forEach((id,i) => document.getElementById(id).style.display = i===0?'block':'none');
-  // Vider et masquer tous les blocs d'erreur de la modale
-  ['fp-err','fp-err2','fp-err3'].forEach(id => { const el=document.getElementById(id); el.style.display='none'; el.textContent=''; });
-  // Remettre à zéro tous les champs de saisie de la modale
-  document.getElementById('fp-email').value=''; document.getElementById('fp-otp').value='';
-  document.getElementById('fp-pwd').value=''; document.getElementById('fp-pwd2').value='';
-  // Afficher la modale en mode flexbox
-  const m = document.getElementById('forgotModal');
-  m.style.display='flex';
-  // Réinitialiser les boutons de bascule pour les nouveaux champs mot de passe apparus
-  initPasswordToggles();
-}
-
-/**
- * Ferme la modale de réinitialisation du mot de passe en la masquant.
- */
-function closeForgotModal() { document.getElementById('forgotModal').style.display='none'; }
-
-/**
- * Étape 1 — Envoie un code OTP à l'adresse email saisie.
- * Appelle l'API /api/auth/forgot-password avec l'email et le type d'utilisateur.
- * En cas de succès, passe à l'étape 2 (saisie du code).
- */
-async function fpSendOtp() {
-  const email = document.getElementById('fp-email').value.trim();
-  const errEl = document.getElementById('fp-err');
-  errEl.style.display='none';
-  // Validation : l'email est obligatoire
-  if (!email) { errEl.textContent='Email requis'; errEl.style.display='block'; return; }
-  try {
-    // Appel API pour déclencher l'envoi du code OTP par email
-    await apiFetch('/api/auth/forgot-password', { method:'POST', body: JSON.stringify({ email, userType: _fpType }) });
-    // Passer à l'étape 2 : saisie du code OTP
-    document.getElementById('fp-step1').style.display='none';
-    document.getElementById('fp-step2').style.display='block';
-    toast('Code envoyé !','success');
-  } catch(e) { errEl.textContent=e.message; errEl.style.display='block'; }
-}
-
-/**
- * Étape 2 — Vérifie le code OTP saisi par l'utilisateur.
- * Appelle l'API /api/auth/verify-otp avec l'email, le type et le code.
- * En cas de succès, passe à l'étape 3 (nouveau mot de passe).
- */
-async function fpVerifyOtp() {
-  const email = document.getElementById('fp-email').value.trim();
-  const otp = document.getElementById('fp-otp').value.trim();
-  const errEl = document.getElementById('fp-err2');
-  errEl.style.display='none';
-  // Validation : le code OTP doit comporter exactement 6 chiffres
-  if (otp.length !== 6) { errEl.textContent='Code à 6 chiffres requis'; errEl.style.display='block'; return; }
-  try {
-    // Appel API pour valider le code OTP
-    await apiFetch('/api/auth/verify-otp', { method:'POST', body: JSON.stringify({ email, userType: _fpType, otp }) });
-    // Passer à l'étape 3 : définir le nouveau mot de passe
-    document.getElementById('fp-step2').style.display='none';
-    document.getElementById('fp-step3').style.display='block';
-  } catch(e) { errEl.textContent=e.message; errEl.style.display='block'; }
-}
-
-/**
- * Étape 3 — Réinitialise le mot de passe avec le nouveau mot de passe choisi.
- * Vérifie que les deux champs concordent et que la longueur minimale est respectée.
- * Appelle l'API /api/auth/reset-password, puis ferme la modale en cas de succès.
- */
-async function fpResetPassword() {
-  const email = document.getElementById('fp-email').value.trim();
-  const otp = document.getElementById('fp-otp').value.trim();
-  const pwd = document.getElementById('fp-pwd').value;
-  const pwd2 = document.getElementById('fp-pwd2').value;
-  const errEl = document.getElementById('fp-err3');
-  errEl.style.display='none';
-  // Validation : les deux mots de passe doivent être identiques
-  if (pwd !== pwd2) { errEl.textContent='Les mots de passe ne correspondent pas'; errEl.style.display='block'; return; }
-  // Validation : longueur minimale de 6 caractères
-  if (pwd.length < 6) { errEl.textContent='Minimum 6 caractères'; errEl.style.display='block'; return; }
-  try {
-    // Appel API pour enregistrer le nouveau mot de passe (avec l'OTP comme jeton de validation)
-    await apiFetch('/api/auth/reset-password', { method:'POST', body: JSON.stringify({ email, userType: _fpType, otp, newPassword: pwd }) });
-    toast('Mot de passe changé ! Connectez-vous.','success');
-    closeForgotModal();
-  } catch(e) { errEl.textContent=e.message; errEl.style.display='block'; }
-}
-
-/**
- * Active l'onglet de connexion entreprise et affiche le formulaire correspondant.
- * Masque également le message d'erreur précédent.
- * @param {string} tab - Identifiant de l'onglet à activer ('company')
- */
-function switchTab(tab) {
-  document.getElementById('tab-company').classList.toggle('active', tab === 'company');
-  document.getElementById('form-company').classList.toggle('active', tab === 'company');
-  // Masquer les éventuels messages d'erreur lors du changement d'onglet
-  document.getElementById('errMsg').classList.remove('show');
-}
-
-/**
- * Effectue la connexion du compte entreprise.
- * Lit l'email et le mot de passe, appelle l'API /api/auth/company/login,
- * puis stocke le token JWT et les infos de session dans localStorage
- * avant de rediriger vers le tableau de bord entreprise.
- */
-async function loginCompany() {
-  // Récupération des valeurs saisies dans le formulaire
-  const email = document.getElementById('coEmail').value.trim();
-  const pwd = document.getElementById('coPwd').value;
-  const err = document.getElementById('errMsg');
+async function login() {
+  const email = document.getElementById('email').value.trim();
+  const pwd   = document.getElementById('password').value;
+  const err   = document.getElementById('errMsg');
+  const errTxt = document.getElementById('errTxt');
   err.classList.remove('show');
 
-  // Désactiver le bouton pendant la requête pour éviter les doubles soumissions
-  const btn = document.getElementById('coBtnLogin');
-  btn.disabled = true; btn.textContent = '⏳ Connexion...';
+  if (!email) { errTxt.textContent = 'Adresse email requise'; err.classList.add('show'); shakeEl(err); return; }
+  if (!pwd)   { errTxt.textContent = 'Mot de passe requis';   err.classList.add('show'); shakeEl(err); return; }
+
+  const btn = document.getElementById('loginBtn');
+  setLoading(btn, 'Connexion...');
   try {
-    // Appel API de connexion entreprise : renvoie { token, name, id }
-    const data = await apiFetch('/api/auth/company/login', { method: 'POST', body: JSON.stringify({ email, password: pwd }) });
-    // Stocker le token JWT principal (utilisé par apiFetch pour les requêtes authentifiées)
+    const data = await apiFetch('/api/auth/company/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password: pwd })
+    });
     localStorage.setItem('fc_token', data.token);
-    // Stocker également le token spécifique au rôle entreprise
-    localStorage.setItem('fc_co_token', data.token);
-    // Stocker le rôle pour les redirections automatiques futures
     localStorage.setItem('fc_role', 'company');
-    // Stocker le nom affiché dans les interfaces
     localStorage.setItem('fc_name', data.name);
-    // Stocker l'identifiant de l'entreprise pour les requêtes API
     localStorage.setItem('fc_id', data.id);
-    // Redirection vers le tableau de bord de l'entreprise
-    window.location.href = '/company/admin';
-  } catch(e2) {
-    // Afficher le message d'erreur retourné par l'API
-    err.textContent = e2.message; err.classList.add('show');
-  } finally {
-    // Réactiver le bouton dans tous les cas (succès ou échec)
-    btn.disabled = false; btn.textContent = 'Se connecter';
+    localStorage.setItem('fc_co_token', data.token);
+
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg> Connexion réussie !';
+    btn.style.background = 'var(--success)';
+    btn.style.transform = 'scale(1.02)';
+    setTimeout(() => window.location.href = '/company/admin', 600);
+  } catch(e) {
+    errTxt.textContent = e.message || 'Identifiants incorrects';
+    err.classList.add('show');
+    shakeEl(err);
+    unsetLoading(btn, '<svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Se connecter');
   }
 }
 
-// Expose functions globally
-window.loginCompany = loginCompany;
-window.fpSendOtp = fpSendOtp;
-window.fpVerifyOtp = fpVerifyOtp;
-window.fpResetPassword = fpResetPassword;
-window.openForgotModal = openForgotModal;
-window.closeForgotModal = closeForgotModal;
+window.login = login;
+
+// Particles
+(function(){
+  const canvas = document.getElementById('particlesCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+  function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+  for (let i = 0; i < 28; i++) particles.push({
+    x: Math.random() * W, y: Math.random() * H,
+    r: Math.random() * 1.5 + .3,
+    vx: (Math.random() - .5) * .2, vy: (Math.random() - .5) * .2,
+    o: Math.random() * .08 + .02
+  });
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,248,243,${p.o})`; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+if (typeof initRipple === 'function') initRipple();
 </script>
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

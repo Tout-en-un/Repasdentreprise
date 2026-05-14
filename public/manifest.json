@@ -1,0 +1,50 @@
+{
+  "name": "FoodChooseApp",
+  "short_name": "FoodChoose",
+  "description": "Plateforme intelligente de gestion des repas d'entreprise",
+  "lang": "fr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#2C1810",
+  "theme_color": "#E85A2A",
+  "prefer_related_applications": false,
+  "categories": ["food", "productivity", "business"],
+  "icons": [
+    { "src": "/assets/images/icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any" },
+    { "src": "/assets/images/icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any" },
+    { "src": "/assets/images/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/images/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/images/icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/images/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/images/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/images/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/images/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/assets/images/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/assets/images/logo.svg",     "sizes": "any",      "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Espace Entreprise",
+      "short_name": "Entreprise",
+      "description": "Connexion espace entreprise",
+      "url": "/company/login?source=shortcut",
+      "icons": [{ "src": "/assets/images/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Espace Restaurant",
+      "short_name": "Restaurant",
+      "description": "Connexion espace restaurant",
+      "url": "/restaurant/login?source=shortcut",
+      "icons": [{ "src": "/assets/images/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Espace Employé",
+      "short_name": "Employé",
+      "description": "Connexion espace employé",
+      "url": "/login?source=shortcut",
+      "icons": [{ "src": "/assets/images/icon-96.png", "sizes": "96x96" }]
+    }
+  ]
+}

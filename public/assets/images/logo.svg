@@ -1,0 +1,45 @@
+<svg width="100%" viewBox="0 0 680 680" xmlns="http://www.w3.org/2000/svg" role="img" style="">
+  <title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Logo restaurant f raffiné</title>
+  <desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Lettre f calligraphique italique en vert forêt sombre, entourée de cercles concentriques évoquant une assiette, avec une petite fourchette rouge au sommet</desc>
+
+  <!-- Fond circulaire ivoire chaud -->
+  <circle cx="340" cy="340" r="240" fill="#EDE7DA" style="fill:rgb(237, 231, 218);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Ombre intérieure du rebord de l'assiette -->
+  <circle cx="340" cy="340" r="226" fill="none" stroke="#CEC7B4" stroke-width="2.5" style="fill:none;stroke:rgb(206, 199, 180);color:rgb(0, 0, 0);stroke-width:2.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Anneau extérieur principal — vert forêt épais -->
+  <circle cx="340" cy="340" r="240" fill="none" stroke="#183A29" stroke-width="11" style="fill:none;stroke:rgb(24, 58, 41);color:rgb(0, 0, 0);stroke-width:11px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Anneau décoratif intérieur — vert clair, fin -->
+  <circle cx="340" cy="340" r="202" fill="none" stroke="#5E8C6E" stroke-width="1.8" style="fill:none;stroke:rgb(94, 140, 110);color:rgb(0, 0, 0);stroke-width:1.8px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- ==================== -->
+  <!-- F CALLIGRAPHIQUE     -->
+  <!-- ==================== -->
+
+  <!-- Corps principal du f : arc supérieur + hampe + queue -->
+  <path d="&#10;    M 378,183&#10;    C 361,156 337,147 315,155&#10;    C 297,162 291,181 294,206&#10;    C 292,308 285,390 280,468&#10;    C 277,485 262,499 245,490&#10;  " stroke="#183A29" stroke-width="28" fill="none" stroke-linecap="round" stroke-linejoin="round" style="fill:none;stroke:rgb(24, 58, 41);color:rgb(0, 0, 0);stroke-width:28px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Barre transversale du f -->
+  <path d="M 228,306 L 364,306" stroke="#183A29" stroke-width="21" fill="none" stroke-linecap="round" style="fill:none;stroke:rgb(24, 58, 41);color:rgb(0, 0, 0);stroke-width:21px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Terminal sphérique en haut du f -->
+  <circle cx="378" cy="183" r="15" fill="#183A29" style="fill:rgb(24, 58, 41);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- ============= -->
+  <!-- FOURCHETTE   -->
+  <!-- ============= -->
+  <!-- Petite fourchette rouge, inclinée à ~35° depuis la sphère -->
+  <g transform="translate(392, 158) rotate(33)" style="fill:rgb(0, 0, 0);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">
+    <!-- Dents de la fourchette -->
+    <line x1="-6.5" y1="-24" x2="-6.5" y2="-5" stroke="#C23316" stroke-width="2.6" stroke-linecap="round" style="fill:rgb(0, 0, 0);stroke:rgb(194, 51, 22);color:rgb(0, 0, 0);stroke-width:2.6px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+    <line x1="-0.5" y1="-26" x2="-0.5" y2="-5" stroke="#C23316" stroke-width="2.6" stroke-linecap="round" style="fill:rgb(0, 0, 0);stroke:rgb(194, 51, 22);color:rgb(0, 0, 0);stroke-width:2.6px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+    <line x1="5.5" y1="-24" x2="5.5" y2="-5" stroke="#C23316" stroke-width="2.6" stroke-linecap="round" style="fill:rgb(0, 0, 0);stroke:rgb(194, 51, 22);color:rgb(0, 0, 0);stroke-width:2.6px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+    <!-- Pont des dents -->
+    <path d="M -8,-5 C -4,5 4,5 7,-5" stroke="#C23316" stroke-width="2.2" fill="none" stroke-linecap="round" style="fill:none;stroke:rgb(194, 51, 22);color:rgb(0, 0, 0);stroke-width:2.2px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+    <!-- Manche -->
+    <line x1="-0.5" y1="5" x2="-0.5" y2="30" stroke="#C23316" stroke-width="3.8" stroke-linecap="round" style="fill:rgb(0, 0, 0);stroke:rgb(194, 51, 22);color:rgb(0, 0, 0);stroke-width:3.8px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  </g>
+
+</svg>

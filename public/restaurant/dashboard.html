@@ -5,6 +5,15 @@
   <title>FoodChooseApp — Dashboard Restaurant</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#E85A2A">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="/assets/images/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="FoodChooseApp">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="msapplication-TileImage" content="/assets/images/icon-144.png">
+  <meta name="msapplication-TileColor" content="#2C1810">
 </head>
 <body>
 <div id="toastContainer"></div>
@@ -14,26 +23,27 @@
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <span class="logo-icon">🏪</span>
-    <div class="logo-name">Food<span>Choose</span></div>
+    <img src="/assets/images/logo.svg" alt="FoodChooseApp" class="sidebar-logo-img">
     <span class="logo-badge">Restaurant</span>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section">Principal</div>
-    <div class="nav-item active" data-page="dashboard"><span class="icon">📊</span><span>Tableau de bord</span></div>
-    <div class="nav-item" data-page="orders"><span class="icon">🛒</span><span>Commandes</span></div>
-    <div class="nav-item" data-page="messages"><span class="icon">💬</span><span>Messages</span><span class="nav-badge" id="msgBadge" style="display:none">0</span></div>
+    <div class="nav-item active" data-page="dashboard"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span><span>Tableau de bord</span></div>
+    <div class="nav-item" data-page="orders"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><span>Commandes</span></div>
+    <div class="nav-item" data-page="messages"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span>Messages</span><span class="nav-badge" id="msgBadge" style="display:none">0</span></div>
     <div class="nav-section">Gestion</div>
-    <div class="nav-item" data-page="menus"><span class="icon">🍜</span><span>Mes menus</span></div>
-    <div class="nav-item" data-page="ratings"><span class="icon">⭐</span><span>Avis clients</span></div>
+    <div class="nav-item" data-page="menus"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2c-1.67 0-5 .83-5 4v6c0 1.1.9 2 2 2v5a1 1 0 0 0 2 0v-5c1.1 0 2-.9 2-2z"/></svg></span><span>Mes menus</span></div>
+    <div class="nav-item" data-page="ratings"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span><span>Avis clients</span></div>
+    <div class="nav-item" data-page="weekly"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Programme hebdo</span></div>
     <div class="nav-section">Compte</div>
-    <div class="nav-item" data-page="profile"><span class="icon">⚙️</span><span>Mon profil</span></div>
-    <div class="nav-item" data-page="invoices"><span class="icon">🧾</span><span>Factures</span></div>
-    <button class="nav-item-logout" onclick="logout()"><span class="icon">🚪</span><span>Déconnexion</span></button>
+    <div class="nav-item" data-page="profile"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg></span><span>Mon profil</span></div>
+    <div class="nav-item" data-page="invoices"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><span>Factures</span></div>
+    <div class="nav-item" data-page="weekly-invoices"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></span><span>Factures hebdo</span></div>
+    <button class="nav-item-logout" onclick="logout()"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span><span>Déconnexion</span></button>
   </nav>
   <div class="sidebar-footer">
     <div class="user-card">
-      <div class="user-avatar" id="sidebarAvatar">🏪</div>
+      <div class="user-avatar" id="sidebarAvatar"><img src="/assets/images/logo.svg" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>
       <div><div class="user-name" id="sidebarName">—</div><div class="user-role">Restaurant</div></div>
     </div>
   </div>
@@ -46,10 +56,10 @@
       <div class="topbar-title" id="pageTitle">Tableau de bord</div>
     </div>
     <div class="topbar-right">
-      <a href="/" title="Accueil" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:rgba(44,24,16,.08);border:1px solid var(--border);color:var(--brown);text-decoration:none;font-size:16px;cursor:pointer;margin-right:6px">🏠</a>
-      <button onclick="logout()" title="Déconnexion" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:rgba(232,90,42,.1);border:1px solid rgba(232,90,42,.2);color:var(--orange);font-size:16px;cursor:pointer;margin-right:6px">🚪</button>
+      <a href="/" title="Accueil" class="topbar-icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></a>
+      <button onclick="logout()" title="Déconnexion" class="topbar-icon-btn danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
       <div style="position:relative">
-        <button class="notif-btn" onclick="toggleNotifDropdown()">🔔<span class="notif-count" id="notifCount" style="display:none">0</span></button>
+        <button class="notif-btn" onclick="toggleNotifDropdown()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-count" id="notifCount" style="display:none">0</span></button>
         <div class="notif-dropdown" id="notifDropdown"></div>
       </div>
     </div>
@@ -59,15 +69,15 @@
   <!-- ═══ DASHBOARD ═══ -->
   <div class="page active" id="page-dashboard">
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon">🛒</div><div class="stat-number" id="s-today">—</div><div class="stat-label">Aujourd'hui</div></div>
-      <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-number" id="s-week">—</div><div class="stat-label">Cette semaine</div></div>
-      <div class="stat-card"><div class="stat-icon">📆</div><div class="stat-number" id="s-month">—</div><div class="stat-label">Ce mois</div></div>
-      <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-number" id="s-revenue">—</div><div class="stat-label">Revenu mois (FCFA)</div></div>
+      <div class="stat-card reveal"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div><div class="stat-number" id="s-today">—</div><div class="stat-label">Aujourd'hui</div></div>
+      <div class="stat-card reveal" style="--reveal-delay:.08s"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="stat-number" id="s-week">—</div><div class="stat-label">Cette semaine</div></div>
+      <div class="stat-card reveal" style="--reveal-delay:.16s"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/></svg></div><div class="stat-number" id="s-month">—</div><div class="stat-label">Ce mois</div></div>
+      <div class="stat-card reveal" style="--reveal-delay:.24s"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div class="stat-number" id="s-revenue">—</div><div class="stat-label">Revenu mois (FCFA)</div></div>
     </div>
     <div class="page-grid">
-      <div class="card">
+      <div class="card reveal">
         <div class="card-header">
-          <span class="card-title">Commandes (30 jours)</span>
+          <span class="card-title">📊 Commandes (30 jours)</span>
           <div style="display:flex;gap:8px">
             <button class="btn btn-outline btn-sm" onclick="exportPDF('week')">PDF semaine</button>
             <button class="btn btn-outline btn-sm" onclick="exportPDF('month')">PDF mois</button>
@@ -75,7 +85,7 @@
         </div>
         <div class="card-body"><div class="bar-chart" id="orderChart"></div></div>
       </div>
-      <div class="card">
+      <div class="card reveal-right">
         <div class="card-header"><span class="card-title">⭐ Note moyenne & Affiliations</span></div>
         <div class="card-body" id="ratingStats"></div>
       </div>
@@ -84,21 +94,33 @@
 
   <!-- ═══ ORDERS ═══ -->
   <div class="page" id="page-orders">
-    <div class="card">
+    <div class="card reveal">
       <div class="card-header">
-        <span class="card-title">Commandes reçues</span>
-        <div class="date-filter">
-          <input type="date" id="ordersFrom" placeholder="Du" onchange="loadOrders()">
-          <span style="color:var(--muted);font-size:13px">au</span>
-          <input type="date" id="ordersTo" placeholder="Au" onchange="loadOrders()">
-          <select id="companyFilter" style="width:150px;font-size:13px" onchange="loadOrders()">
-            <option value="">Toutes les entreprises</option>
-          </select>
+        <span class="card-title">🛒 Commandes reçues</span>
+        <div style="display:flex;gap:8px">
           <button class="btn btn-primary btn-sm" onclick="loadOrders()">🔍 Rechercher</button>
           <button class="btn btn-outline btn-sm" onclick="exportOrdersPDF()">⬇️ PDF</button>
         </div>
       </div>
-      <div class="card-body" id="batchesList"></div>
+      <div class="card-body">
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;padding:12px;background:var(--cream);border-radius:12px;margin-bottom:16px;border:1px solid var(--border)">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Du</label>
+            <input type="text" class="form-control date-mask" id="ordersFrom" placeholder="JJ/MM/AAAA" maxlength="10" style="width:135px">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Au</label>
+            <input type="text" class="form-control date-mask" id="ordersTo" placeholder="JJ/MM/AAAA" maxlength="10" style="width:135px">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px">
+            <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Entreprise</label>
+            <select id="companyFilter" class="form-control" style="font-size:13px" onchange="loadOrders()">
+              <option value="">Toutes les entreprises</option>
+            </select>
+          </div>
+        </div>
+        <div id="batchesList"></div>
+      </div>
     </div>
   </div>
 
@@ -106,12 +128,19 @@
   <div class="page" id="page-messages">
     <div class="chat-layout" id="chatLayout">
       <div class="chat-sidebar" id="chatSidebar">
-        <div style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--brown)">Conversations</div>
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--brown);display:flex;align-items:center;gap:8px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:16px;height:16px;opacity:.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Conversations
+        </div>
         <div id="convList"></div>
       </div>
       <div class="chat-main" id="chatMain">
         <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px">
-          <div style="text-align:center"><div style="font-size:36px;margin-bottom:10px">💬</div>Sélectionnez une conversation</div>
+          <div style="text-align:center">
+            <div style="font-size:48px;margin-bottom:12px;opacity:.4">💬</div>
+            <div style="font-weight:600;color:var(--brown);margin-bottom:6px">Aucune conversation sélectionnée</div>
+            <div style="font-size:12px">Choisissez une conversation à gauche</div>
+          </div>
         </div>
       </div>
     </div>
@@ -120,10 +149,10 @@
   <!-- ═══ MENUS ═══ -->
   <div class="page" id="page-menus">
     <div class="page-grid-sidebar-sm">
-      <div class="card">
+      <div class="card reveal">
         <div class="card-header">
-          <span class="card-title">Mes menus</span>
-          <button class="btn btn-outline btn-sm" onclick="loadMenus()">🔄</button>
+          <span class="card-title">🍜 Mes menus</span>
+          <button class="btn btn-outline btn-sm" onclick="loadMenus()">🔄 Actualiser</button>
         </div>
         <div class="card-body">
           <div id="menusTableWrap">
@@ -131,8 +160,8 @@
           </div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-header"><span class="card-title">Ajouter un menu</span></div>
+      <div class="card reveal-right">
+        <div class="card-header"><span class="card-title">➕ Ajouter un menu</span></div>
         <div class="card-body">
           <div class="form-group">
             <label>Nom *</label>
@@ -164,8 +193,12 @@
 
   <!-- ═══ RATINGS ═══ -->
   <div class="page" id="page-ratings">
-    <div class="card">
-      <div class="card-header"><span class="card-title">Avis et notes des clients</span></div>
+    <div id="ratingSummary" style="margin-bottom:16px"></div>
+    <div class="card reveal">
+      <div class="card-header">
+        <span class="card-title">⭐ Avis et notes des clients</span>
+        <button class="btn btn-outline btn-sm" onclick="loadRatings()">🔄</button>
+      </div>
       <div class="card-body">
         <div class="table-wrap">
           <table>
@@ -180,8 +213,8 @@
   <!-- ═══ PROFILE ═══ -->
   <div class="page" id="page-profile">
     <div class="page-grid">
-      <div class="card">
-        <div class="card-header"><span class="card-title">Informations du restaurant</span></div>
+      <div class="card reveal">
+        <div class="card-header"><span class="card-title">🏪 Informations du restaurant</span></div>
         <div class="card-body">
           <div class="photo-upload">
             <div class="photo-preview" id="photoPreview"><img id="photoImg" src="" style="display:none"></div>
@@ -196,7 +229,7 @@
           <button class="btn btn-primary" style="width:100%" onclick="saveProfile()">💾 Enregistrer</button>
         </div>
       </div>
-      <div>
+      <div class="reveal-right">
         <div class="card">
           <div class="card-header"><span class="card-title">🔐 Changer le mot de passe</span></div>
           <div class="card-body">
@@ -222,6 +255,23 @@
               </div>
             </div>
             <button class="btn btn-primary" style="width:100%" onclick="changeRestPassword()">🔐 Mettre à jour</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">⚙️ Paramètres du restaurant</span></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label>Nombre minimum de plats par jour (par entreprise)</label>
+              <input type="number" class="form-control" id="pMinQty" value="8" min="1">
+            </div>
+            <div class="form-group">
+              <label>Fréquence de facturation</label>
+              <select class="form-control" id="pBillingFreq">
+                <option value="monthly">Mensuelle</option>
+                <option value="yearly">Annuelle</option>
+              </select>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="saveRestSettings()">💾 Enregistrer</button>
           </div>
         </div>
         <div class="card">
@@ -253,7 +303,7 @@
   <!-- ═══ INVOICES ═══ -->
   <div class="page" id="page-invoices">
     <div class="page-grid">
-      <div class="card">
+      <div class="card reveal">
         <div class="card-header">
           <span class="card-title">📄 Générer une facture</span>
         </div>
@@ -265,11 +315,11 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Période</label>
+            <label>Période <span style="font-size:11px;color:var(--muted);font-weight:400">(format JJ/MM/AAAA)</span></label>
             <div style="display:flex;gap:8px;align-items:center">
-              <input type="date" class="form-control" id="invoiceFrom" style="width:140px">
+              <input type="text" class="form-control date-mask" id="invoiceFrom" placeholder="JJ/MM/AAAA" maxlength="10" style="width:150px">
               <span style="color:var(--muted)">au</span>
-              <input type="date" class="form-control" id="invoiceTo" style="width:140px">
+              <input type="text" class="form-control date-mask" id="invoiceTo" placeholder="JJ/MM/AAAA" maxlength="10" style="width:150px">
             </div>
           </div>
           <div id="ordersPreview" style="margin-bottom:12px"></div>
@@ -277,7 +327,7 @@
           <div id="generateResult" style="margin-top:16px"></div>
         </div>
       </div>
-      <div class="card" style="grid-column:1/-1">
+      <div class="card reveal" style="grid-column:1/-1">
         <div class="card-header">
           <span class="card-title">🧾 Factures envoyées</span>
           <button class="btn btn-outline btn-sm" onclick="loadInvoices()">🔄</button>
@@ -286,6 +336,119 @@
           <table class="table" id="invoicesTable">
             <thead><tr><th>N° Facture</th><th>Entreprise</th><th>Date emission</th><th>Montant</th><th>Statut</th><th>Actions</th></tr></thead>
             <tbody id="invoicesBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ WEEKLY PROGRAM ═══ -->
+  <div class="page" id="page-weekly">
+    <div class="page-grid">
+      <div class="card reveal">
+        <div class="card-header"><span class="card-title">📸 Image du programme hebdomadaire</span></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Titre (optionnel)</label>
+            <input class="form-control" id="wpTitle" placeholder="Ex: Menu Semaine du 10 Juin">
+          </div>
+          <div class="form-group">
+            <label>Image du programme</label>
+            <label for="wpImageInput" style="display:block;border:2px dashed var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s" id="wpDropZone">
+              <div style="font-size:32px;margin-bottom:8px">📷</div>
+              <div style="font-size:13px;color:var(--brown);font-weight:500">Cliquez pour choisir une image</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">JPG, PNG, WebP — max 5 Mo</div>
+              <input type="file" class="form-control" id="wpImageInput" accept="image/*" style="display:none" onchange="previewWeeklyProgramImage(event)">
+            </label>
+            <img id="wpPreview" style="display:none;width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin-top:10px;box-shadow:0 4px 16px rgba(44,24,16,.12)">
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="uploadWeeklyProgram()">📤 Enregistrer l'image</button>
+          <div id="wpHistory" style="margin-top:16px"></div>
+        </div>
+      </div>
+      <div class="card reveal-right">
+        <div class="card-header"><span class="card-title">📦 Packs hebdomadaires</span></div>
+        <div class="card-body">
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <input class="form-control" id="newPackName" placeholder="Nom du pack (ex: Semaine 1)" style="flex:1">
+            <button class="btn btn-primary" onclick="createWeeklyPack()">➕ Créer</button>
+          </div>
+          <div id="packsList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="packDetailCard" style="display:none;margin-top:16px">
+      <div class="card-header">
+        <span class="card-title" id="packDetailTitle">Pack</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="editCurrentPack()">✏️ Pack</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCurrentPack()">🗑 Pack</button>
+          <button class="btn btn-outline btn-sm" onclick="addMenuToPack()">➕ Menu</button>
+          <button class="btn btn-outline btn-sm" onclick="closePackDetail()">✖ Fermer</button>
+        </div>
+      </div>
+      <div class="card-body" id="packDetailBody"></div>
+    </div>
+  </div>
+
+  <!-- ═══ WEEKLY INVOICES ═══ -->
+  <div class="page" id="page-weekly-invoices">
+    <div class="page-grid">
+      <div class="card reveal">
+        <div class="card-header"><span class="card-title">📋 Nouvelle facture hebdomadaire</span></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Entreprise</label>
+            <select class="form-control" id="wiCompanySelect" onchange="loadWiPacks()"></select>
+          </div>
+          <div class="form-group">
+            <label>Pack hebdomadaire</label>
+            <select class="form-control" id="wiPackSelect"></select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Du <span style="font-size:11px;color:var(--muted);font-weight:400">(JJ/MM/AAAA)</span></label>
+              <input type="text" class="form-control date-mask" id="wiFrom" placeholder="JJ/MM/AAAA" maxlength="10">
+            </div>
+            <div class="form-group">
+              <label>Au <span style="font-size:11px;color:var(--muted);font-weight:400">(JJ/MM/AAAA)</span></label>
+              <input type="text" class="form-control date-mask" id="wiTo" placeholder="JJ/MM/AAAA" maxlength="10">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Fréquence de facturation</label>
+            <select class="form-control" id="wiFrequency">
+              <option value="monthly">Mensuelle</option>
+              <option value="yearly">Annuelle</option>
+            </select>
+          </div>
+          <div id="wiItemsEditor" style="margin-bottom:12px">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;font-size:12px;font-weight:600;color:var(--muted)">
+              <span style="flex:2">Désignation</span>
+              <span style="flex:1;text-align:center">Qté</span>
+              <span style="flex:1;text-align:center">P.U.</span>
+              <span style="flex:1;text-align:center">Total</span>
+              <span style="width:30px"></span>
+            </div>
+            <div id="wiItemsList"></div>
+            <button class="btn btn-outline btn-sm" onclick="addWiItem()">➕ Ajouter une ligne</button>
+          </div>
+          <div style="padding:12px;background:#F9F1EB;border-radius:10px;font-size:16px;font-weight:700;margin-bottom:12px">
+            Total : <span id="wiTotal">0</span> FCFA
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="createWeeklyInvoice()">📤 Créer la facture</button>
+        </div>
+      </div>
+      <div class="card reveal" style="grid-column:1/-1">
+        <div class="card-header">
+          <span class="card-title">📄 Factures hebdomadaires</span>
+          <button class="btn btn-outline btn-sm" onclick="loadWeeklyInvoices()">🔄</button>
+        </div>
+        <div class="card-body">
+          <table class="table">
+            <thead><tr><th>N°</th><th>Entreprise</th><th>Pack</th><th>Montant</th><th>Fréquence</th><th>Date</th><th>Statut</th><th>Actions</th></tr></thead>
+            <tbody id="wiTableBody"></tbody>
           </table>
         </div>
       </div>
@@ -348,6 +511,73 @@
   </div>
 </div>
 
+<!-- EDIT MENU MODAL -->
+<div class="modal-overlay" id="editMenuModal">
+  <div class="modal">
+    <div class="modal-title">✏️ Modifier le menu</div>
+    <input type="hidden" id="editMenuId">
+    <div class="form-group"><label>Nom *</label><input class="form-control" id="editMenuName" placeholder="Nom du menu"></div>
+    <div class="form-group"><label>Catégorie</label>
+      <select class="form-control" id="editMenuCat">
+        <option value="plat">🍜 Plat principal</option>
+        <option value="boisson">🥤 Boisson</option>
+        <option value="snack">🥨 Snack</option>
+        <option value="dessert">🍰 Dessert</option>
+        <option value="petit_déjeuner">🥐 Petit-déjeuner</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Description</label><textarea class="form-control" id="editMenuDesc" rows="2" placeholder="Description (optionnelle)"></textarea></div>
+    <div class="form-group"><label>Prix (FCFA)</label><input type="number" class="form-control" id="editMenuPrice" min="0" placeholder="0"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal(document.getElementById('editMenuModal'))">Annuler</button>
+      <button class="btn btn-primary" onclick="saveEditMenu()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PACK MODAL -->
+<div class="modal-overlay" id="editPackModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-title">✏️ Modifier le pack</div>
+    <input type="hidden" id="editPackId">
+    <div class="form-group"><label>Nom *</label><input class="form-control" id="editPackName" placeholder="Nom du pack"></div>
+    <div class="form-group"><label>Description</label><input class="form-control" id="editPackDesc" placeholder="Description (optionnelle)"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal(document.getElementById('editPackModal'))">Annuler</button>
+      <button class="btn btn-primary" onclick="saveEditPack()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- DISH MODAL (add & edit) -->
+<div class="modal-overlay" id="dishModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-title" id="dishModalTitle">Ajouter un plat</div>
+    <input type="hidden" id="dishModalMode">
+    <input type="hidden" id="dishModalId">
+    <input type="hidden" id="dishModalDayId">
+    <div class="form-group"><label>Nom *</label><input class="form-control" id="dishModalName" placeholder="Nom du plat"></div>
+    <div class="form-group"><label>Prix (FCFA)</label><input type="number" class="form-control" id="dishModalPrice" min="0" value="0"></div>
+    <div class="form-group" id="dishDescGroup"><label>Description</label><textarea class="form-control" id="dishModalDesc" rows="2" placeholder="Description (optionnelle)"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal(document.getElementById('dishModal'))">Annuler</button>
+      <button class="btn btn-primary" onclick="saveDishModal()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROMPT MODAL (generic single-input) -->
+<div class="modal-overlay" id="promptModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title" id="promptTitle">Saisir</div>
+    <div class="form-group"><label id="promptLabel">Valeur</label><input class="form-control" id="promptInput" onkeydown="if(event.key==='Enter')promptConfirm()"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal(document.getElementById('promptModal'))">Annuler</button>
+      <button class="btn btn-primary" onclick="promptConfirm()">Confirmer</button>
+    </div>
+  </div>
+</div>
+
 <script src="/assets/js/utils.js"></script>
 <script>
 const token = localStorage.getItem('fc_token');
@@ -359,7 +589,7 @@ function logout() { localStorage.clear(); window.location.href = '/'; }
 // Order batch and invoice functions (global scope for onclick handlers)
 async function createBatchForCompany(companyId, orderDate) {
   try {
-    const batch = await apiFetch('/api/restaurant/batches', { method: 'POST', body: { company_id: companyId, batch_date: orderDate } }, token);
+    const batch = await apiFetch('/api/restaurant/batches', { method: 'POST', body: { companyId, batchDate: orderDate } }, token);
     toast('Batch créé!', 'success');
     loadOrders();
   } catch(e) { toast(e.message, 'error'); }
@@ -377,6 +607,16 @@ async function createInvoiceForCompany(companyName, companyId, orderDate) {
   } catch(e) { toast(e.message, 'error'); }
 }
 
+// Convert JJ/MM/AAAA → YYYY-MM-DD for API calls
+function parseFrDate(str) {
+  if (!str || str.length < 10) return '';
+  const parts = str.split('/');
+  if (parts.length !== 3) return '';
+  const [d, m, y] = parts;
+  if (!d || !m || !y || y.length < 4) return '';
+  return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
 const restName = localStorage.getItem('fc_name') || '—';
 document.getElementById('sidebarName').textContent = restName.substring(0,20);
@@ -384,6 +624,36 @@ document.getElementById('sidebarName').textContent = restName.substring(0,20);
 let msgPollInterval = null;
 let currentChatCompanyId = null;
 let activeBatchId = null;
+
+function initDateMask() {
+  document.querySelectorAll('input.date-mask').forEach(inp => {
+    if (inp._dateMaskInit) return;
+    inp._dateMaskInit = true;
+    inp.addEventListener('input', function() {
+      const raw = this.value.replace(/\D/g,'');
+      let out = raw.slice(0,2);
+      if (raw.length > 2) out += '/' + raw.slice(2,4);
+      if (raw.length > 4) out += '/' + raw.slice(4,8);
+      this.value = out;
+    });
+  });
+}
+
+let _promptCb = null;
+function showPromptModal(title, label, defaultVal, cb) {
+  document.getElementById('promptTitle').textContent = title;
+  document.getElementById('promptLabel').textContent = label;
+  document.getElementById('promptInput').value = defaultVal || '';
+  _promptCb = cb;
+  document.getElementById('promptModal').classList.add('open');
+  setTimeout(() => document.getElementById('promptInput').focus(), 120);
+}
+window.promptConfirm = function() {
+  const val = document.getElementById('promptInput').value.trim();
+  if (!val) return toast('Ce champ est requis', 'error');
+  closeModal(document.getElementById('promptModal'));
+  if (_promptCb) _promptCb(val);
+};
 
 function switchToPage(page) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -399,6 +669,8 @@ function switchToPage(page) {
   else if (page === 'profile') loadProfile();
   else if (page === 'messages') { loadConversations(); startMsgPolling(); }
   else if (page === 'invoices') { loadInvoices(); loadCompaniesForInvoices(); }
+  else if (page === 'weekly') { loadWeeklyPacks(); }
+  else if (page === 'weekly-invoices') { loadWeeklyInvoices(); }
 }
 
 function loadCompaniesForInvoices() {
@@ -429,17 +701,17 @@ async function loadDashboard() {
     document.getElementById('s-today').textContent = stats.today || 0;
     document.getElementById('s-week').textContent = stats.week || 0;
     document.getElementById('s-month').textContent = stats.month || 0;
-    document.getElementById('s-revenue').textContent = (stats.revenue || 0).toLocaleString();
+    document.getElementById('s-revenue').textContent = (stats.revenueMonth || 0).toLocaleString();
     
     const avgRating = parseFloat(stats.avgRating) || 0;
     const ratingsEl = document.getElementById('ratingStats');
     ratingsEl.innerHTML = `<div style="text-align:center;padding:20px">
       <div style="font-size:36px;font-weight:bold;color:var(--orange)">${avgRating.toFixed(1)} ⭐</div>
-      <div style="color:var(--muted);margin-top:6px">${stats.ratingCount || 0} avis</div>
+      <div style="color:var(--muted);margin-top:6px">${stats.totalRatings || 0} avis</div>
       <div style="margin-top:16px;font-size:13px;color:var(--brown)">🏢 ${stats.companies || 0} entreprises affiliées</div>
     </div>`;
     
-    renderOrderChart(stats.weeklyData || []);
+    renderOrderChart(stats.dailyOrders || []);
   } catch(e) { console.error('loadDashboard:', e); }
 }
 
@@ -449,18 +721,19 @@ function renderOrderChart(data) {
   const max = Math.max(...data.map(d => d.count), 1);
   el.innerHTML = data.map(d => {
     const h = Math.max(30, (d.count / max) * 120);
-    return `<div style="flex:1;text-align:center"><div style="height:120px;display:flex;align-items:flex-end;justify-content:center"><div style="width:24px;height:${h}px;background:var(--orange);border-radius:4px 4px 0 0"></div></div><div style="font-size:11px;color:var(--muted);margin-top:6px">${d.day}</div><div style="font-size:12px;font-weight:600;color:var(--text)">${d.count}</div></div>`;
+    const label = d.date ? new Date(d.date+'T12:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}) : d.day||'';
+    return `<div style="flex:1;text-align:center"><div style="height:120px;display:flex;align-items:flex-end;justify-content:center"><div style="width:24px;height:${h}px;background:var(--orange);border-radius:4px 4px 0 0"></div></div><div style="font-size:11px;color:var(--muted);margin-top:6px">${label}</div><div style="font-size:12px;font-weight:600;color:var(--text)">${d.count}</div></div>`;
   }).join('');
 }
 
 function exportPDF(type) {
-  window.open(`/api/restaurant/export/pdf?type=${type}`, '_blank');
+  window.open(`/api/restaurant/export-pdf?period=${type}`, '_blank');
 }
 
 function exportOrdersPDF() {
-  const from = document.getElementById('ordersFrom').value;
-  const to = document.getElementById('ordersTo').value;
-  let url = '/api/restaurant/orders/pdf';
+  const from = parseFrDate(document.getElementById('ordersFrom').value) || document.getElementById('ordersFrom').value;
+  const to = parseFrDate(document.getElementById('ordersTo').value) || document.getElementById('ordersTo').value;
+  let url = '/api/restaurant/orders/export-pdf';
   const params = [];
   if (from) params.push('from=' + from);
   if (to) params.push('to=' + to);
@@ -482,7 +755,7 @@ async function loadMenus() {
         <td><span style="padding:4px 8px;border-radius:6px;background:${m.available ? '#D1FAE5' : '#FEE2E2'};color:${m.available ? '#065F46' : '#991B1B'}">${m.available ? 'Actif' : 'Inactif'}</span></td>
         <td>
           <button class="btn btn-outline btn-sm" onclick="toggleMenu(${m.id}, ${!m.available})">${m.available ? '⏸' : '▶'}</button>
-          <button class="btn btn-outline btn-sm" onclick="editMenu(${m.id})">✏️</button>
+          <button class="btn btn-outline btn-sm" onclick="editMenu(${m.id},${JSON.stringify(m.name)},${JSON.stringify(m.category||'plat')},${JSON.stringify(m.description||'')},${m.price||0})">✏️</button>
           <button class="btn btn-outline btn-sm" style="color:var(--danger)" onclick="deleteMenu(${m.id})">🗑</button>
         </td>
       </tr>
@@ -513,12 +786,27 @@ async function toggleMenu(id, available) {
   } catch(e) { toast(e.message, 'error'); }
 }
 
-async function editMenu(id) {
-  const name = prompt('Nouveau nom:');
-  const price = prompt('Nouveau prix:');
-  if (!name || !price) return;
+function editMenu(id, name, cat, desc, price) {
+  document.getElementById('editMenuId').value = id;
+  document.getElementById('editMenuName').value = name || '';
+  document.getElementById('editMenuCat').value = cat || 'plat';
+  document.getElementById('editMenuDesc').value = desc || '';
+  document.getElementById('editMenuPrice').value = price || 0;
+  document.getElementById('editMenuModal').classList.add('open');
+  setTimeout(() => document.getElementById('editMenuName').focus(), 120);
+}
+
+async function saveEditMenu() {
+  const id = document.getElementById('editMenuId').value;
+  const name = document.getElementById('editMenuName').value.trim();
+  if (!name) return toast('Le nom est requis', 'error');
+  const cat = document.getElementById('editMenuCat').value;
+  const desc = document.getElementById('editMenuDesc').value.trim();
+  const price = parseFloat(document.getElementById('editMenuPrice').value) || 0;
   try {
-    await apiFetch(`/api/restaurant/menus/${id}`, { method: 'PUT', body: { name, price: parseFloat(price) } }, token);
+    await apiFetch(`/api/restaurant/menus/${id}`, { method: 'PUT', body: { name, category: cat, description: desc, price } }, token);
+    toast('Menu modifié!', 'success');
+    closeModal(document.getElementById('editMenuModal'));
     loadMenus();
   } catch(e) { toast(e.message, 'error'); }
 }
@@ -536,14 +824,31 @@ async function loadRatings() {
   try {
     const ratings = await apiFetch('/api/restaurant/ratings', {}, token);
     const tbody = document.getElementById('ratingsTableBody');
-    if (!ratings.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">Aucun avis</td></tr>'; return; }
-    tbody.innerHTML = ratings.map(r => `<tr>
-      <td>${r.menu_name || '—'}</td>
-      <td>${r.employee_name || '—'}</td>
-      <td>${'⭐'.repeat(r.score)}</td>
-      <td>${r.comment || '—'}</td>
-      <td>${r.created_at ? new Date(r.created_at).toLocaleDateString('fr-FR') : '—'}</td>
-    </tr>`).join('');
+    const summaryEl = document.getElementById('ratingSummary');
+    if (!ratings.length) {
+      if (summaryEl) summaryEl.innerHTML = '';
+      tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><span class="icon">⭐</span>Aucun avis pour l\'instant</div></td></tr>';
+      return;
+    }
+    const avg = (ratings.reduce((s,r) => s + (parseInt(r.score)||0), 0) / ratings.length).toFixed(1);
+    const dist = [5,4,3,2,1].map(n => ({ n, count: ratings.filter(r => parseInt(r.score)===n).length }));
+    if (summaryEl) summaryEl.innerHTML = `
+      <div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
+        <div class="stat-card reveal"><div class="stat-icon">⭐</div><div class="stat-number">${avg}</div><div class="stat-label">Note moyenne</div></div>
+        <div class="stat-card reveal" style="--reveal-delay:.06s"><div class="stat-icon">💬</div><div class="stat-number">${ratings.length}</div><div class="stat-label">Total avis</div></div>
+        ${dist.map((d,i) => `<div class="stat-card reveal" style="--reveal-delay:${.12+i*.06}s"><div class="stat-icon" style="font-size:13px;font-weight:700">${'★'.repeat(d.n)}</div><div class="stat-number">${d.count}</div><div class="stat-label">${d.n} étoile${d.n>1?'s':''}</div></div>`).join('')}
+      </div>`;
+    tbody.innerHTML = ratings.map(r => {
+      const score = parseInt(r.score) || 0;
+      const stars = '<span style="color:#F9C74F;letter-spacing:1px">' + '★'.repeat(score) + '</span><span style="color:var(--border)">' + '★'.repeat(5-score) + '</span>';
+      return `<tr>
+        <td><strong>${r.menu_name || '—'}</strong></td>
+        <td>${r.employee_name || '—'}</td>
+        <td style="white-space:nowrap">${stars} <span style="font-size:11px;color:var(--muted)">(${score}/5)</span></td>
+        <td style="font-size:13px;color:var(--muted)">${r.comment || '—'}</td>
+        <td style="white-space:nowrap;font-size:12px">${r.created_at ? new Date(r.created_at).toLocaleDateString('fr-FR') : '—'}</td>
+      </tr>`;
+    }).join('');
   } catch(e) { console.error('loadRatings:', e); }
 }
 
@@ -555,13 +860,29 @@ async function loadProfile() {
     document.getElementById('pPhone').value = profile.phone || '';
     document.getElementById('pLocation').value = profile.location || '';
     document.getElementById('pAddress').value = profile.address || '';
-    if (profile.photo) {
-      document.getElementById('photoImg').src = profile.photo;
+    if (profile.photo_url) {
+      document.getElementById('photoImg').src = profile.photo_url;
       document.getElementById('photoImg').style.display = 'block';
     }
     renderSpecialties('profileSpecialties', profile.specialties || []);
-    renderPaymentFields('profilePayments', profile.payment_methods || []);
+    renderPaymentFields('profilePayments', profile.payment_types || []);
+    const settings = await apiFetch('/api/restaurant/settings', {}, token);
+    if (settings) {
+      document.getElementById('pMinQty').value = settings.min_order_qty || 8;
+      document.getElementById('pBillingFreq').value = settings.billing_frequency || 'monthly';
+    }
   } catch(e) { console.error('loadProfile:', e); }
+}
+
+async function saveRestSettings() {
+  const data = {
+    min_order_qty: parseInt(document.getElementById('pMinQty').value) || 8,
+    billing_frequency: document.getElementById('pBillingFreq').value
+  };
+  try {
+    await apiFetch('/api/restaurant/settings', { method: 'PUT', body: data }, token);
+    toast('Paramètres enregistrés!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 async function saveProfile() {
@@ -614,7 +935,7 @@ async function saveSpecialties() {
 async function savePayments() {
   const payments = getPaymentTypes('profilePayments');
   try {
-    await apiFetch('/api/restaurant/profile', { method: 'PUT', body: { payment_methods: payments } }, token);
+    await apiFetch('/api/restaurant/profile', { method: 'PUT', body: { paymentTypes: payments } }, token);
     toast('Modes de paiement enregistrés!', 'success');
   } catch(e) { toast(e.message, 'error'); }
 }
@@ -623,10 +944,10 @@ async function deleteAccount() {
   const reason = document.getElementById('delReason').value.trim();
   const exp = document.getElementById('delExp').value;
   const issue = document.getElementById('delIssue').value.trim();
-  const confirm = document.getElementById('delConfirm').checked;
-  if (!reason || !exp || !confirm) return toast('Veuillez répondre aux questions', 'error');
+  const confirmed = document.getElementById('delConfirm').checked;
+  if (!reason || !exp || !confirmed) return toast('Veuillez répondre aux questions', 'error');
   try {
-    await apiFetch('/api/restaurant/delete', { method: 'DELETE', body: { reason, experience: exp, issue } }, token);
+    await apiFetch('/api/restaurant/account', { method: 'DELETE', body: { reason, experience: exp, issue, confirmed: true } }, token);
     localStorage.clear();
     window.location.href = '/';
   } catch(e) { toast(e.message, 'error'); }
@@ -664,8 +985,8 @@ async function loadInvoices() {
 
 async function generateInvoice() {
   const companyId = document.getElementById('invoiceCompanySelect').value;
-  const from = document.getElementById('invoiceFrom').value;
-  const to = document.getElementById('invoiceTo').value;
+  const from = parseFrDate(document.getElementById('invoiceFrom').value) || document.getElementById('invoiceFrom').value;
+  const to = parseFrDate(document.getElementById('invoiceTo').value) || document.getElementById('invoiceTo').value;
   
   if (!companyId) return toast('Sélectionnez une entreprise', 'error');
   
@@ -733,15 +1054,26 @@ async function loadConversations() {
     const convs = await apiFetch('/api/restaurant/conversations', {}, token);
     const list = document.getElementById('convList');
     if (!convs.length) { list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">Aucune conversation</div>'; return; }
-    list.innerHTML = convs.map(c => `<div class="conv-item" onclick="openChat(${c.company_id})">
-      <div style="font-weight:600">🏢 ${c.company_name}</div>
-      <div style="font-size:12px;color:var(--muted)">${c.last_message || 'Aucun message'}</div>
-    </div>`).join('');
+    let totalUnread = 0;
+    list.innerHTML = convs.map(c => {
+      totalUnread += parseInt(c.unread || 0);
+      return `<div class="conv-item" onclick="openChat(${c.company_id})">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:600">🏢 ${c.company_name}</div>
+          ${c.unread > 0 ? `<span style="background:var(--orange);color:white;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px">${c.unread}</span>` : ''}
+        </div>
+        <div style="font-size:12px;color:var(--muted)">${c.last_message || 'Aucun message'}</div>
+      </div>`;
+    }).join('');
+    const badge = document.getElementById('msgBadge');
+    if (totalUnread > 0) { badge.textContent = totalUnread; badge.style.display = 'inline'; } else { badge.style.display = 'none'; }
   } catch(e) { console.error('loadConversations:', e); }
 }
 
 function openChat(companyId) {
   currentChatCompanyId = companyId;
+  const restId = JSON.parse(atob(token.split('.')[1])).id;
+  apiFetch('/api/messages/read', { method: 'PUT', body: { companyId, restaurantId: restId } }, token).catch(()=>{});
   loadMessages(companyId);
   document.getElementById('chatMain').innerHTML = `<div style="padding:20px">
     <div id="msgList" style="max-height:400px;overflow-y:auto"></div>
@@ -754,10 +1086,31 @@ function openChat(companyId) {
 
 async function loadMessages(companyId) {
   try {
-    const msgs = await apiFetch(`/api/restaurant/messages/${companyId}`, {}, token);
+    const restId = JSON.parse(atob(token.split('.')[1])).id;
+    const msgs = await apiFetch(`/api/messages?companyId=${companyId}&restaurantId=${restId}`, {}, token);
     const list = document.getElementById('msgList');
     if (!msgs.length) { list.innerHTML = '<div style="text-align:center;color:var(--muted)">Aucun message</div>'; return; }
-    list.innerHTML = msgs.map(m => `<div style="padding:8px;margin:4px 0;background:${m.from_restaurant ? 'var(--orange)' : '#F3F4F6'};color:${m.from_restaurant ? 'white' : 'var(--text)'};border-radius:8px;align-self:${m.from_restaurant ? 'flex-end' : 'flex-start'};max-width:80%">${m.message}</div>`).join('');
+    list.innerHTML = msgs.map(m => {
+      const cls = m.sender_type === 'restaurant' ? 'msg-out' : 'msg-in';
+      const audioSrc = m.audio_url || m.audio_data;
+      const fileSrc = m.file_url || m.file_data;
+      if (m.message_type === 'voice' && audioSrc) {
+        return `<div class="msg ${cls}"><div class="msg-voice"><div class="voice-badge">🎙 Message vocal</div><audio controls src="${audioSrc}"></audio><div class="msg-time">${timeAgo(m.created_at)}</div></div></div>`;
+      }
+      if (m.message_type === 'file' && fileSrc) {
+        let inner = '';
+        if (m.file_mime?.startsWith('image/')) {
+          inner = `<img src="${fileSrc}" onclick="window.open('${fileSrc}','_blank')" alt="${m.file_name||'image'}" style="max-width:220px;max-height:200px;border-radius:9px;display:block;cursor:pointer;object-fit:cover">`;
+        } else if (m.file_mime?.startsWith('video/')) {
+          inner = `<video controls style="max-width:220px;border-radius:9px;display:block;background:#000"><source src="${fileSrc}" type="${m.file_mime}"></video>`;
+        } else {
+          inner = `<a class="msg-file-doc" href="${fileSrc}" download="${m.file_name||'document'}">📄<span>${m.file_name||'Document'}</span></a>`;
+        }
+        const caption = m.content && !['📷 Photo','🎬 Vidéo'].includes(m.content) && !m.content.startsWith('📄') ? `<div style="font-size:12px;margin-top:3px">${m.content}</div>` : '';
+        return `<div class="msg ${cls}"><div class="msg-file">${inner}${caption}<div class="msg-time">${timeAgo(m.created_at)}</div></div></div>`;
+      }
+      return `<div class="msg ${cls}">${m.content}<div class="msg-time">${timeAgo(m.created_at)}</div></div>`;
+    }).join('');
   } catch(e) { console.error('loadMessages:', e); }
 }
 
@@ -766,7 +1119,8 @@ async function sendMessage() {
   const msg = input.value.trim();
   if (!msg || !currentChatCompanyId) return;
   try {
-    await apiFetch('/api/restaurant/messages', { method: 'POST', body: { company_id: currentChatCompanyId, message: msg } }, token);
+    const restId = JSON.parse(atob(token.split('.')[1])).id;
+    await apiFetch('/api/messages', { method: 'POST', body: { companyId: currentChatCompanyId, restaurantId: restId, content: msg } }, token);
     input.value = '';
     loadMessages(currentChatCompanyId);
   } catch(e) { toast(e.message, 'error'); }
@@ -775,11 +1129,15 @@ async function sendMessage() {
 function startMsgPolling() {
   if (msgPollInterval) clearInterval(msgPollInterval);
   msgPollInterval = setInterval(() => {
+    loadConversations();
     if (currentChatCompanyId) loadMessages(currentChatCompanyId);
-  }, 5000);
+  }, 3000);
 }
 
 function loadOrders(from, to, companyId) {
+  if (from === undefined) { const r = document.getElementById('ordersFrom')?.value; from = parseFrDate(r) || r; }
+  if (to === undefined) { const r = document.getElementById('ordersTo')?.value; to = parseFrDate(r) || r; }
+  if (companyId === undefined) companyId = document.getElementById('companyFilter')?.value;
   var url = '/api/restaurant/orders';
   var params = [];
   if (from || to || companyId) { url += '?'; var parts = []; if (from) { parts.push('from='+from); } if (to) { parts.push('to='+to); } if (companyId) { parts.push('companyId='+companyId); } url += parts.join('&'); }
@@ -830,7 +1188,359 @@ document.querySelectorAll('.nav-item[data-page]').forEach(function(item) {
 // Init
 try { initSidebar(); } catch(e) { console.error('initSidebar:', e); }
 try { initNotifications(); } catch(e) { console.error('initNotifications:', e); }
+initDateMask();
 loadDashboard();
+
+// ═══ WEEKLY PROGRAM SYSTEM ═══
+let currentPackId = null;
+let wiItemIndex = 0;
+
+function previewWeeklyProgramImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const preview = document.getElementById('wpPreview');
+    preview.src = ev.target.result;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function uploadWeeklyProgram() {
+  const fileInput = document.getElementById('wpImageInput');
+  const title = document.getElementById('wpTitle').value.trim();
+  if (!fileInput.files.length) return toast('Sélectionnez une image', 'error');
+  const reader = new FileReader();
+  reader.onload = async function(ev) {
+    try {
+      await apiFetch('/api/restaurant/weekly-program', { method: 'POST', body: { image: ev.target.result, title: title || null } }, token);
+      toast('Image enregistrée!', 'success');
+      fileInput.value = '';
+      document.getElementById('wpPreview').style.display = 'none';
+      document.getElementById('wpTitle').value = '';
+      loadWeeklyPrograms();
+    } catch(e) { toast(e.message, 'error'); }
+  };
+  reader.readAsDataURL(fileInput.files[0]);
+}
+
+async function loadWeeklyPrograms() {
+  try {
+    const programs = await apiFetch('/api/restaurant/weekly-programs', {}, token);
+    const el = document.getElementById('wpHistory');
+    if (!programs.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px">Aucune image</div>'; return; }
+    el.innerHTML = programs.map(p => `
+      <div style="display:flex;align-items:center;gap:12px;padding:8px;background:#F9F1EB;border-radius:10px;margin-bottom:8px">
+        <img src="${p.image_url}" style="width:60px;height:60px;object-fit:cover;border-radius:8px">
+        <div style="flex:1"><strong>${p.title || 'Sans titre'}</strong><br><span style="font-size:11px;color:var(--muted)">${new Date(p.created_at).toLocaleDateString('fr-FR')}</span></div>
+        <button class="btn btn-danger btn-sm" onclick="deleteWeeklyProgram(${p.id})">🗑</button>
+      </div>
+    `).join('');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteWeeklyProgram(id) {
+  try {
+    await apiFetch(`/api/restaurant/weekly-program/${id}`, { method: 'DELETE' }, token);
+    loadWeeklyPrograms();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function loadWeeklyPacks() {
+  loadWeeklyPrograms();
+  try {
+    const packs = await apiFetch('/api/restaurant/weekly-packs', {}, token);
+    const el = document.getElementById('packsList');
+    if (!packs.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px">Aucun pack. Créez-en un !</div>'; return; }
+    el.innerHTML = packs.map(p => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#F9F1EB;border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="openPackDetail(${p.id})">
+        <span style="font-size:24px">📦</span>
+        <div style="flex:1"><strong>${p.name}</strong>${p.description ? '<br><span style="font-size:12px;color:var(--muted)">'+p.description+'</span>' : ''}</div>
+        <span style="font-size:11px;color:var(--muted)">${p.is_active ? '✅ Actif' : '💤 Inactif'}</span>
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editWeeklyPack(${p.id},'${p.name}','${(p.description||'').replace(/'/g,"\\'")}')" style="padding:2px 6px;font-size:10px">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteWeeklyPack(${p.id})" style="padding:2px 6px;font-size:10px">🗑</button>
+      </div>
+    `).join('');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function createWeeklyPack() {
+  const name = document.getElementById('newPackName').value.trim();
+  if (!name) return toast('Entrez un nom de pack', 'error');
+  try {
+    await apiFetch('/api/restaurant/weekly-packs', { method: 'POST', body: { name } }, token);
+    document.getElementById('newPackName').value = '';
+    toast('Pack créé avec menus par défaut!', 'success');
+    loadWeeklyPacks();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteWeeklyPack(id) {
+  try {
+    await apiFetch(`/api/restaurant/weekly-packs/${id}`, { method: 'DELETE' }, token);
+    if (currentPackId === id) closePackDetail();
+    loadWeeklyPacks();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function openPackDetail(id) {
+  currentPackId = id;
+  document.getElementById('packDetailCard').style.display = 'block';
+  try {
+    const pack = await apiFetch(`/api/restaurant/weekly-packs/${id}`, {}, token);
+    document.getElementById('packDetailTitle').textContent = '📦 ' + pack.name;
+    const dayNames = {1:'Lundi',2:'Mardi',3:'Mercredi',4:'Jeudi',5:'Vendredi',6:'Samedi',7:'Dimanche'};
+    const el = document.getElementById('packDetailBody');
+    el.innerHTML = pack.menus.map(menu => `
+      <div style="background:#FFF8F3;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <span style="font-size:18px">🍽</span>
+          <strong style="flex:1">${menu.name}</strong>
+          <button class="btn btn-outline btn-sm" onclick="renameMenu(${menu.id})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteMenu2(${menu.id})">🗑</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px">
+          ${(menu.days||[]).map(day => `
+            <div style="background:${day.is_optional ? 'rgba(249,199,79,.08)' : 'white'};border:1px solid var(--border);border-radius:10px;padding:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <strong style="font-size:13px">${dayNames[day.day_of_week]||'Jour '+day.day_of_week}${day.is_optional ? ' <span style="color:var(--muted);font-weight:400;font-size:11px">(opt.)</span>' : ''}</strong>
+                <button class="btn btn-outline btn-sm" onclick="addDish(${day.id})" title="Ajouter un plat">➕</button>
+              </div>
+              ${(!day.dishes || !day.dishes.length) ? '<div style="font-size:11px;color:var(--muted)">Aucun plat</div>' :
+                day.dishes.map(d => `
+                  <div style="display:flex;align-items:center;gap:8px;padding:6px;background:#F9F1EB;border-radius:8px;margin-bottom:4px">
+                    ${d.image_url ? '<img src="'+d.image_url+'" style="width:36px;height:36px;object-fit:cover;border-radius:6px">' : '<span style="width:36px;height:36px;background:var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px">🍲</span>'}
+                    <div style="flex:1;font-size:12px"><strong>${d.name}</strong>${d.description ? '<br><span style="color:var(--muted)">'+d.description.substring(0,30)+'</span>' : ''}</div>
+                    <span style="font-size:12px;font-weight:600">${d.price}FCFA</span>
+                    <button class="btn btn-outline btn-sm" onclick="editDish(${d.id})" style="padding:2px 6px;font-size:10px">✏️</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteDish(${d.id})" style="padding:2px 6px;font-size:10px">🗑</button>
+                  </div>
+                `).join('')
+              }
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function editWeeklyPack(id, currentName, currentDesc) {
+  document.getElementById('editPackId').value = id;
+  document.getElementById('editPackName').value = currentName || '';
+  document.getElementById('editPackDesc').value = currentDesc || '';
+  document.getElementById('editPackModal').classList.add('open');
+  setTimeout(() => document.getElementById('editPackName').focus(), 120);
+}
+
+async function saveEditPack() {
+  const id = document.getElementById('editPackId').value;
+  const name = document.getElementById('editPackName').value.trim();
+  if (!name) return toast('Le nom est requis', 'error');
+  const description = document.getElementById('editPackDesc').value.trim();
+  try {
+    await apiFetch(`/api/restaurant/weekly-packs/${id}`, { method: 'PUT', body: { name, description: description || null } }, token);
+    toast('Pack modifié!', 'success');
+    closeModal(document.getElementById('editPackModal'));
+    loadWeeklyPacks();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function editCurrentPack() {
+  if (!currentPackId) return;
+  const titleEl = document.getElementById('packDetailTitle');
+  const currentName = titleEl.textContent.replace('📦 ', '');
+  editWeeklyPack(currentPackId, currentName, '');
+}
+
+async function deleteCurrentPack() {
+  if (!currentPackId || !confirm('Supprimer ce pack et tous ses menus ?')) return;
+  try {
+    const id = currentPackId;
+    await apiFetch(`/api/restaurant/weekly-packs/${id}`, { method: 'DELETE' }, token);
+    closePackDetail();
+    loadWeeklyPacks();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function closePackDetail() {
+  currentPackId = null;
+  document.getElementById('packDetailCard').style.display = 'none';
+}
+
+function addMenuToPack() {
+  if (!currentPackId) return;
+  showPromptModal('➕ Nouveau menu', 'Nom du menu (ex: Menu 4)', '', async (name) => {
+    try {
+      await apiFetch(`/api/restaurant/weekly-packs/${currentPackId}/menus`, { method: 'POST', body: { name } }, token);
+      openPackDetail(currentPackId);
+    } catch(e) { toast(e.message, 'error'); }
+  });
+}
+
+function renameMenu(id) {
+  showPromptModal('✏️ Renommer le menu', 'Nouveau nom', '', async (name) => {
+    try {
+      await apiFetch(`/api/restaurant/menus/${id}`, { method: 'PUT', body: { name } }, token);
+      openPackDetail(currentPackId);
+    } catch(e) { toast(e.message, 'error'); }
+  });
+}
+
+async function deleteMenu2(id) {
+  if (!confirm('Supprimer ce menu et tous ses plats ?')) return;
+  try {
+    await apiFetch(`/api/restaurant/menus/${id}`, { method: 'DELETE' }, token);
+    openPackDetail(currentPackId);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function addDish(dayId) {
+  document.getElementById('dishModalMode').value = 'add';
+  document.getElementById('dishModalDayId').value = dayId;
+  document.getElementById('dishModalId').value = '';
+  document.getElementById('dishModalTitle').textContent = '➕ Ajouter un plat';
+  document.getElementById('dishModalName').value = '';
+  document.getElementById('dishModalPrice').value = '0';
+  document.getElementById('dishModalDesc').value = '';
+  document.getElementById('dishDescGroup').style.display = '';
+  document.getElementById('dishModal').classList.add('open');
+  setTimeout(() => document.getElementById('dishModalName').focus(), 120);
+}
+
+function editDish(id) {
+  document.getElementById('dishModalMode').value = 'edit';
+  document.getElementById('dishModalId').value = id;
+  document.getElementById('dishModalTitle').textContent = '✏️ Modifier le plat';
+  document.getElementById('dishModalName').value = '';
+  document.getElementById('dishModalPrice').value = '0';
+  document.getElementById('dishDescGroup').style.display = 'none';
+  document.getElementById('dishModal').classList.add('open');
+  setTimeout(() => document.getElementById('dishModalName').focus(), 120);
+}
+
+async function saveDishModal() {
+  const mode = document.getElementById('dishModalMode').value;
+  const id = document.getElementById('dishModalId').value;
+  const name = document.getElementById('dishModalName').value.trim();
+  if (!name) return toast('Le nom est requis', 'error');
+  const price = parseFloat(document.getElementById('dishModalPrice').value) || 0;
+  try {
+    if (mode === 'add') {
+      const dayId = document.getElementById('dishModalDayId').value;
+      const desc = document.getElementById('dishModalDesc').value.trim();
+      await apiFetch('/api/restaurant/dishes', { method: 'POST', body: { weekly_menu_day_id: parseInt(dayId), name, price, description: desc } }, token);
+    } else {
+      await apiFetch(`/api/restaurant/dishes/${id}`, { method: 'PUT', body: { name, price } }, token);
+    }
+    closeModal(document.getElementById('dishModal'));
+    openPackDetail(currentPackId);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteDish(id) {
+  if (!confirm('Supprimer ce plat ?')) return;
+  try {
+    await apiFetch(`/api/restaurant/dishes/${id}`, { method: 'DELETE' }, token);
+    openPackDetail(currentPackId);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ═══ WEEKLY INVOICES ═══
+async function loadWeeklyInvoices() {
+  try {
+    const companies = await apiFetch('/api/restaurant/companies', {}, token);
+    const sel = document.getElementById('wiCompanySelect');
+    if (sel) {
+      sel.innerHTML = '<option value="">Choisir...</option>' + companies.map(c => '<option value="'+c.id+'">'+c.name+'</option>').join('');
+    }
+    const invoices = await apiFetch('/api/restaurant/weekly-invoices', {}, token);
+    const tb = document.getElementById('wiTableBody');
+    if (!tb) return;
+    if (!invoices.length) { tb.innerHTML = '<tr><td colspan="8" class="empty-state">Aucune facture hebdomadaire</td></tr>'; return; }
+    tb.innerHTML = invoices.map(inv => `
+      <tr>
+        <td>${inv.invoice_number}</td>
+        <td>${inv.company_name || '—'}</td>
+        <td>${inv.pack_name || '—'}</td>
+        <td>${parseFloat(inv.total_amount).toLocaleString()} FCFA</td>
+        <td>${inv.billing_frequency === 'yearly' ? 'Annuelle' : 'Mensuelle'}</td>
+        <td>${new Date(inv.created_at).toLocaleDateString('fr-FR')}</td>
+        <td><span class="badge badge-${inv.status === 'confirmed' ? 'success' : 'pending'}">${inv.status}</span></td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="window.open('/api/restaurant/weekly-invoices/${inv.id}/pdf?token=${token}','_blank')">📄</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function loadWiPacks() {
+  try {
+    const packs = await apiFetch('/api/restaurant/weekly-packs', {}, token);
+    const sel = document.getElementById('wiPackSelect');
+    sel.innerHTML = '<option value="">Aucun pack</option>' + packs.map(p => '<option value="'+p.id+'">'+p.name+'</option>').join('');
+  } catch(e) {}
+}
+
+function addWiItem() {
+  wiItemIndex++;
+  const el = document.getElementById('wiItemsList');
+  const div = document.createElement('div');
+  div.id = 'wiItem-' + wiItemIndex;
+  div.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:6px';
+  div.innerHTML = `
+    <input class="form-control" id="wiName-${wiItemIndex}" placeholder="Désignation" style="flex:2;font-size:12px;padding:6px 10px" oninput="calcWiTotal()">
+    <input type="number" class="form-control" id="wiQty-${wiItemIndex}" value="1" min="0" style="flex:1;font-size:12px;padding:6px 10px;text-align:center" oninput="calcWiTotal()">
+    <input type="number" class="form-control" id="wiPrice-${wiItemIndex}" value="0" min="0" style="flex:1;font-size:12px;padding:6px 10px;text-align:center" oninput="calcWiTotal()">
+    <span id="wiSubtotal-${wiItemIndex}" style="flex:1;text-align:center;font-size:12px;font-weight:600">0</span>
+    <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove();calcWiTotal()" style="padding:2px 6px;font-size:10px">✖</button>
+  `;
+  el.appendChild(div);
+}
+
+function calcWiTotal() {
+  let total = 0;
+  const items = document.querySelectorAll('[id^="wiItem-"]');
+  items.forEach(item => {
+    const idx = item.id.split('-')[1];
+    const qty = parseFloat(document.getElementById('wiQty-' + idx)?.value) || 0;
+    const price = parseFloat(document.getElementById('wiPrice-' + idx)?.value) || 0;
+    const subtotal = qty * price;
+    const st = document.getElementById('wiSubtotal-' + idx);
+    if (st) st.textContent = subtotal.toLocaleString();
+    total += subtotal;
+  });
+  document.getElementById('wiTotal').textContent = total.toLocaleString();
+}
+
+async function createWeeklyInvoice() {
+  const companyId = document.getElementById('wiCompanySelect').value;
+  const packId = document.getElementById('wiPackSelect').value;
+  const from = parseFrDate(document.getElementById('wiFrom').value) || document.getElementById('wiFrom').value;
+  const to = parseFrDate(document.getElementById('wiTo').value) || document.getElementById('wiTo').value;
+  const freq = document.getElementById('wiFrequency').value;
+  if (!companyId) return toast('Sélectionnez une entreprise', 'error');
+  const items = [];
+  document.querySelectorAll('[id^="wiItem-"]').forEach(item => {
+    const idx = item.id.split('-')[1];
+    const name = document.getElementById('wiName-' + idx)?.value.trim();
+    if (!name) return;
+    const qty = parseFloat(document.getElementById('wiQty-' + idx)?.value) || 0;
+    const price = parseFloat(document.getElementById('wiPrice-' + idx)?.value) || 0;
+    items.push({ name, qty, price });
+  });
+  if (!items.length) return toast('Ajoutez au moins un article', 'error');
+  const total = items.reduce((s, i) => s + i.qty * i.price, 0);
+  try {
+    await apiFetch('/api/restaurant/weekly-invoices', { method: 'POST', body: { company_id: parseInt(companyId), weekly_pack_id: packId ? parseInt(packId) : null, items, total_amount: total, billing_frequency: freq, from_date: from || null, to_date: to || null } }, token);
+    toast('Facture hebdomadaire créée!', 'success');
+    document.getElementById('wiItemsList').innerHTML = '';
+    calcWiTotal();
+    loadWeeklyInvoices();
+  } catch(e) { toast(e.message, 'error'); }
+}
 
 // Expose ALL functions to global window
 window.logout = logout;
@@ -857,6 +1567,7 @@ window.createBatchForCompany = createBatchForCompany;
 window.createInvoiceForCompany = createInvoiceForCompany;
 window.saveSpecialties = saveSpecialties;
 window.savePayments = savePayments;
+window.saveRestSettings = saveRestSettings;
 window.deleteAccount = deleteAccount;
 window.exportPDF = exportPDF;
 window.exportOrdersPDF = exportOrdersPDF;
@@ -871,7 +1582,33 @@ window.loadConfirmedOrders = loadConfirmedOrders;
 window.openDeleteModal = openDeleteModal;
 window.handlePhoto = handlePhoto;
 window.startMsgPolling = startMsgPolling;
+window.uploadWeeklyProgram = uploadWeeklyProgram;
+window.deleteWeeklyProgram = deleteWeeklyProgram;
+window.loadWeeklyPacks = loadWeeklyPacks;
+window.createWeeklyPack = createWeeklyPack;
+window.deleteWeeklyPack = deleteWeeklyPack;
+window.openPackDetail = openPackDetail;
+window.closePackDetail = closePackDetail;
+window.addMenuToPack = addMenuToPack;
+window.renameMenu = renameMenu;
+window.deleteMenu2 = deleteMenu2;
+window.addDish = addDish;
+window.editDish = editDish;
+window.deleteDish = deleteDish;
+window.loadWeeklyInvoices = loadWeeklyInvoices;
+window.loadWiPacks = loadWiPacks;
+window.addWiItem = addWiItem;
+window.calcWiTotal = calcWiTotal;
+window.createWeeklyInvoice = createWeeklyInvoice;
+window.previewWeeklyProgramImage = previewWeeklyProgramImage;
+window.editWeeklyPack = editWeeklyPack;
+window.saveEditPack = saveEditPack;
+window.editCurrentPack = editCurrentPack;
+window.deleteCurrentPack = deleteCurrentPack;
+window.saveEditMenu = saveEditMenu;
+window.saveDishModal = saveDishModal;
 }); // end DOMContentLoaded
 </script>
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

@@ -32,7 +32,8 @@
     <div class="nav-item" data-page="messages"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span>Messages</span><span class="nav-badge" id="msgBadge" style="display:none">0</span></div>
     <div class="nav-section">Restaurants</div>
     <div class="nav-item" data-page="allrestaurants"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2c-1.67 0-5 .83-5 4v6c0 1.1.9 2 2 2v5a1 1 0 0 0 2 0v-5c1.1 0 2-.9 2-2z"/></svg></span><span>Tous les restaurants</span></div>
-    <div class="nav-item" data-page="affiliations"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span><span>Mes affiliations</span></div>
+    <div class="nav-item" data-page="affiliations"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span><span>Mes affiliations</span><span class="nav-badge" id="affContractBadge" style="display:none">0</span></div>
+    <div class="nav-item" data-page="weeklymenu"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg></span><span>Menus Hebdo</span></div>
     <div class="nav-section">Commandes</div>
     <div class="nav-item" data-page="orders"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><span>Commandes du jour</span></div>
     <div class="nav-item" data-page="validate"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span>Valider &amp; Exporter</span></div>
@@ -43,6 +44,7 @@
     <div class="nav-item" data-page="history"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><polyline points="12 7 12 12 15 15"/></svg></span><span>Historique</span></div>
     <div class="nav-section">Compte</div>
     <div class="nav-item" data-page="settings"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg></span><span>Paramètres</span></div>
+    <div class="nav-item" data-page="help"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>Documentation</span></div>
     <button class="nav-item-logout" onclick="logout()"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span><span>Déconnexion</span></button>
   </nav>
   <div class="sidebar-footer">
@@ -118,6 +120,39 @@
         <div class="rest-grid" id="myAffGrid"></div>
       </div>
     </div>
+    <div class="card reveal" style="margin-top:16px">
+      <div class="card-header">
+        <span class="card-title">📝 Contrats d'affiliation</span>
+        <button class="btn btn-outline btn-sm" onclick="loadCoAffiliationContracts()">🔄</button>
+      </div>
+      <div class="card-body" id="coAffiliationContractsBody">
+        <div style="text-align:center;padding:24px;color:var(--muted)">Chargement…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ WEEKLY MENUS ═══ -->
+  <div class="page" id="page-weeklymenu">
+    <div class="card reveal">
+      <div class="card-header"><span class="card-title">📋 Menus &amp; Programmes hebdomadaires</span><button class="btn btn-outline btn-sm" onclick="loadWeeklyMenus()">🔄</button></div>
+      <div class="card-body">
+        <div class="tab-bar">
+          <button class="tab-btn active" id="tabPrograms" onclick="switchWeeklyTab('programs')">Programmes</button>
+          <button class="tab-btn" id="tabPacks" onclick="switchWeeklyTab('packs')">Packs de menus</button>
+        </div>
+        <div id="weeklyProgramsPanel">
+          <div id="programsGrid" class="program-grid"></div>
+        </div>
+        <div id="weeklyPacksPanel" style="display:none">
+          <div id="packsGrid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox pour les programmes -->
+  <div id="programLightbox" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.9);align-items:center;justify-content:center" onclick="document.getElementById('programLightbox').style.display='none'">
+    <img id="programLightboxImg" src="" style="max-width:90vw;max-height:90vh;border-radius:12px;object-fit:contain">
   </div>
 
   <!-- ═══ ORDERS ═══ -->
@@ -341,6 +376,220 @@
     </div>
   </div>
 
+  <!-- ═══ HELP / DOCUMENTATION ═══ -->
+  <div class="page" id="page-help">
+    <div class="doc-hero">
+      <div class="doc-hero-title">📖 Guide d'utilisation — Entreprise</div>
+      <div class="doc-hero-sub">Tout ce qu'il faut savoir pour gérer les repas de votre entreprise sur FoodChooseApp : affiliations, commandes, employés, messagerie et factures.</div>
+    </div>
+
+    <div class="doc-search">
+      <span class="doc-search-icon">🔍</span>
+      <input type="text" id="coDocSearchInput" placeholder="Rechercher dans la documentation…" oninput="filterCoDocSections(this.value)">
+    </div>
+
+    <div class="doc-toc">
+      <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-start')"><span class="doc-toc-icon">🚀</span><span class="doc-toc-label">Démarrage rapide</span></button>
+      <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-dashboard')"><span class="doc-toc-icon">📊</span><span class="doc-toc-label">Tableau de bord</span></button>
+      <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-affiliation')"><span class="doc-toc-icon">🔗</span><span class="doc-toc-label">Affiliations</span></button>
+      <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-employees')"><span class="doc-toc-icon">👥</span><span class="doc-toc-label">Employés</span></button>
+      <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-orders')"><span class="doc-toc-icon">🛒</span><span class="doc-toc-label">Commandes</span></button>
+      <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-weekly')"><span class="doc-toc-icon">📅</span><span class="doc-toc-label">Menus Hebdo</span></button>
+      <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-messages')"><span class="doc-toc-icon">💬</span><span class="doc-toc-label">Messagerie</span></button>
+      <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-invoices')"><span class="doc-toc-icon">🧾</span><span class="doc-toc-label">Factures</span></button>
+      <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-contracts')"><span class="doc-toc-icon">📝</span><span class="doc-toc-label">Contrats</span></button>
+      <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-employee-guide')"><span class="doc-toc-icon">🙋</span><span class="doc-toc-label">Guide employé</span></button>
+    </div>
+
+    <div class="doc-accordion" id="coDocAccordion">
+
+      <!-- DÉMARRAGE RAPIDE -->
+      <div class="doc-section open" id="co-doc-start" data-keywords="démarrage rapide inscription compte commencer premier pas">
+        <div class="doc-section-header" onclick="toggleCoDocSection('co-doc-start')">
+          <div class="doc-section-icon">🚀</div>
+          <div class="doc-section-title">Démarrage rapide</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Créez votre compte entreprise</div><div class="doc-step-desc">Rendez-vous sur la page d'inscription entreprise. Renseignez le nom de votre société, le secteur d'activité, l'email, le téléphone, l'adresse et un mot de passe sécurisé.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Affiliez-vous à des restaurants</div><div class="doc-step-desc">Dans <strong>Tous les restaurants</strong>, parcourez les établissements disponibles. Cliquez sur un restaurant, consultez ses menus, puis cliquez sur <strong>🤝 S'affilier</strong>. Une fois affiliée, l'entreprise et le restaurant devront signer un contrat d'affiliation.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Créez les comptes de vos employés</div><div class="doc-step-desc">Dans <strong>Employés</strong>, ajoutez chaque membre de votre équipe : prénom, nom, identifiant, email et mot de passe temporaire. Ils recevront un email de bienvenue avec leurs identifiants.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">4</div><div class="doc-step-content"><div class="doc-step-title">Les employés commandent, vous gérez</div><div class="doc-step-desc">Chaque jour, vos employés passent leur commande depuis leur espace. Vous suivez toutes les commandes en temps réel dans <strong>Commandes du jour</strong> et les validez avant de recevoir les factures des restaurants.</div></div></div>
+          <div class="doc-tip"><strong>Astuce :</strong> Ajoutez plusieurs restaurants affiliés pour offrir plus de choix à vos employés. Chaque employé peut choisir parmi tous les restaurants de votre entreprise.</div>
+        </div>
+      </div>
+
+      <!-- TABLEAU DE BORD -->
+      <div class="doc-section" id="co-doc-dashboard" data-keywords="tableau de bord statistiques chiffres employés affiliations commandes en attente">
+        <div class="doc-section-header" onclick="toggleCoDocSection('co-doc-dashboard')">
+          <div class="doc-section-icon">📊</div>
+          <div class="doc-section-title">Tableau de bord</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Les 4 indicateurs clés</div><div class="doc-step-desc">Le tableau de bord affiche : le nombre d'employés actifs, le nombre de restaurants affiliés, les commandes du jour et les commandes en attente de validation.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Restaurants affiliés</div><div class="doc-step-desc">La liste de vos restaurants affiliés s'affiche directement sur le tableau de bord avec accès rapide à leurs menus.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Recherche de plats</div><div class="doc-step-desc">Le champ de recherche en haut de <strong>Mes affiliations</strong> permet de chercher un plat parmi tous vos restaurants affiliés pour vérifier disponibilité et prix rapidement.</div></div></div>
+        </div>
+      </div>
+
+      <!-- AFFILIATIONS -->
+      <div class="doc-section" id="co-doc-affiliation" data-keywords="affiliation restaurant s'affilier désaffilier contrat trouver parcourir spécialité">
+        <div class="doc-section-header" onclick="toggleCoDocSection('co-doc-affiliation')">
+          <div class="doc-section-icon">🔗</div>
+          <div class="doc-section-title">Affiliations restaurants</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Trouver un restaurant</div><div class="doc-step-desc">Allez dans <strong>Tous les restaurants</strong>. Parcourez la liste complète ou utilisez la barre de recherche pour trouver un restaurant par nom ou spécialité. Cliquez sur une carte pour voir le détail : adresse, spécialités, menus et prix.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">S'affilier</div><div class="doc-step-desc">Depuis la fiche d'un restaurant, cliquez sur <strong>🤝 S'affilier</strong>. L'affiliation est immédiate — vos employés peuvent déjà voir les menus. Un contrat d'affiliation sera généré et devra être signé par les deux parties.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Gérer vos affiliations</div><div class="doc-step-desc">Dans <strong>Mes affiliations</strong>, retrouvez tous vos restaurants partenaires. Vous pouvez vous désaffilier d'un restaurant avec le bouton ❌ (attention : vos employés ne pourront plus commander chez ce restaurant).</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">4</div><div class="doc-step-content"><div class="doc-step-title">Signer le contrat d'affiliation</div><div class="doc-step-desc">Dans la section <strong>Contrats d'affiliation</strong> de la page Mes affiliations, un contrat est créé pour chaque restaurant affilié. Lisez et signez votre côté — le restaurant doit faire de même. Un badge orange vous prévient quand un contrat attend votre signature.</div></div></div>
+          <div class="doc-tip"><strong>Recommandation :</strong> Affiliez-vous à 2 ou 3 restaurants minimum pour offrir de la variété à vos employés et éviter les ruptures de service.</div>
+        </div>
+      </div>
+
+      <!-- EMPLOYÉS -->
+      <div class="doc-section" id="co-doc-employees" data-keywords="employés ajouter créer compte identifiant email mot de passe photo préférence boisson modifier supprimer">
+        <div class="doc-section-header" onclick="toggleCoDocSection('co-doc-employees')">
+          <div class="doc-section-icon">👥</div>
+          <div class="doc-section-title">Gestion des employés</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Ajouter un employé</div><div class="doc-step-desc">Dans <strong>Employés</strong>, cliquez sur <strong>+ Ajouter un employé</strong>. Renseignez le prénom, le nom, un identifiant unique (ex: MTD001), l'email et un mot de passe temporaire. L'employé reçoit un email de bienvenue avec ses identifiants.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Préférence boisson</div><div class="doc-step-desc">Vous pouvez définir la préférence de boisson de chaque employé (eau, jus, café...). Cette information est transmise au restaurant lors de chaque commande.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Modifier ou supprimer</div><div class="doc-step-desc">Cliquez sur un employé pour accéder à sa fiche. Modifiez ses informations ou supprimez son compte. La suppression efface toutes ses données de commande — agissez avec précaution.</div></div></div>
+          <div class="doc-tip"><strong>Identifiants de connexion employé :</strong> L'employé se connecte sur <em>/employee</em> avec son email et son mot de passe. Son identifiant (ex: MTD001) apparaît dans les commandes et les exports.</div>
+        </div>
+      </div>
+
+      <!-- COMMANDES -->
+      <div class="doc-section" id="co-doc-orders" data-keywords="commandes du jour employé plat restaurant valider exporter pdf période filtre">
+        <div class="doc-section-header" onclick="toggleCoDocSection('co-doc-orders')">
+          <div class="doc-section-icon">🛒</div>
+          <div class="doc-section-title">Commandes &amp; Validation</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Voir les commandes du jour</div><div class="doc-step-desc">Dans <strong>Commandes du jour</strong>, filtrez par date et par restaurant. Le tableau liste chaque employé, le plat commandé, le prix et le statut. Vous voyez en temps réel qui a commandé quoi.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Valider et exporter</div><div class="doc-step-desc">Dans <strong>Valider &amp; Exporter</strong>, définissez une période et cliquez sur <strong>⚡ Prévisualiser</strong> pour voir le récapitulatif. Validez les commandes et exportez en PDF ou Excel pour vos services comptables.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Historique</div><div class="doc-step-desc">L'onglet <strong>Historique</strong> conserve toutes les commandes passées et toutes les modifications (commandes annulées, modifiées). Utile pour les audits ou les réclamations.</div></div></div>
+          <div class="doc-tip"><strong>Heure limite :</strong> Les commandes se font avant midi. Après cette heure, les employés ne peuvent plus passer commande pour le jour même. Encouragez vos équipes à commander tôt le matin.</div>
+        </div>
+      </div>
+
+      <!-- MENUS HEBDO -->
+      <div class="doc-section" id="co-doc-weekly" data-keywords="menus hebdomadaires programme image flyer semaine pack restaurant afficher voir">
+        <div class="doc-section-header" onclick="toggleCoDocSection('co-doc-weekly')">
+          <div class="doc-section-icon">📅</div>
+          <div class="doc-section-title">Menus hebdomadaires</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Programmes hebdomadaires</div><div class="doc-step-desc">Dans <strong>Menus Hebdo</strong>, l'onglet <strong>Programmes</strong> affiche les images de menus uploadées par vos restaurants affiliés. Vous voyez le flyer ou l'affiche de chaque semaine pour chaque restaurant.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Packs de menus</div><div class="doc-step-desc">L'onglet <strong>Packs de menus</strong> liste les abonnements hebdomadaires structurés proposés par vos restaurants. Chaque pack détaille les plats prévus par jour et par type de menu (entrée, plat, dessert).</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Agrandissement des programmes</div><div class="doc-step-desc">Cliquez sur l'image d'un programme pour l'afficher en plein écran. Fermez en cliquant n'importe où sur le fond sombre.</div></div></div>
+          <div class="doc-tip"><strong>Pour les employés :</strong> Les menus hebdomadaires sont également visibles dans l'espace employé. Encouragez vos équipes à les consulter pour planifier leurs commandes à l'avance.</div>
+        </div>
+      </div>
+
+      <!-- MESSAGERIE -->
+      <div class="doc-section" id="co-doc-messages" data-keywords="messagerie message restaurant envoyer fichier photo audio voix conversation">
+        <div class="doc-section-header" onclick="toggleCoDocSection('co-doc-messages')">
+          <div class="doc-section-icon">💬</div>
+          <div class="doc-section-title">Messagerie instantanée</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Contacter un restaurant</div><div class="doc-step-desc">Dans <strong>Messages</strong>, la liste de vos restaurants affiliés s'affiche. Cliquez sur un restaurant pour ouvrir la conversation. Vous pouvez envoyer des messages, des images, des fichiers PDF ou des messages vocaux.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Pièces jointes et photos</div><div class="doc-step-desc">Cliquez sur 📎 pour joindre un fichier (image, PDF jusqu'à 3 Mo, vidéo jusqu'à 30 secondes). Idéal pour envoyer un bon de commande ou une réclamation documentée.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Messages vocaux</div><div class="doc-step-desc">Cliquez sur le micro 🎤 pour enregistrer un message vocal (2 minutes maximum). Pratique pour les échanges rapides sans taper.</div></div></div>
+          <div class="doc-tip"><strong>Cas d'usage :</strong> Utilisez la messagerie pour signaler une commande spéciale, une allergie particulière, demander un devis pour un événement ou régler un différend sur une facture.</div>
+        </div>
+      </div>
+
+      <!-- FACTURES -->
+      <div class="doc-section" id="co-doc-invoices" data-keywords="facture recevoir confirmer télécharger pdf payer montant total période restaurant">
+        <div class="doc-section-header" onclick="toggleCoDocSection('co-doc-invoices')">
+          <div class="doc-section-icon">🧾</div>
+          <div class="doc-section-title">Factures reçues</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Recevoir une facture</div><div class="doc-step-desc">Les restaurants génèrent et vous envoient leurs factures depuis leur tableau de bord. Vous les retrouvez dans la section <strong>Factures</strong> de votre espace, avec le détail des commandes, le montant total et la période.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Confirmer une facture</div><div class="doc-step-desc">Après vérification, vous pouvez confirmer la réception d'une facture pour indiquer au restaurant qu'elle a bien été traitée. Cette confirmation sert de preuve pour la comptabilité des deux parties.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Télécharger en PDF</div><div class="doc-step-desc">Chaque facture peut être téléchargée en PDF pour archivage ou transmission à votre service comptable.</div></div></div>
+          <div class="doc-tip"><strong>Contestation :</strong> Si une facture est incorrecte, utilisez la messagerie pour contacter le restaurant directement. Expliquez le problème et demandez une facture rectificative.</div>
+        </div>
+      </div>
+
+      <!-- CONTRATS -->
+      <div class="doc-section" id="co-doc-contracts" data-keywords="contrat affiliation signer restaurant entreprise menus prix horaires programmes badge">
+        <div class="doc-section-header" onclick="toggleCoDocSection('co-doc-contracts')">
+          <div class="doc-section-icon">📝</div>
+          <div class="doc-section-title">Contrats d'affiliation</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Qu'est-ce qu'un contrat d'affiliation ?</div><div class="doc-step-desc">Quand votre entreprise s'affilie à un restaurant, un contrat d'affiliation est automatiquement créé. Il couvre les engagements mutuels sur les menus, les prix affichés, les horaires de service et les programmes proposés.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Signer le contrat</div><div class="doc-step-desc">Dans <strong>Mes affiliations</strong>, section "Contrats d'affiliation", les contrats non signés affichent un bouton <strong>✍️ Signer</strong> avec le texte complet du contrat. Lisez-le et signez-le. Le restaurant doit faire de même de son côté.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Statut des contrats</div><div class="doc-step-desc">Chaque contrat affiche l'état de signature des deux côtés (entreprise et restaurant). Le badge orange sur "Mes affiliations" dans la barre latérale indique combien de contrats attendent votre signature.</div></div></div>
+          <div class="doc-warn"><strong>Important :</strong> Un contrat signé d'un seul côté n'est pas encore pleinement actif. Relancez le restaurant par messagerie s'il tarde à signer sa partie.</div>
+        </div>
+      </div>
+
+      <!-- GUIDE EMPLOYÉ -->
+      <div class="doc-section" id="co-doc-employee-guide" data-keywords="employé connexion commander plat restaurant annuler modifier avis note historique">
+        <div class="doc-section-header" onclick="toggleCoDocSection('co-doc-employee-guide')">
+          <div class="doc-section-icon">🙋</div>
+          <div class="doc-section-title">Guide pour vos employés</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">Résumé à transmettre à vos équipes pour les aider à prendre en main leur espace.</p>
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Connexion</div><div class="doc-step-desc">Les employés se connectent sur <strong>/employee</strong> (ou via le bouton "Espace Employé" sur la page d'accueil) avec l'email et le mot de passe fournis par l'entreprise. Ils peuvent changer leur mot de passe depuis leur profil.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Passer une commande</div><div class="doc-step-desc">L'employé voit les restaurants disponibles et leurs menus. Il sélectionne un plat et confirme. Une seule commande par restaurant par jour. La commande apparaît immédiatement dans votre tableau de bord.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Modifier ou annuler</div><div class="doc-step-desc">L'employé peut modifier ou annuler sa commande du jour jusqu'à midi. Passé ce délai, la commande est définitive.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">4</div><div class="doc-step-content"><div class="doc-step-title">Laisser un avis</div><div class="doc-step-desc">Après avoir commandé un plat, l'employé peut lui attribuer une note de 1 à 5 étoiles et un commentaire. Ces avis aident les autres employés à choisir et informent les restaurants sur la qualité perçue.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">5</div><div class="doc-step-content"><div class="doc-step-title">Voir les menus hebdomadaires</div><div class="doc-step-desc">Dans l'espace employé, la section "Menus Hebdo" affiche les programmes et packs de la semaine pour chaque restaurant affilié. Utile pour planifier à l'avance.</div></div></div>
+          <div class="doc-tip"><strong>À transmettre aux nouveaux employés :</strong> Leur email de bienvenue contient leurs identifiants. Invitez-les à changer leur mot de passe dès la première connexion depuis l'onglet "Mon profil" de leur espace.</div>
+        </div>
+      </div>
+
+    </div><!-- /coDocAccordion -->
+
+    <!-- FAQ -->
+    <div class="doc-faq">
+      <div class="doc-faq-title">❓ Questions fréquentes</div>
+
+      <div class="doc-faq-item" onclick="toggleCoFaq(this)">
+        <div class="doc-faq-q">Comment un employé reçoit-il ses identifiants ? <span>▼</span></div>
+        <div class="doc-faq-a">Lorsque vous créez un compte employé, un email de bienvenue est automatiquement envoyé à son adresse avec ses identifiants de connexion (email et mot de passe temporaire). Il peut ensuite changer son mot de passe depuis son profil.</div>
+      </div>
+      <div class="doc-faq-item" onclick="toggleCoFaq(this)">
+        <div class="doc-faq-q">Puis-je voir les commandes de tous mes employés en même temps ? <span>▼</span></div>
+        <div class="doc-faq-a">Oui. Dans "Commandes du jour", vous voyez toutes les commandes du jour pour tous vos employés, tous restaurants confondus. Vous pouvez filtrer par date, par restaurant ou exporter l'ensemble en PDF.</div>
+      </div>
+      <div class="doc-faq-item" onclick="toggleCoFaq(this)">
+        <div class="doc-faq-q">Que se passe-t-il si un employé ne commande pas ? <span>▼</span></div>
+        <div class="doc-faq-a">Rien de spécial — les commandes sont optionnelles chaque jour. Si un employé est absent ou ne commande pas, il n'apparaît simplement pas dans le récapitulatif du jour. Vous pouvez voir qui a commandé et qui ne l'a pas fait dans "Commandes du jour".</div>
+      </div>
+      <div class="doc-faq-item" onclick="toggleCoFaq(this)">
+        <div class="doc-faq-q">Comment contester une facture d'un restaurant ? <span>▼</span></div>
+        <div class="doc-faq-a">Utilisez la messagerie pour contacter le restaurant directement. Expliquez l'erreur constatée (montant incorrect, plat non livré, etc.) et joignez une capture si nécessaire. Le restaurant devra vous envoyer une facture rectificative.</div>
+      </div>
+      <div class="doc-faq-item" onclick="toggleCoFaq(this)">
+        <div class="doc-faq-q">Puis-je avoir plusieurs entreprises sur le même compte ? <span>▼</span></div>
+        <div class="doc-faq-a">Non — chaque compte entreprise représente une entité unique. Si vous gérez plusieurs sociétés, créez un compte distinct pour chacune avec un email différent.</div>
+      </div>
+      <div class="doc-faq-item" onclick="toggleCoFaq(this)">
+        <div class="doc-faq-q">Les employés peuvent-ils voir les factures ? <span>▼</span></div>
+        <div class="doc-faq-a">Non. Les factures sont uniquement visibles par les gestionnaires de l'entreprise (votre compte). Les employés ont accès à leurs commandes personnelles et aux menus, mais pas aux informations financières de l'entreprise.</div>
+      </div>
+    </div>
+  </div>
+
   </div><!-- /content -->
 </main>
 </div>
@@ -442,11 +691,11 @@ function switchToPage(page) {
   if (navItem) navItem.classList.add('active');
   const pg = document.getElementById(`page-${page}`);
   if (pg) pg.classList.add('active');
-  const titles = { dashboard:'Vue d\'ensemble', allrestaurants:'Tous les restaurants', affiliations:'Mes affiliations', orders:'Commandes du jour', validate:'Valider & Exporter', invoices:'Factures', employees:'Employés', expenses:'Dépenses', history:'Historique', messages:'Messages', settings:'Paramètres' };
+  const titles = { dashboard:'Vue d\'ensemble', allrestaurants:'Tous les restaurants', affiliations:'Mes affiliations', weeklymenu:'Menus Hebdomadaires', orders:'Commandes du jour', validate:'Valider & Exporter', invoices:'Factures', employees:'Employés', expenses:'Dépenses', history:'Historique', messages:'Messages', settings:'Paramètres', help:'Documentation' };
   document.getElementById('pageTitle').textContent = titles[page] || page;
   if (page === 'dashboard') loadDashboard();
   else if (page === 'allrestaurants') loadAllRestaurants();
-  else if (page === 'affiliations') loadAffiliations();
+  else if (page === 'affiliations') { loadAffiliations(); loadCoAffiliationContracts(); }
   else if (page === 'orders') { const td = todayFrStr(); document.getElementById('ordersFrom').value = td; document.getElementById('ordersTo').value = td; initDateMask(); loadOrders(); }
   else if (page === 'validate') { const td = todayFrStr(); document.getElementById('validateFrom').value = td; document.getElementById('validateTo').value = td; initDateMask(); previewValidate(); }
   else if (page === 'invoices') loadInvoices();
@@ -454,7 +703,9 @@ function switchToPage(page) {
   else if (page === 'expenses') loadExpenses();
   else if (page === 'history') {}
   else if (page === 'messages') { loadAdminConversations(); startMsgPolling(); }
+  else if (page === 'weeklymenu') loadWeeklyMenus();
   else if (page === 'settings') loadSettings();
+  else if (page === 'help') { initCoDocSearch(); }
 }
 
 try { initSidebar(); } catch(e) { console.error('initSidebar:', e); }
@@ -469,6 +720,12 @@ document.querySelectorAll('.nav-item[data-page]').forEach(item => {
 
 try { initNotifications(); } catch(e) { console.error('initNotifications:', e); }
 loadDashboard();
+// Vérifier les contrats d'affiliation non signés au chargement
+apiFetch('/api/company/affiliation-contracts', {}, token).then(contracts => {
+  const unsigned = (contracts || []).filter(c => !c.company_signed_at).length;
+  const badge = document.getElementById('affContractBadge');
+  if (badge && unsigned > 0) { badge.style.display = ''; badge.textContent = unsigned; }
+}).catch(() => {});
 
 // ── Dashboard ─────────────────────────────────────────
 async function loadDashboard() {
@@ -639,6 +896,61 @@ async function deaffiliateRest(id, name) {
     toast('Désaffilié', 'info'); loadAffiliations();
   } catch(e) { toast(e.message, 'error'); }
 }
+
+async function loadCoAffiliationContracts() {
+  const el = document.getElementById('coAffiliationContractsBody');
+  if (!el) return;
+  try {
+    const contracts = await apiFetch('/api/company/affiliation-contracts', {}, token);
+    if (!contracts.length) {
+      el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:16px">Aucune affiliation pour le moment.</div>';
+      return;
+    }
+    const affContractText = `CONTRAT D'AFFILIATION — TERMES ET CONDITIONS\n\nENTRE : L'Entreprise soussignée (ci-après "l'Entreprise")\nET : Le Restaurant soussigné (ci-après "le Restaurant")\n────────────────────────────────────────\nARTICLE 1 — OBJET\nLe présent contrat régit les conditions de partenariat entre l'Entreprise et le Restaurant sur la plateforme FoodChooseApp.\n\nARTICLE 2 — MENUS ET PRIX\nLe Restaurant s'engage à maintenir ses menus à jour sur la plateforme et à honorer les prix affichés pour les commandes de l'Entreprise et de ses employés.\n\nARTICLE 3 — HORAIRES ET PROGRAMMES\nLe Restaurant communiquera ses horaires de service et ses programmes hebdomadaires via la plateforme. Tout changement sera notifié à l'avance.\n\nARTICLE 4 — QUALITÉ DE SERVICE\nLe Restaurant garantit la qualité et la fraîcheur des plats commandés, dans le respect des normes d'hygiène alimentaire en vigueur.\n\nARTICLE 5 — DURÉE\nCe contrat d'affiliation est valable pour toute la durée de l'affiliation sur la plateforme FoodChooseApp.`;
+
+    const html = contracts.map(c => {
+      const coSigned = !!c.company_signed_at;
+      const restSigned = !!c.restaurant_signed_at;
+      const bothSigned = coSigned && restSigned;
+      return `
+        <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:14px;padding:14px;background:#F9F1EB">
+            ${c.restaurant_photo ? `<img src="${c.restaurant_photo}" style="width:44px;height:44px;object-fit:cover;border-radius:10px">` : `<div style="width:44px;height:44px;background:var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">🍽</div>`}
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:14px">${c.restaurant_name}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">
+                Entreprise : ${coSigned ? '✅ Signé le '+new Date(c.company_signed_at).toLocaleDateString('fr-FR') : '⏳ Non signé'}
+                &nbsp;|&nbsp;
+                Restaurant : ${restSigned ? '✅ Signé le '+new Date(c.restaurant_signed_at).toLocaleDateString('fr-FR') : '⏳ En attente'}
+              </div>
+              ${bothSigned ? '<div style="font-size:11px;color:#166534;font-weight:500;margin-top:4px">✅ Contrat actif — les deux parties ont signé</div>' : ''}
+            </div>
+            ${!coSigned ? `<button class="btn btn-primary btn-sm" onclick="signCoAffiliationContract(${c.affiliation_id})">✍️ Signer</button>` : ''}
+          </div>
+          ${!coSigned ? `<div style="padding:14px;background:white;border-top:1px solid var(--border)">
+            <div style="font-size:11px;font-family:monospace;white-space:pre-wrap;max-height:180px;overflow-y:auto;color:var(--text);line-height:1.6;padding:12px;background:#F9F1EB;border-radius:8px">${affContractText}</div>
+          </div>` : ''}
+        </div>
+      `;
+    }).join('');
+    el.innerHTML = html;
+    const unsigned = contracts.filter(c => !c.company_signed_at).length;
+    const badge = document.getElementById('affContractBadge');
+    if (badge) { badge.style.display = unsigned > 0 ? '' : 'none'; badge.textContent = unsigned; }
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--danger);font-size:13px;padding:16px">Erreur de chargement.</div>';
+  }
+}
+window.loadCoAffiliationContracts = loadCoAffiliationContracts;
+
+async function signCoAffiliationContract(affiliationId) {
+  try {
+    await apiFetch(`/api/company/affiliation-contracts/${affiliationId}/sign`, { method: 'POST' }, token);
+    toast('Contrat d\'affiliation signé !', 'success');
+    loadCoAffiliationContracts();
+  } catch(e) { toast(e.message, 'error'); }
+}
+window.signCoAffiliationContract = signCoAffiliationContract;
 
 // ── Orders ────────────────────────────────────────────
 async function loadOrders() {
@@ -962,12 +1274,25 @@ async function loadAdminConversations() {
     if (!convs.length) { el.innerHTML = '<div class="empty-state" style="padding:16px"><span class="icon">💬</span>Affiliez-vous à un restaurant pour communiquer</div>'; return; }
     el.innerHTML = convs.map(c=>{
       total += parseInt(c.unread||0);
-      return `<div class="chat-conv ${currentChatRestId==c.restaurant_id?'active':''}" onclick="openAdminChat(${c.restaurant_id},'${c.restaurant_name.replace(/'/g,"\\'")}','${c.photo_url||''}')">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div class="chat-conv-name">${c.restaurant_name}</div>
-          ${c.unread>0?`<span style="background:var(--orange);color:white;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px">${c.unread}</span>`:''}
+      const eName = (c.restaurant_name||'').replace(/'/g,"\\'");
+      const ePhoto = (c.photo_url||'').replace(/'/g,"\\'");
+      const avatar = c.photo_url
+        ? `<img src="${c.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+        : '🍽';
+      return `<div class="chat-conv ${currentChatRestId==c.restaurant_id?'active':''}" onclick="openAdminChat(${c.restaurant_id},'${eName}','${ePhoto}')">
+        <div style="display:flex;align-items:center;gap:9px">
+          <div class="user-avatar" style="width:34px;height:34px;font-size:14px;flex-shrink:0">${avatar}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:4px">
+              <div class="chat-conv-name">${c.restaurant_name}</div>
+              <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+                ${c.last_at?`<span style="font-size:10px;color:var(--muted)">${timeAgo(c.last_at)}</span>`:''}
+                ${c.unread>0?`<span style="background:var(--orange);color:white;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px">${c.unread}</span>`:''}
+              </div>
+            </div>
+            <div class="chat-conv-last">${c.last_message||'Pas encore de message'}</div>
+          </div>
         </div>
-        <div class="chat-conv-last">${c.last_message||'Pas encore de message'}</div>
       </div>`;
     }).join('');
     const b = document.getElementById('msgBadge');
@@ -1202,6 +1527,82 @@ async function changeCompanyPassword() {
   } catch(e) { toast(e.message, 'error'); }
 }
 
+// ── Weekly Menus (Company) ────────────────────────────
+const DAY_NAMES = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+
+async function loadWeeklyMenus() {
+  try {
+    const [programs, packs] = await Promise.all([
+      apiFetch('/api/company/weekly-programs', {}, token),
+      apiFetch('/api/company/weekly-packs', {}, token)
+    ]);
+    // Render programs
+    const pgrid = document.getElementById('programsGrid');
+    if (!programs.length) {
+      pgrid.innerHTML = '<div class="empty-state"><span class="icon">🖼</span>Aucun programme hebdomadaire disponible</div>';
+    } else {
+      pgrid.innerHTML = programs.map(p => `
+        <div class="program-card" onclick="openProgramLightbox('${p.image_url}')">
+          <img src="${p.image_url}" alt="${p.title || 'Programme'}">
+          <div class="program-card-info">
+            <div style="font-weight:700;font-size:13px;color:var(--brown)">${p.title || 'Programme'}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">${p.restaurant_name}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+    // Render packs
+    const packGrid = document.getElementById('packsGrid');
+    if (!packs.length) {
+      packGrid.innerHTML = '<div class="empty-state"><span class="icon">📦</span>Aucun pack hebdomadaire actif</div>';
+    } else {
+      packGrid.innerHTML = packs.map(pack => {
+        const menusHtml = (pack.menus || []).map(menu => {
+          const daysHtml = (menu.days || []).map(day => {
+            const dishesHtml = (day.dishes || []).map(dish => `
+              <div class="dish-row">
+                ${dish.image_url ? `<img src="${dish.image_url}" alt="${dish.name}">` : '<div style="width:40px;height:40px;border-radius:7px;background:var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">🍽</div>'}
+                <div style="flex:1">
+                  <div style="font-weight:600;font-size:13px;color:var(--brown)">${dish.name}</div>
+                  ${dish.description ? `<div style="font-size:11px;color:var(--muted)">${dish.description}</div>` : ''}
+                </div>
+                <div style="font-weight:700;color:var(--orange);font-size:13px;white-space:nowrap">${parseFloat(dish.price||0).toLocaleString()} FCFA</div>
+              </div>
+            `).join('');
+            return `<div style="margin-bottom:14px"><div style="margin-bottom:6px"><span class="day-pill">${DAY_NAMES[day.day_of_week] || 'Jour '+day.day_of_week}</span>${day.is_optional ? '<span style="font-size:10px;color:var(--muted);margin-left:6px">(optionnel)</span>' : ''}</div><div style="padding:0 4px">${dishesHtml || '<div style="font-size:12px;color:var(--muted)">Aucun plat</div>'}</div></div>`;
+          }).join('');
+          return `<div style="padding:12px 16px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:var(--brown);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">${menu.name}</div>${daysHtml}</div>`;
+        }).join('');
+        return `
+          <div class="pack-card">
+            <div class="pack-card-header" onclick="this.parentElement.querySelector('.pack-card-body').style.display=this.parentElement.querySelector('.pack-card-body').style.display==='none'?'block':'none'">
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:14px;color:var(--brown)">${pack.name}</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:2px">🍽 ${pack.restaurant_name}</div>
+              </div>
+              <span style="font-size:12px;color:var(--muted)">▾</span>
+            </div>
+            <div class="pack-card-body" style="display:none">${menusHtml || '<div style="padding:16px;color:var(--muted);font-size:13px">Aucun menu</div>'}</div>
+          </div>
+        `;
+      }).join('');
+    }
+  } catch(e) { toast('Erreur chargement menus hebdo: ' + e.message, 'error'); }
+}
+
+function switchWeeklyTab(tab) {
+  document.getElementById('weeklyProgramsPanel').style.display = tab === 'programs' ? 'block' : 'none';
+  document.getElementById('weeklyPacksPanel').style.display = tab === 'packs' ? 'block' : 'none';
+  document.getElementById('tabPrograms').classList.toggle('active', tab === 'programs');
+  document.getElementById('tabPacks').classList.toggle('active', tab === 'packs');
+}
+
+function openProgramLightbox(url) {
+  const lb = document.getElementById('programLightbox');
+  document.getElementById('programLightboxImg').src = url;
+  lb.style.display = 'flex';
+}
+
 // Expose ALL functions globally for onclick handlers
   window.logout = logout;
   window.validateOrders = validateOrders;
@@ -1263,6 +1664,36 @@ window.confirmInvoice = confirmInvoice;
   window.initDateMask = initDateMask;
   window.parseFrDate = parseFrDate;
   window.todayFrStr = todayFrStr;
+  window.loadWeeklyMenus = loadWeeklyMenus;
+  window.switchWeeklyTab = switchWeeklyTab;
+  window.openProgramLightbox = openProgramLightbox;
+
+  // ── Company documentation helpers ─────────────────
+  window.toggleCoDocSection = function(id) {
+    const sec = document.getElementById(id);
+    if (sec) sec.classList.toggle('open');
+  };
+  window.openCoDocSection = function(id) {
+    document.querySelectorAll('#coDocAccordion .doc-section').forEach(s => s.classList.remove('open'));
+    const sec = document.getElementById(id);
+    if (sec) { sec.classList.add('open'); sec.scrollIntoView({ behavior:'smooth', block:'start' }); }
+  };
+  window.filterCoDocSections = function(q) {
+    const query = q.toLowerCase().trim();
+    document.querySelectorAll('#coDocAccordion .doc-section').forEach(sec => {
+      const keywords = (sec.dataset.keywords || '').toLowerCase();
+      const text = sec.textContent.toLowerCase();
+      const match = !query || keywords.includes(query) || text.includes(query);
+      sec.style.display = match ? '' : 'none';
+      if (match && query) sec.classList.add('open');
+    });
+  };
+  window.toggleCoFaq = function(item) { item.classList.toggle('open'); };
+  window.initCoDocSearch = function() {
+    const inp = document.getElementById('coDocSearchInput');
+    if (inp) inp.value = '';
+    document.querySelectorAll('#coDocAccordion .doc-section').forEach(s => s.style.display = '');
+  };
 }); // end DOMContentLoaded
 </script>
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>

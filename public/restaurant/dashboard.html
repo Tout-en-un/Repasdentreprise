@@ -37,8 +37,10 @@
     <div class="nav-item" data-page="weekly"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Programme hebdo</span></div>
     <div class="nav-section">Compte</div>
     <div class="nav-item" data-page="profile"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg></span><span>Mon profil</span></div>
+    <div class="nav-item" data-page="contract"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span><span>Mon contrat</span><span class="nav-badge" id="contractBadge" style="display:none">!</span></div>
     <div class="nav-item" data-page="invoices"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><span>Factures</span></div>
     <div class="nav-item" data-page="weekly-invoices"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></span><span>Factures hebdo</span></div>
+    <div class="nav-item" data-page="help"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>Documentation</span></div>
     <button class="nav-item-logout" onclick="logout()"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span><span>Déconnexion</span></button>
   </nav>
   <div class="sidebar-footer">
@@ -369,6 +371,10 @@
       <div class="card reveal-right">
         <div class="card-header"><span class="card-title">📦 Packs hebdomadaires</span></div>
         <div class="card-body">
+          <div style="background:#FFF8F3;border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--muted);line-height:1.6">
+            <strong style="color:var(--brown);display:block;margin-bottom:4px">À quoi sert un pack ?</strong>
+            Un pack hebdomadaire est un abonnement structuré : vous définissez les plats proposés chaque jour de la semaine. Les entreprises s'y abonnent et vous les facturez via <em>Factures hebdo</em>. C'est différent des commandes à la carte faites par les employés chaque jour.
+          </div>
           <div style="display:flex;gap:8px;margin-bottom:12px">
             <input class="form-control" id="newPackName" placeholder="Nom du pack (ex: Semaine 1)" style="flex:1">
             <button class="btn btn-primary" onclick="createWeeklyPack()">➕ Créer</button>
@@ -450,6 +456,247 @@
             <thead><tr><th>N°</th><th>Entreprise</th><th>Pack</th><th>Montant</th><th>Fréquence</th><th>Date</th><th>Statut</th><th>Actions</th></tr></thead>
             <tbody id="wiTableBody"></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ HELP / DOCUMENTATION ═══ -->
+  <div class="page" id="page-help">
+    <div class="doc-hero">
+      <div class="doc-hero-title">📖 Guide d'utilisation — Restaurant</div>
+      <div class="doc-hero-sub">Tout ce qu'il faut savoir pour gérer votre restaurant sur FoodChooseApp : menus, commandes, messagerie, factures et contrats.</div>
+    </div>
+
+    <div class="doc-search">
+      <span class="doc-search-icon">🔍</span>
+      <input type="text" id="docSearchInput" placeholder="Rechercher dans la documentation…" oninput="filterDocSections(this.value)">
+    </div>
+
+    <div class="doc-toc">
+      <button class="doc-toc-btn" onclick="openDocSection('doc-start')"><span class="doc-toc-icon">🚀</span><span class="doc-toc-label">Démarrage rapide</span></button>
+      <button class="doc-toc-btn" onclick="openDocSection('doc-dashboard')"><span class="doc-toc-icon">📊</span><span class="doc-toc-label">Tableau de bord</span></button>
+      <button class="doc-toc-btn" onclick="openDocSection('doc-menus')"><span class="doc-toc-icon">🍽</span><span class="doc-toc-label">Mes menus</span></button>
+      <button class="doc-toc-btn" onclick="openDocSection('doc-orders')"><span class="doc-toc-icon">🛒</span><span class="doc-toc-label">Commandes</span></button>
+      <button class="doc-toc-btn" onclick="openDocSection('doc-messages')"><span class="doc-toc-icon">💬</span><span class="doc-toc-label">Messagerie</span></button>
+      <button class="doc-toc-btn" onclick="openDocSection('doc-weekly')"><span class="doc-toc-icon">📅</span><span class="doc-toc-label">Programme hebdo</span></button>
+      <button class="doc-toc-btn" onclick="openDocSection('doc-packs')"><span class="doc-toc-icon">📦</span><span class="doc-toc-label">Packs hebdo</span></button>
+      <button class="doc-toc-btn" onclick="openDocSection('doc-invoices')"><span class="doc-toc-icon">🧾</span><span class="doc-toc-label">Factures</span></button>
+      <button class="doc-toc-btn" onclick="openDocSection('doc-contract')"><span class="doc-toc-icon">📝</span><span class="doc-toc-label">Contrats</span></button>
+      <button class="doc-toc-btn" onclick="openDocSection('doc-profile')"><span class="doc-toc-icon">👤</span><span class="doc-toc-label">Profil</span></button>
+    </div>
+
+    <div class="doc-accordion" id="docAccordion">
+
+      <!-- DÉMARRAGE RAPIDE -->
+      <div class="doc-section open" id="doc-start" data-keywords="démarrage rapide inscription compte commencer premier pas">
+        <div class="doc-section-header" onclick="toggleDocSection('doc-start')">
+          <div class="doc-section-icon">🚀</div>
+          <div class="doc-section-title">Démarrage rapide</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Créez votre compte restaurant</div><div class="doc-step-desc">Rendez-vous sur la page d'inscription restaurant. Renseignez le nom de votre établissement, votre email, votre adresse, votre téléphone et choisissez un mot de passe sécurisé.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Signez le contrat d'exclusivité</div><div class="doc-step-desc">À la première connexion, un contrat d'exclusivité apparaît automatiquement. Lisez-le, choisissez la fréquence de paiement de la commission (hebdomadaire ou mensuelle), cochez votre accord et signez. Cette étape est obligatoire.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Ajoutez vos menus</div><div class="doc-step-desc">Allez dans <strong>Mes menus</strong> et créez vos plats : nom, catégorie, prix, description et photo. Les entreprises et leurs employés pourront les voir et les commander.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">4</div><div class="doc-step-content"><div class="doc-step-title">Attendez les affiliations</div><div class="doc-step-desc">Les entreprises peuvent demander à s'affilier à votre restaurant. Une fois affiliées, leurs employés peuvent commander vos plats. Signez le contrat d'affiliation depuis <strong>Mon contrat</strong>.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">5</div><div class="doc-step-content"><div class="doc-step-title">Gérez les commandes et envoyez les factures</div><div class="doc-step-desc">Chaque jour, consultez les commandes reçues dans <strong>Commandes</strong>. En fin de période, générez et envoyez les factures aux entreprises clientes depuis <strong>Factures</strong>.</div></div></div>
+          <div class="doc-tip"><strong>Astuce :</strong> Uploadez une image de votre programme de la semaine dans <strong>Programme hebdo</strong> — les entreprises et leurs employés la verront directement dans leur espace.</div>
+        </div>
+      </div>
+
+      <!-- TABLEAU DE BORD -->
+      <div class="doc-section" id="doc-dashboard" data-keywords="tableau de bord statistiques chiffres commandes semaine mois revenus affiliations note">
+        <div class="doc-section-header" onclick="toggleDocSection('doc-dashboard')">
+          <div class="doc-section-icon">📊</div>
+          <div class="doc-section-title">Tableau de bord</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Chiffres clés</div><div class="doc-step-desc">Le tableau de bord affiche 4 indicateurs essentiels : commandes du jour, de la semaine, du mois et le revenu mensuel total en FCFA.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Graphique des 30 derniers jours</div><div class="doc-step-desc">Un graphique en barres visualise l'évolution des commandes sur le mois. Exportez-le en PDF (semaine ou mois) via les boutons en haut à droite du graphique.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Note moyenne et affiliations</div><div class="doc-step-desc">Le second bloc affiche votre note client moyenne (sur 5) et la liste de vos entreprises affiliées avec le nombre d'employés.</div></div></div>
+          <div class="doc-tip"><strong>Notifications :</strong> La cloche en haut à droite affiche les nouvelles commandes, signatures de contrats et messages non lus.</div>
+        </div>
+      </div>
+
+      <!-- MES MENUS -->
+      <div class="doc-section" id="doc-menus" data-keywords="menus plats ajouter modifier supprimer catégorie prix photo image disponible boisson snack dessert">
+        <div class="doc-section-header" onclick="toggleDocSection('doc-menus')">
+          <div class="doc-section-icon">🍽</div>
+          <div class="doc-section-title">Mes menus</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Ajouter un plat</div><div class="doc-step-desc">Cliquez sur <strong>+ Ajouter un menu</strong>. Renseignez le nom du plat, sa catégorie (Plat principal, Boisson, Snack, Dessert ou Petit-déjeuner), le prix en FCFA, une description optionnelle et une photo.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Modifier ou désactiver</div><div class="doc-step-desc">Cliquez sur le bouton <strong>✏️</strong> d'un plat pour modifier ses informations. Utilisez le bouton <strong>Rendre indisponible</strong> pour masquer temporairement un plat sans le supprimer — les employés ne pourront plus le commander.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Supprimer un plat</div><div class="doc-step-desc">Le bouton <strong>🗑</strong> supprime définitivement un plat. Attention : cette action est irréversible.</div></div></div>
+          <div class="doc-tip"><strong>Bonnes pratiques :</strong> Ajoutez une photo pour chaque plat — les employés commandent beaucoup plus facilement avec une image. Maintenez vos prix à jour pour éviter les litiges avec les entreprises.</div>
+          <div class="doc-warn"><strong>Important :</strong> Les plats désactivés ne sont pas commandables mais restent visibles dans votre liste. Les plats supprimés disparaissent définitivement des historiques de commande.</div>
+        </div>
+      </div>
+
+      <!-- COMMANDES -->
+      <div class="doc-section" id="doc-orders" data-keywords="commandes reçues liste filtre date entreprise confirmer exporter pdf">
+        <div class="doc-section-header" onclick="toggleDocSection('doc-orders')">
+          <div class="doc-section-icon">🛒</div>
+          <div class="doc-section-title">Commandes reçues</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Consulter les commandes</div><div class="doc-step-desc">La page <strong>Commandes</strong> liste toutes les commandes reçues. Filtrez par date (saisissez au format JJ/MM/AAAA) et par entreprise pour affiner la vue.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Créer un batch de commandes</div><div class="doc-step-desc">Un "batch" regroupe toutes les commandes d'une entreprise pour un jour donné. Cliquez sur <strong>Créer batch</strong> pour valider le regroupement avant de générer la facture.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Exporter en PDF</div><div class="doc-step-desc">Cliquez sur <strong>PDF semaine</strong> ou <strong>PDF mois</strong> pour télécharger un récapitulatif imprimable de vos commandes.</div></div></div>
+          <div class="doc-tip"><strong>Commandes du jour :</strong> Les commandes se font avant midi. Chaque employé passe une commande par jour par restaurant affilié. Vous recevez une notification quand de nouvelles commandes arrivent.</div>
+        </div>
+      </div>
+
+      <!-- MESSAGERIE -->
+      <div class="doc-section" id="doc-messages" data-keywords="messagerie message entreprise envoyer fichier photo audio voix conversation">
+        <div class="doc-section-header" onclick="toggleDocSection('doc-messages')">
+          <div class="doc-section-icon">💬</div>
+          <div class="doc-section-title">Messagerie instantanée</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Conversations avec les entreprises</div><div class="doc-step-desc">La messagerie liste toutes vos entreprises affiliées. Cliquez sur une entreprise pour ouvrir la conversation. Les messages non lus sont indiqués par un badge orange.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Envoyer un message texte</div><div class="doc-step-desc">Tapez votre message dans la zone de saisie en bas de la conversation et appuyez sur <strong>Envoyer</strong> ou sur la touche Entrée.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Envoyer un fichier ou une image</div><div class="doc-step-desc">Cliquez sur l'icône 📎 pour choisir un fichier (image, PDF jusqu'à 3 Mo, vidéo jusqu'à 30 secondes). Une prévisualisation s'affiche avant l'envoi.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">4</div><div class="doc-step-content"><div class="doc-step-title">Envoyer un message vocal</div><div class="doc-step-desc">Cliquez sur le micro 🎤 pour démarrer l'enregistrement (2 minutes maximum). Recliquez pour arrêter et envoyer automatiquement.</div></div></div>
+          <div class="doc-tip"><strong>Temps réel :</strong> Les messages se rafraîchissent automatiquement toutes les 3 secondes. Le badge sur l'icône Messages dans la barre latérale indique le nombre de messages non lus.</div>
+        </div>
+      </div>
+
+      <!-- PROGRAMME HEBDO -->
+      <div class="doc-section" id="doc-weekly" data-keywords="programme hebdomadaire image photo flyer semaine upload entreprise employé">
+        <div class="doc-section-header" onclick="toggleDocSection('doc-weekly')">
+          <div class="doc-section-icon">📅</div>
+          <div class="doc-section-title">Programme hebdomadaire</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Qu'est-ce qu'un programme hebdomadaire ?</div><div class="doc-step-desc">C'est une image (photo, flyer, affiche) présentant vos menus de la semaine. Les entreprises affiliées et leurs employés la voient dans leur espace <strong>Menus Hebdo</strong>.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Uploader un programme</div><div class="doc-step-desc">Dans <strong>Programme hebdo</strong>, section gauche : donnez un titre à votre programme (ex: "Menu du 10 au 14 juin"), cliquez sur la zone d'upload pour choisir une image JPG/PNG/WebP (max 5 Mo), puis cliquez sur <strong>Enregistrer l'image</strong>.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Historique des programmes</div><div class="doc-step-desc">Vos programmes précédents sont listés sous le formulaire d'upload. Vous pouvez en supprimer avec le bouton 🗑.</div></div></div>
+          <div class="doc-tip"><strong>Fréquence recommandée :</strong> Uploadez un nouveau programme chaque lundi matin pour que les entreprises puissent planifier les repas de la semaine à venir.</div>
+        </div>
+      </div>
+
+      <!-- PACKS HEBDO -->
+      <div class="doc-section" id="doc-packs" data-keywords="pack hebdomadaire abonnement plat jour semaine lundi mardi menu facturation structure">
+        <div class="doc-section-header" onclick="toggleDocSection('doc-packs')">
+          <div class="doc-section-icon">📦</div>
+          <div class="doc-section-title">Packs hebdomadaires</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Qu'est-ce qu'un pack ?</div><div class="doc-step-desc">Un pack hebdomadaire est un abonnement structuré : vous planifiez à l'avance quels plats sont proposés chaque jour de la semaine. Contrairement aux commandes à la carte, les entreprises s'abonnent à un pack entier pour leurs employés.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Créer un pack</div><div class="doc-step-desc">Dans la section droite de <strong>Programme hebdo</strong>, saisissez le nom du pack (ex: "Pack Standard Juin") et cliquez sur <strong>➕ Créer</strong>. Le pack est créé avec 3 menus (Entrée, Plat, Dessert) sur 5 jours par défaut.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Ajouter les plats par jour</div><div class="doc-step-desc">Cliquez sur un pack pour l'ouvrir. Vous voyez la grille semaine (Lundi → Vendredi) × menus. Cliquez sur <strong>➕</strong> dans chaque case pour ajouter les plats prévus ce jour-là.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">4</div><div class="doc-step-content"><div class="doc-step-title">Facturer un pack</div><div class="doc-step-desc">Une fois le pack consommé par une entreprise, allez dans <strong>Factures hebdo</strong>, sélectionnez l'entreprise et le pack, définissez la période et les lignes de facturation, puis créez la facture.</div></div></div>
+          <div class="doc-tip"><strong>Quand utiliser un pack ?</strong> Lorsqu'une entreprise veut un abonnement hebdomadaire fixe (ex: 50 repas/jour pendant 5 jours = 250 repas). Si les commandes se font au coup par coup par les employés, utilisez plutôt les <strong>Factures</strong> classiques.</div>
+        </div>
+      </div>
+
+      <!-- FACTURES -->
+      <div class="doc-section" id="doc-invoices" data-keywords="facture générer envoyer pdf entreprise période montant total hebdomadaire mensuel">
+        <div class="doc-section-header" onclick="toggleDocSection('doc-invoices')">
+          <div class="doc-section-icon">🧾</div>
+          <div class="doc-section-title">Factures</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Factures classiques (commandes à la carte)</div><div class="doc-step-desc">Allez dans <strong>Factures</strong>. Sélectionnez l'entreprise, entrez la période (format JJ/MM/AAAA), puis cliquez sur <strong>⚡ Générer la facture</strong>. La facture récapitule toutes les commandes validées sur cette période.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Factures hebdomadaires (packs)</div><div class="doc-step-desc">Allez dans <strong>Factures hebdo</strong>. Sélectionnez l'entreprise, le pack associé, la période et la fréquence (mensuelle ou annuelle). Ajoutez les lignes manuellement si nécessaire, puis cliquez sur <strong>📤 Créer la facture</strong>.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Télécharger ou envoyer</div><div class="doc-step-desc">Chaque facture générée peut être téléchargée en PDF ou envoyée directement par email à l'entreprise depuis la liste des factures.</div></div></div>
+          <div class="doc-tip"><strong>Commission admin :</strong> Rappel — l'administrateur prélève 1% sur chaque commande selon la fréquence choisie dans votre contrat. Cela ne change pas le montant facturé à l'entreprise.</div>
+        </div>
+      </div>
+
+      <!-- CONTRATS -->
+      <div class="doc-section" id="doc-contract" data-keywords="contrat exclusivité affiliation signer commission paiement hebdomadaire mensuel entreprise">
+        <div class="doc-section-header" onclick="toggleDocSection('doc-contract')">
+          <div class="doc-section-icon">📝</div>
+          <div class="doc-section-title">Contrats</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Contrat d'exclusivité FoodChooseApp</div><div class="doc-step-desc">Ce contrat vous lie à l'administrateur de la plateforme. Il établit la commission de 1% par commande reversée à FoodChooseApp, et la fréquence de paiement (hebdomadaire ou mensuelle). Il est signé une seule fois à la première connexion.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Consulter votre contrat</div><div class="doc-step-desc">Accédez à <strong>Mon contrat</strong> dans la barre latérale pour voir le statut de votre contrat (signé/en attente), la date de signature et les modalités. Si vous n'avez pas encore signé, vous pouvez le faire depuis cette page.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Contrats d'affiliation</div><div class="doc-step-desc">Quand une entreprise s'affilie à votre restaurant, un contrat d'affiliation doit être signé des deux côtés. Ce contrat couvre les menus, les prix, les horaires et les programmes. Signez-le depuis la section <strong>Contrats d'affiliation</strong> de la page Mon contrat.</div></div></div>
+          <div class="doc-warn"><strong>Attention :</strong> Sans contrat d'exclusivité signé, votre accès aux fonctionnalités peut être limité. Sans contrat d'affiliation signé des deux côtés, l'affiliation n'est pas pleinement active.</div>
+        </div>
+      </div>
+
+      <!-- PROFIL -->
+      <div class="doc-section" id="doc-profile" data-keywords="profil modifier photo logo adresse téléphone spécialités paiement supprimer compte">
+        <div class="doc-section-header" onclick="toggleDocSection('doc-profile')">
+          <div class="doc-section-icon">👤</div>
+          <div class="doc-section-title">Mon profil</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Modifier les informations</div><div class="doc-step-desc">Dans <strong>Mon profil</strong>, modifiez le nom du restaurant, l'adresse, le téléphone, la ville, les spécialités culinaires et les moyens de paiement acceptés. Cliquez sur <strong>Enregistrer</strong> pour valider.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Photo du restaurant</div><div class="doc-step-desc">Uploadez une photo de votre restaurant ou de votre logo. Elle apparaît dans la liste des restaurants visible par les entreprises et dans la messagerie.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Changer de mot de passe</div><div class="doc-step-desc">Depuis la page profil, entrez votre ancien mot de passe puis le nouveau (2 fois) et cliquez sur <strong>Changer le mot de passe</strong>.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">4</div><div class="doc-step-content"><div class="doc-step-title">Supprimer le compte</div><div class="doc-step-desc">En bas de la page profil, cliquez sur <strong>Supprimer le compte</strong>. Vous devrez répondre à 3 questions et cocher une confirmation. Cette action est irréversible.</div></div></div>
+        </div>
+      </div>
+
+    </div><!-- /doc-accordion -->
+
+    <!-- FAQ -->
+    <div class="doc-faq">
+      <div class="doc-faq-title">❓ Questions fréquentes</div>
+
+      <div class="doc-faq-item" onclick="toggleFaq(this)">
+        <div class="doc-faq-q">Comment les entreprises trouvent-elles mon restaurant ? <span>▼</span></div>
+        <div class="doc-faq-a">Les entreprises voient tous les restaurants enregistrés sur la plateforme dans leur rubrique "Tous les restaurants". Elles peuvent filtrer par spécialité ou rechercher par nom. Assurez-vous que votre profil est complet (photo, spécialités, adresse) pour être facilement trouvable.</div>
+      </div>
+      <div class="doc-faq-item" onclick="toggleFaq(this)">
+        <div class="doc-faq-q">Que se passe-t-il si je n'ai pas signé le contrat ? <span>▼</span></div>
+        <div class="doc-faq-a">Le contrat d'exclusivité apparaîtra à chaque connexion jusqu'à ce qu'il soit signé. Vous pouvez accéder au tableau de bord, mais certaines fonctionnalités sont conditionnées à la signature. Rendez-vous dans "Mon contrat" pour le signer à tout moment.</div>
+      </div>
+      <div class="doc-faq-item" onclick="toggleFaq(this)">
+        <div class="doc-faq-q">Comment fonctionne la commission de 1% ? <span>▼</span></div>
+        <div class="doc-faq-a">Pour chaque plat commandé via la plateforme, FoodChooseApp perçoit 1% du montant hors taxes. Ce montant est prélevé selon la fréquence choisie dans votre contrat (hebdomadaire ou mensuelle). Le reste vous revient intégralement. Les coordonnées de paiement de l'administrateur sont mentionnées dans votre contrat.</div>
+      </div>
+      <div class="doc-faq-item" onclick="toggleFaq(this)">
+        <div class="doc-faq-q">Puis-je avoir plusieurs entreprises affiliées ? <span>▼</span></div>
+        <div class="doc-faq-a">Oui, il n'y a pas de limite au nombre d'entreprises affiliées. Chaque affiliation génère un contrat d'affiliation distinct à signer avec l'entreprise concernée. La messagerie et les factures gèrent chaque entreprise séparément.</div>
+      </div>
+      <div class="doc-faq-item" onclick="toggleFaq(this)">
+        <div class="doc-faq-q">Quelle est la différence entre une facture classique et une facture hebdomadaire ? <span>▼</span></div>
+        <div class="doc-faq-a">La facture classique regroupe les commandes à la carte passées par les employés sur une période donnée. La facture hebdomadaire est liée à un pack — elle facture l'abonnement hebdomadaire d'une entreprise à un plan de repas structuré que vous avez défini. Si vous n'utilisez pas les packs, vous n'avez besoin que des factures classiques.</div>
+      </div>
+      <div class="doc-faq-item" onclick="toggleFaq(this)">
+        <div class="doc-faq-q">Comment récupérer mon mot de passe si je l'ai oublié ? <span>▼</span></div>
+        <div class="doc-faq-a">Sur la page de connexion restaurant, cliquez sur "Mot de passe oublié". Entrez votre email, vous recevrez un code OTP à 6 chiffres valable 10 minutes. Saisissez ce code, puis définissez votre nouveau mot de passe.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CONTRACT PAGE ═══ -->
+  <div class="page" id="page-contract">
+    <div class="page-grid">
+      <!-- Admin-restaurant contract -->
+      <div class="card reveal" style="grid-column:1/-1">
+        <div class="card-header">
+          <span class="card-title">📝 Contrat d'exclusivité FoodChooseApp</span>
+          <span id="contractPageBadge" class="badge-pending">En attente</span>
+        </div>
+        <div class="card-body" id="contractPageBody">
+          <div style="text-align:center;padding:32px;color:var(--muted)">Chargement…</div>
+        </div>
+      </div>
+      <!-- Affiliation contracts -->
+      <div class="card reveal" style="grid-column:1/-1">
+        <div class="card-header">
+          <span class="card-title">🤝 Contrats d'affiliation</span>
+          <button class="btn btn-outline btn-sm" onclick="loadAffiliationContracts()">🔄</button>
+        </div>
+        <div class="card-body" id="affiliationContractsBody">
+          <div style="text-align:center;padding:24px;color:var(--muted)">Chargement…</div>
         </div>
       </div>
     </div>
@@ -566,6 +813,70 @@
   </div>
 </div>
 
+<!-- CONTRACT MODAL -->
+<div class="contract-modal-overlay" id="contractModal" style="display:none">
+  <div class="contract-modal">
+    <div class="contract-modal-header">
+      <div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--brown);font-weight:700">📝 Contrat d'exclusivité FoodChooseApp</div>
+    </div>
+    <div class="contract-modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Veuillez lire attentivement les conditions ci-dessous avant de signer.</p>
+      <div class="contract-text">CONTRAT D'EXCLUSIVITÉ ET CONDITIONS D'UTILISATION
+
+ENTRE : FoodChooseApp (ci-après "l'Administrateur")
+ET : Le Restaurant soussigné (ci-après "le Restaurant")
+
+─────────────────────────────────────────
+
+ARTICLE 1 — OBJET
+Le présent contrat régit les conditions d'utilisation de la plateforme FoodChooseApp par le Restaurant.
+
+ARTICLE 2 — COMMISSION ADMINISTRATIVE
+Pour chaque plat commandé par une entreprise ou par les employés d'une entreprise via la plateforme FoodChooseApp, l'Administrateur perçoit une commission de 1% (un pour cent) du montant total hors taxes.
+
+Cette commission est prélevée automatiquement sur les paiements reçus.
+
+ARTICLE 3 — MODALITÉS DE PAIEMENT DE LA COMMISSION
+Le paiement de la commission s'effectue selon la fréquence choisie par le Restaurant (hebdomadaire ou mensuelle), sur le compte de l'Administrateur dont les coordonnées sont les suivantes :
+
+┌─────────────────────────────────────────┐
+│  COORDONNÉES DE PAIEMENT                │
+│  [À renseigner par l'Administrateur]    │
+└─────────────────────────────────────────┘
+
+ARTICLE 4 — POLITIQUE DE CONFIDENTIALITÉ
+Les données personnelles collectées sur la plateforme sont traitées conformément aux lois en vigueur sur la protection des données. Elles sont utilisées exclusivement pour le fonctionnement du service et ne sont ni vendues ni cédées à des tiers.
+
+ARTICLE 5 — EXCLUSIVITÉ
+Le Restaurant s'engage à utiliser FoodChooseApp comme canal principal de gestion des commandes d'entreprise et à y maintenir ses menus à jour.
+
+ARTICLE 6 — DURÉE ET RÉSILIATION
+Ce contrat est conclu pour une durée indéterminée. Il peut être résilié par l'une ou l'autre des parties avec un préavis de 30 (trente) jours, notifié par écrit.
+
+ARTICLE 7 — ACCEPTATION
+En cliquant sur "Signer le contrat", le Restaurant reconnaît avoir lu, compris et accepté l'intégralité des présentes conditions.</div>
+      <div style="margin-top:20px">
+        <div style="font-weight:600;font-size:13px;color:var(--brown);margin-bottom:10px">Fréquence de paiement de la commission :</div>
+        <div style="display:flex;gap:20px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+            <input type="radio" name="contractSchedule" value="weekly" style="accent-color:var(--orange);width:16px;height:16px"> Hebdomadaire
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+            <input type="radio" name="contractSchedule" value="monthly" checked style="accent-color:var(--orange);width:16px;height:16px"> Mensuel
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="contract-modal-footer">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13.5px;color:var(--text)">
+        <input type="checkbox" id="contractAccept" style="width:16px;height:16px;accent-color:var(--orange)" onchange="document.getElementById('contractSignBtn').disabled=!this.checked">
+        J'ai lu et j'accepte les termes de ce contrat
+      </label>
+      <button class="btn btn-primary" id="contractSignBtn" style="width:100%" disabled onclick="signContract()">✍️ Signer le contrat</button>
+    </div>
+  </div>
+</div>
+
 <!-- PROMPT MODAL (generic single-input) -->
 <div class="modal-overlay" id="promptModal">
   <div class="modal" style="max-width:400px">
@@ -617,13 +928,52 @@ function parseFrDate(str) {
   return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
 }
 
+async function signContract() {
+  const btn = document.getElementById('contractSignBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Signature en cours...';
+  const schedule = document.querySelector('input[name="contractSchedule"]:checked')?.value || 'monthly';
+  try {
+    await apiFetch('/api/restaurant/contract/sign', { method: 'POST', body: { payment_schedule: schedule } }, token);
+    document.getElementById('contractModal').style.display = 'none';
+    toast('Contrat signé avec succès !', 'success');
+  } catch(e) {
+    toast('Erreur lors de la signature: ' + e.message, 'error');
+    btn.disabled = false;
+    btn.textContent = '✍️ Signer le contrat';
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
 const restName = localStorage.getItem('fc_name') || '—';
 document.getElementById('sidebarName').textContent = restName.substring(0,20);
 
+// Vérifier le statut du contrat au chargement
+apiFetch('/api/restaurant/contract', {}, token).then(contract => {
+  if (!contract || contract.status !== 'signed') {
+    document.getElementById('contractModal').style.display = 'flex';
+    document.getElementById('contractBadge').style.display = '';
+    document.getElementById('contractBadge').textContent = '!';
+  }
+}).catch(() => {
+  document.getElementById('contractModal').style.display = 'flex';
+  document.getElementById('contractBadge').style.display = '';
+  document.getElementById('contractBadge').textContent = '!';
+});
+// Vérifier les contrats d'affiliation non signés
+apiFetch('/api/restaurant/affiliation-contracts', {}, token).then(contracts => {
+  const unsigned = (contracts || []).filter(c => !c.restaurant_signed_at).length;
+  if (unsigned > 0) {
+    document.getElementById('contractBadge').style.display = '';
+    document.getElementById('contractBadge').textContent = unsigned;
+  }
+}).catch(() => {});
+
 let msgPollInterval = null;
 let currentChatCompanyId = null;
 let activeBatchId = null;
+let pendingRestFile = null;
+let restVoiceRecorder = null, restVoiceChunks = [], restVoiceTimer = null, restIsRecording = false;
 
 function initDateMask() {
   document.querySelectorAll('input.date-mask').forEach(inp => {
@@ -671,6 +1021,8 @@ function switchToPage(page) {
   else if (page === 'invoices') { loadInvoices(); loadCompaniesForInvoices(); }
   else if (page === 'weekly') { loadWeeklyPacks(); }
   else if (page === 'weekly-invoices') { loadWeeklyInvoices(); }
+  else if (page === 'contract') { loadContractPage(); }
+  else if (page === 'help') { initDocSearch(); }
 }
 
 function loadCompaniesForInvoices() {
@@ -955,10 +1307,7 @@ async function deleteAccount() {
 
 function openDeleteModal() { document.getElementById('deleteModal').classList.add('open'); }
 
-function openRestFileUpload() { document.getElementById('restFileInput').click(); }
-function toggleVoiceRecord() { alert('Fonctionnalité en développement'); }
 
-function clearRestFile() { document.getElementById('restFilePreview').innerHTML = ''; }
 
 // ═══ INVOICES ═══
 let currentInvoiceId = null;
@@ -1049,81 +1398,219 @@ async function sendInvoice() {
 }
 
 // ═══ MESSAGES ═══
+function _restId() { return JSON.parse(atob(token.split('.')[1])).id; }
+
 async function loadConversations() {
   try {
     const convs = await apiFetch('/api/restaurant/conversations', {}, token);
     const list = document.getElementById('convList');
-    if (!convs.length) { list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">Aucune conversation</div>'; return; }
+    if (!convs.length) {
+      list.innerHTML = '<div class="empty-state" style="padding:20px"><span class="icon">💬</span>Aucune entreprise affiliée</div>';
+      return;
+    }
     let totalUnread = 0;
     list.innerHTML = convs.map(c => {
       totalUnread += parseInt(c.unread || 0);
-      return `<div class="conv-item" onclick="openChat(${c.company_id})">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-weight:600">🏢 ${c.company_name}</div>
-          ${c.unread > 0 ? `<span style="background:var(--orange);color:white;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px">${c.unread}</span>` : ''}
+      const active = currentChatCompanyId == c.company_id ? 'active' : '';
+      const eName = (c.company_name || '').replace(/'/g, "\\'");
+      const ePhoto = (c.logo_url || '').replace(/'/g, "\\'");
+      const avatar = c.logo_url
+        ? `<img src="${c.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+        : '🏢';
+      return `<div class="chat-conv ${active}" onclick="openChat(${c.company_id},'${eName}','${ePhoto}')">
+        <div style="display:flex;align-items:center;gap:9px">
+          <div class="user-avatar" style="width:34px;height:34px;font-size:14px;flex-shrink:0">${avatar}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:4px">
+              <div class="chat-conv-name">${c.company_name}</div>
+              <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+                ${c.last_at ? `<span style="font-size:10px;color:var(--muted)">${timeAgo(c.last_at)}</span>` : ''}
+                ${c.unread > 0 ? `<span style="background:var(--orange);color:white;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px">${c.unread}</span>` : ''}
+              </div>
+            </div>
+            <div class="chat-conv-last">${c.last_message || 'Pas encore de message'}</div>
+          </div>
         </div>
-        <div style="font-size:12px;color:var(--muted)">${c.last_message || 'Aucun message'}</div>
       </div>`;
     }).join('');
     const badge = document.getElementById('msgBadge');
-    if (totalUnread > 0) { badge.textContent = totalUnread; badge.style.display = 'inline'; } else { badge.style.display = 'none'; }
+    if (totalUnread > 0) { badge.textContent = totalUnread; badge.style.display = 'inline'; }
+    else { badge.style.display = 'none'; }
   } catch(e) { console.error('loadConversations:', e); }
 }
 
-function openChat(companyId) {
+function renderRestMsg(m) {
+  const cls = m.sender_type === 'restaurant' ? 'msg-out' : 'msg-in';
+  const audioSrc = m.audio_url || m.audio_data;
+  const fileSrc = m.file_url || m.file_data;
+  if (m.message_type === 'voice' && audioSrc) {
+    return `<div class="msg ${cls}"><div class="msg-voice"><div class="voice-badge">🎙 Message vocal</div><audio controls src="${audioSrc}"></audio><div class="msg-time">${timeAgo(m.created_at)}</div></div></div>`;
+  }
+  if (m.message_type === 'file' && fileSrc) {
+    let inner = '';
+    if (m.file_mime?.startsWith('image/')) {
+      inner = `<img src="${fileSrc}" onclick="window.open('${fileSrc}','_blank')" alt="${m.file_name||'image'}" style="max-width:220px;max-height:200px;border-radius:9px;display:block;cursor:pointer;object-fit:cover">`;
+    } else if (m.file_mime?.startsWith('video/')) {
+      inner = `<video controls style="max-width:220px;border-radius:9px;display:block;background:#000"><source src="${fileSrc}" type="${m.file_mime}"></video>`;
+    } else {
+      inner = `<a class="msg-file-doc" href="${fileSrc}" download="${m.file_name||'document'}">📄<span>${m.file_name||'Document'}</span></a>`;
+    }
+    const caption = m.content && !['📷 Photo','🎬 Vidéo'].includes(m.content) && !m.content.startsWith('📄')
+      ? `<div style="font-size:12px;margin-top:3px">${m.content}</div>` : '';
+    return `<div class="msg ${cls}"><div class="msg-file">${inner}${caption}<div class="msg-time">${timeAgo(m.created_at)}</div></div></div>`;
+  }
+  return `<div class="msg ${cls}">${m.content}<div class="msg-time">${timeAgo(m.created_at)}</div></div>`;
+}
+
+function openChat(companyId, companyName, photo) {
   currentChatCompanyId = companyId;
-  const restId = JSON.parse(atob(token.split('.')[1])).id;
-  apiFetch('/api/messages/read', { method: 'PUT', body: { companyId, restaurantId: restId } }, token).catch(()=>{});
-  loadMessages(companyId);
-  document.getElementById('chatMain').innerHTML = `<div style="padding:20px">
-    <div id="msgList" style="max-height:400px;overflow-y:auto"></div>
-    <div style="display:flex;gap:8px;margin-top:16px">
-      <input class="form-control" id="msgInput" placeholder="Votre message..." onkeypress="if(event.key==='Enter')sendMessage()">
-      <button class="btn btn-primary" onclick="sendMessage()">Envoyer</button>
+  restIsRecording = false;
+  clearRestFile();
+  apiFetch('/api/messages/read', { method: 'PUT', body: { companyId, restaurantId: _restId() } }, token).catch(() => {});
+  const main = document.getElementById('chatMain');
+  const avatar = photo
+    ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+    : '🏢';
+  main.innerHTML = `
+    <div class="chat-header">
+      <div class="user-avatar" style="width:32px;height:32px;font-size:14px;flex-shrink:0">${avatar}</div>
+      <span style="flex:1;font-weight:600">${companyName || 'Entreprise'}</span>
     </div>
-  </div>`;
+    <div class="chat-messages" id="restChatMessages"></div>
+    <div class="file-preview-bar" id="restFilePreviewBar" style="display:none"></div>
+    <div class="chat-input-area">
+      <button class="attach-btn" onclick="openRestFileUpload()" title="Joindre un fichier">📎</button>
+      <input class="chat-input" id="restChatInput" placeholder="Votre message..."
+        onkeydown="if(event.key==='Enter'){event.preventDefault();sendRestMsg(${companyId})}">
+      <span class="record-timer" id="restRecordTimer"></span>
+      <button class="record-btn" id="restRecordBtn" onclick="toggleRestVoiceRecord(${companyId})" title="Message vocal">🎙</button>
+      <button class="btn btn-primary btn-sm" onclick="sendRestMsg(${companyId})">Envoyer</button>
+    </div>`;
+  loadMessages(companyId);
+  loadConversations();
 }
 
 async function loadMessages(companyId) {
   try {
-    const restId = JSON.parse(atob(token.split('.')[1])).id;
-    const msgs = await apiFetch(`/api/messages?companyId=${companyId}&restaurantId=${restId}`, {}, token);
-    const list = document.getElementById('msgList');
-    if (!msgs.length) { list.innerHTML = '<div style="text-align:center;color:var(--muted)">Aucun message</div>'; return; }
-    list.innerHTML = msgs.map(m => {
-      const cls = m.sender_type === 'restaurant' ? 'msg-out' : 'msg-in';
-      const audioSrc = m.audio_url || m.audio_data;
-      const fileSrc = m.file_url || m.file_data;
-      if (m.message_type === 'voice' && audioSrc) {
-        return `<div class="msg ${cls}"><div class="msg-voice"><div class="voice-badge">🎙 Message vocal</div><audio controls src="${audioSrc}"></audio><div class="msg-time">${timeAgo(m.created_at)}</div></div></div>`;
-      }
-      if (m.message_type === 'file' && fileSrc) {
-        let inner = '';
-        if (m.file_mime?.startsWith('image/')) {
-          inner = `<img src="${fileSrc}" onclick="window.open('${fileSrc}','_blank')" alt="${m.file_name||'image'}" style="max-width:220px;max-height:200px;border-radius:9px;display:block;cursor:pointer;object-fit:cover">`;
-        } else if (m.file_mime?.startsWith('video/')) {
-          inner = `<video controls style="max-width:220px;border-radius:9px;display:block;background:#000"><source src="${fileSrc}" type="${m.file_mime}"></video>`;
-        } else {
-          inner = `<a class="msg-file-doc" href="${fileSrc}" download="${m.file_name||'document'}">📄<span>${m.file_name||'Document'}</span></a>`;
-        }
-        const caption = m.content && !['📷 Photo','🎬 Vidéo'].includes(m.content) && !m.content.startsWith('📄') ? `<div style="font-size:12px;margin-top:3px">${m.content}</div>` : '';
-        return `<div class="msg ${cls}"><div class="msg-file">${inner}${caption}<div class="msg-time">${timeAgo(m.created_at)}</div></div></div>`;
-      }
-      return `<div class="msg ${cls}">${m.content}<div class="msg-time">${timeAgo(m.created_at)}</div></div>`;
-    }).join('');
+    const msgs = await apiFetch(`/api/messages?companyId=${companyId}&restaurantId=${_restId()}`, {}, token);
+    const el = document.getElementById('restChatMessages');
+    if (!el) return;
+    if (!msgs.length) {
+      el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">Aucun message — commencez la conversation !</div>';
+      return;
+    }
+    el.innerHTML = msgs.map(m => renderRestMsg(m)).join('');
+    el.scrollTop = el.scrollHeight;
   } catch(e) { console.error('loadMessages:', e); }
 }
 
-async function sendMessage() {
-  const input = document.getElementById('msgInput');
-  const msg = input.value.trim();
-  if (!msg || !currentChatCompanyId) return;
+async function sendRestMsg(companyId) {
+  const input = document.getElementById('restChatInput');
+  const text = input?.value.trim();
   try {
-    const restId = JSON.parse(atob(token.split('.')[1])).id;
-    await apiFetch('/api/messages', { method: 'POST', body: { companyId: currentChatCompanyId, restaurantId: restId, content: msg } }, token);
-    input.value = '';
-    loadMessages(currentChatCompanyId);
-  } catch(e) { toast(e.message, 'error'); }
+    if (pendingRestFile) {
+      const caption = text || (pendingRestFile.type === 'image' ? '📷 Photo' : pendingRestFile.type === 'video' ? '🎬 Vidéo' : `📄 ${pendingRestFile.name}`);
+      await apiFetch('/api/messages', { method: 'POST', body: { companyId, restaurantId: _restId(), content: caption, messageType: 'file', fileData: pendingRestFile.data, fileName: pendingRestFile.name, fileMime: pendingRestFile.mime } }, token);
+      if (input) input.value = '';
+      clearRestFile();
+    } else if (text) {
+      await apiFetch('/api/messages', { method: 'POST', body: JSON.stringify({ companyId, restaurantId: _restId(), content: text }) }, token);
+      input.value = '';
+    } else { return; }
+    loadMessages(companyId);
+  } catch(e) { toast('Erreur envoi', 'error'); }
+}
+
+async function sendRestVoiceMsg(companyId, audioData) {
+  try {
+    await apiFetch('/api/messages', { method: 'POST', body: { companyId, restaurantId: _restId(), content: '🎙 Message vocal', messageType: 'voice', audioData } }, token);
+    loadMessages(companyId);
+  } catch(e) { toast('Erreur envoi vocal', 'error'); }
+}
+
+function toggleRestVoiceRecord(companyId) {
+  if (restIsRecording) {
+    if (restVoiceRecorder && restVoiceRecorder.state === 'recording') restVoiceRecorder.stop();
+    clearInterval(restVoiceTimer);
+    restIsRecording = false;
+    document.getElementById('restRecordBtn')?.classList.remove('recording');
+    const t = document.getElementById('restRecordTimer');
+    if (t) t.textContent = '';
+  } else {
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+      restVoiceRecorder = new MediaRecorder(stream, { mimeType });
+      restVoiceChunks = [];
+      restVoiceRecorder.ondataavailable = e => { if (e.data.size > 0) restVoiceChunks.push(e.data); };
+      restVoiceRecorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(restVoiceChunks, { type: mimeType });
+        const reader = new FileReader();
+        reader.onloadend = () => sendRestVoiceMsg(companyId, reader.result);
+        reader.readAsDataURL(blob);
+      };
+      restVoiceRecorder.start();
+      restIsRecording = true;
+      document.getElementById('restRecordBtn')?.classList.add('recording');
+      let secs = 0;
+      restVoiceTimer = setInterval(() => {
+        secs++;
+        const t = document.getElementById('restRecordTimer');
+        if (t) t.textContent = `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`;
+        if (secs >= 120) toggleRestVoiceRecord(companyId);
+      }, 1000);
+    }).catch(() => toast('Microphone inaccessible', 'error'));
+  }
+}
+
+function openRestFileUpload() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*,application/pdf,video/mp4,video/webm,video/quicktime';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const mime = file.type;
+    let data, fileType;
+    if (mime.startsWith('image/')) {
+      fileType = 'image';
+      data = await compressImage(file);
+    } else if (mime === 'application/pdf') {
+      fileType = 'pdf';
+      if (file.size > 3 * 1024 * 1024) { toast('PDF trop volumineux (max 3 Mo)', 'error'); return; }
+      data = await readFileAsBase64(file);
+    } else if (mime.startsWith('video/')) {
+      fileType = 'video';
+      if (file.size > 3 * 1024 * 1024) { toast('Vidéo trop volumineuse (max 3 Mo)', 'error'); return; }
+      const dur = await checkVideoDuration(file);
+      if (dur > 32) { toast('Vidéo trop longue (max 30s)', 'error'); return; }
+      data = await readFileAsBase64(file);
+    } else { toast('Type non supporté (image, PDF ou vidéo)', 'error'); return; }
+    pendingRestFile = { data, name: file.name, mime, type: fileType };
+    showRestFilePreview();
+  };
+  input.click();
+}
+
+function showRestFilePreview() {
+  const bar = document.getElementById('restFilePreviewBar');
+  if (!bar || !pendingRestFile) return;
+  bar.style.display = 'flex';
+  let inner = '';
+  if (pendingRestFile.type === 'image') {
+    inner = `<div class="file-thumb"><img src="${pendingRestFile.data}"><button class="file-thumb-del" onclick="clearRestFile()">✕</button></div>`;
+  } else if (pendingRestFile.type === 'video') {
+    inner = `<div class="file-thumb">🎬<span style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pendingRestFile.name}</span><button class="file-thumb-del" onclick="clearRestFile()">✕</button></div>`;
+  } else {
+    inner = `<div class="file-thumb">📄<span style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pendingRestFile.name}</span><button class="file-thumb-del" onclick="clearRestFile()">✕</button></div>`;
+  }
+  bar.innerHTML = inner;
+}
+
+function clearRestFile() {
+  pendingRestFile = null;
+  const bar = document.getElementById('restFilePreviewBar');
+  if (bar) { bar.innerHTML = ''; bar.style.display = 'none'; }
 }
 
 function startMsgPolling() {
@@ -1561,8 +2048,10 @@ window.loadProfile = loadProfile;
 window.openChat = openChat;
 window.loadConversations = loadConversations;
 window.loadMessages = loadMessages;
+window.sendRestMsg = sendRestMsg;
 window.openRestFileUpload = openRestFileUpload;
-window.toggleVoiceRecord = toggleVoiceRecord;
+window.clearRestFile = clearRestFile;
+window.toggleRestVoiceRecord = toggleRestVoiceRecord;
 window.createBatchForCompany = createBatchForCompany;
 window.createInvoiceForCompany = createInvoiceForCompany;
 window.saveSpecialties = saveSpecialties;
@@ -1573,9 +2062,7 @@ window.exportPDF = exportPDF;
 window.exportOrdersPDF = exportOrdersPDF;
 window.downloadRestInvoice = downloadRestInvoice;
 window.printRestInvoice = printRestInvoice;
-window.clearRestFile = clearRestFile;
 window.openInvoiceModal = openInvoiceModal;
-window.sendMessage = sendMessage;
 window.confirmBatch = confirmBatch;
 window.generateInvoice = generateInvoice;
 window.loadConfirmedOrders = loadConfirmedOrders;
@@ -1607,6 +2094,156 @@ window.editCurrentPack = editCurrentPack;
 window.deleteCurrentPack = deleteCurrentPack;
 window.saveEditMenu = saveEditMenu;
 window.saveDishModal = saveDishModal;
+window.signContract = signContract;
+
+// ── Documentation helpers ──────────────────────────
+function toggleDocSection(id) {
+  const sec = document.getElementById(id);
+  if (!sec) return;
+  sec.classList.toggle('open');
+}
+function openDocSection(id) {
+  document.querySelectorAll('#docAccordion .doc-section').forEach(s => s.classList.remove('open'));
+  const sec = document.getElementById(id);
+  if (sec) { sec.classList.add('open'); sec.scrollIntoView({ behavior:'smooth', block:'start' }); }
+}
+function filterDocSections(q) {
+  const query = q.toLowerCase().trim();
+  document.querySelectorAll('#docAccordion .doc-section').forEach(sec => {
+    const keywords = (sec.dataset.keywords || '').toLowerCase();
+    const text = sec.textContent.toLowerCase();
+    const match = !query || keywords.includes(query) || text.includes(query);
+    sec.style.display = match ? '' : 'none';
+    if (match && query) sec.classList.add('open');
+  });
+}
+function toggleFaq(item) { item.classList.toggle('open'); }
+function initDocSearch() {
+  const inp = document.getElementById('docSearchInput');
+  if (inp) inp.value = '';
+  document.querySelectorAll('#docAccordion .doc-section').forEach(s => s.style.display = '');
+}
+window.toggleDocSection = toggleDocSection;
+window.openDocSection = openDocSection;
+window.filterDocSections = filterDocSections;
+window.toggleFaq = toggleFaq;
+window.initDocSearch = initDocSearch;
+
+window.loadContractPage = loadContractPage;
+window.loadAffiliationContracts = loadAffiliationContracts;
+window.signAffiliationContract = signAffiliationContract;
+
+async function loadContractPage() {
+  try {
+    const contract = await apiFetch('/api/restaurant/contract', {}, token);
+    const body = document.getElementById('contractPageBody');
+    const badge = document.getElementById('contractPageBadge');
+    const signed = contract && contract.status === 'signed';
+    badge.textContent = signed ? 'Signé ✓' : 'En attente';
+    badge.className = signed ? 'badge-signed' : 'badge-pending';
+    if (signed) {
+      body.innerHTML = `
+        <div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:12px;padding:20px;margin-bottom:20px">
+          <div style="font-size:16px;font-weight:700;color:#166534;margin-bottom:8px">✅ Contrat signé</div>
+          <div style="font-size:13px;color:#166534">Signé le ${new Date(contract.signed_at).toLocaleDateString('fr-FR', {day:'2-digit',month:'long',year:'numeric'})} • Commission : ${contract.commission_rate}% • Paiement : ${contract.payment_schedule === 'weekly' ? 'Hebdomadaire' : 'Mensuel'}</div>
+        </div>
+        <div class="contract-text" style="max-height:420px;overflow-y:auto">${document.querySelector('.contract-text').innerHTML}</div>
+      `;
+    } else {
+      body.innerHTML = `
+        <div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:12px;padding:20px;margin-bottom:20px">
+          <div style="font-size:14px;font-weight:600;color:#92400E;margin-bottom:8px">⚠️ Contrat non signé</div>
+          <div style="font-size:13px;color:#92400E">Vous devez signer le contrat d'exclusivité pour utiliser toutes les fonctionnalités.</div>
+        </div>
+        <div class="contract-text" style="max-height:320px;overflow-y:auto">${document.querySelector('.contract-text').innerHTML}</div>
+        <div style="margin-top:20px">
+          <div style="font-weight:600;font-size:13px;color:var(--brown);margin-bottom:10px">Fréquence de paiement :</div>
+          <div style="display:flex;gap:20px;margin-bottom:16px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+              <input type="radio" name="contractSchedule2" value="weekly" style="accent-color:var(--orange);width:16px;height:16px"> Hebdomadaire
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+              <input type="radio" name="contractSchedule2" value="monthly" checked style="accent-color:var(--orange);width:16px;height:16px"> Mensuel
+            </label>
+          </div>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13.5px;color:var(--text);margin-bottom:14px">
+            <input type="checkbox" id="contractAccept2" style="width:16px;height:16px;accent-color:var(--orange)" onchange="document.getElementById('contractSignBtn2').disabled=!this.checked">
+            J'ai lu et j'accepte les termes de ce contrat
+          </label>
+          <button class="btn btn-primary" id="contractSignBtn2" style="width:100%" disabled onclick="signContractFromPage()">✍️ Signer le contrat</button>
+        </div>
+      `;
+    }
+  } catch(e) {
+    document.getElementById('contractPageBody').innerHTML = '<div style="color:var(--danger);padding:16px">Erreur de chargement.</div>';
+  }
+  loadAffiliationContracts();
+}
+
+async function signContractFromPage() {
+  const btn = document.getElementById('contractSignBtn2');
+  btn.disabled = true;
+  btn.textContent = '⏳ Signature en cours...';
+  const schedule = document.querySelector('input[name="contractSchedule2"]:checked')?.value || 'monthly';
+  try {
+    await apiFetch('/api/restaurant/contract/sign', { method: 'POST', body: { payment_schedule: schedule } }, token);
+    document.getElementById('contractModal').style.display = 'none';
+    toast('Contrat signé avec succès !', 'success');
+    loadContractPage();
+    document.getElementById('contractBadge').style.display = 'none';
+  } catch(e) {
+    toast('Erreur : ' + e.message, 'error');
+    btn.disabled = false;
+    btn.textContent = '✍️ Signer le contrat';
+  }
+}
+window.signContractFromPage = signContractFromPage;
+
+async function loadAffiliationContracts() {
+  const el = document.getElementById('affiliationContractsBody');
+  try {
+    const contracts = await apiFetch('/api/restaurant/affiliation-contracts', {}, token);
+    if (!contracts.length) {
+      el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:16px">Aucune affiliation pour le moment.</div>';
+      return;
+    }
+    const html = contracts.map(c => {
+      const restSigned = !!c.restaurant_signed_at;
+      const coSigned = !!c.company_signed_at;
+      const bothSigned = restSigned && coSigned;
+      return `
+        <div style="display:flex;align-items:center;gap:14px;padding:14px;background:#F9F1EB;border-radius:12px;margin-bottom:10px">
+          ${c.company_logo ? `<img src="${c.company_logo}" style="width:44px;height:44px;object-fit:cover;border-radius:10px">` : `<div style="width:44px;height:44px;background:var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">🏢</div>`}
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">${c.company_name}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">
+              Restaurant : ${restSigned ? '✅ Signé le '+new Date(c.restaurant_signed_at).toLocaleDateString('fr-FR') : '⏳ En attente de signature'}
+              &nbsp;|&nbsp;
+              Entreprise : ${coSigned ? '✅ Signé le '+new Date(c.company_signed_at).toLocaleDateString('fr-FR') : '⏳ En attente'}
+            </div>
+            ${bothSigned ? '<div style="font-size:11px;color:#166534;font-weight:500;margin-top:4px">✅ Contrat d\'affiliation actif</div>' : ''}
+          </div>
+          ${!restSigned ? `<button class="btn btn-primary btn-sm" onclick="signAffiliationContract(${c.affiliation_id})">✍️ Signer</button>` : ''}
+        </div>
+      `;
+    }).join('');
+    el.innerHTML = html;
+    const unsignedCount = contracts.filter(c => !c.restaurant_signed_at).length;
+    document.getElementById('contractBadge').style.display = unsignedCount > 0 ? '' : 'none';
+    document.getElementById('contractBadge').textContent = unsignedCount;
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--danger);font-size:13px;padding:16px">Erreur de chargement.</div>';
+  }
+}
+
+async function signAffiliationContract(affiliationId) {
+  try {
+    await apiFetch(`/api/restaurant/affiliation-contracts/${affiliationId}/sign`, { method: 'POST' }, token);
+    toast('Contrat d\'affiliation signé !', 'success');
+    loadAffiliationContracts();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
 }); // end DOMContentLoaded
 </script>
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>

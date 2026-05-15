@@ -99,6 +99,8 @@
 
     <!-- Section : Mon compte -->
     <div class="nav-section">Mon compte</div>
+    <!-- Page menus hebdomadaires -->
+    <div class="nav-item" data-page="weeklymenu"><span class="icon">📋</span><span>Menus Hebdo</span></div>
     <!-- Page historique des commandes passées -->
     <div class="nav-item" data-page="history"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><polyline points="12 7 12 12 15 15"/></svg></span><span>Mon historique</span></div>
     <!-- Page des notes attribuées aux repas -->
@@ -361,6 +363,30 @@
 
   </div><!-- /page-profile -->
 
+  <!-- ═══ PAGE : MENUS HEBDO (page-weeklymenu) ═══ -->
+  <div class="page" id="page-weeklymenu">
+    <div class="card reveal">
+      <div class="card-header"><span class="card-title">📋 Menus &amp; Programmes hebdomadaires</span><button class="btn btn-outline btn-sm" onclick="loadWeeklyMenus()">🔄</button></div>
+      <div class="card-body">
+        <div class="tab-bar">
+          <button class="tab-btn active" id="empTabPrograms" onclick="switchWeeklyTab('programs')">Programmes</button>
+          <button class="tab-btn" id="empTabPacks" onclick="switchWeeklyTab('packs')">Packs de menus</button>
+        </div>
+        <div id="empWeeklyProgramsPanel">
+          <div id="empProgramsGrid" class="program-grid"></div>
+        </div>
+        <div id="empWeeklyPacksPanel" style="display:none">
+          <div id="empPacksGrid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox programmes employé -->
+  <div id="empProgramLightbox" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.9);align-items:center;justify-content:center" onclick="document.getElementById('empProgramLightbox').style.display='none'">
+    <img id="empProgramLightboxImg" src="" style="max-width:90vw;max-height:90vh;border-radius:12px;object-fit:contain">
+  </div>
+
   </div><!-- /content -->
 </main>
 </div>
@@ -488,6 +514,7 @@ function showApp() {
     else if (page === 'history') loadEmpHistory();
     else if (page === 'profile') loadEmpProfile();
     else if (page === 'ratings') loadRatingsPage();
+    else if (page === 'weeklymenu') loadWeeklyMenus();
   }
 
   // Direct click handlers for nav items
@@ -1079,6 +1106,76 @@ async function submitRating() {
   }
 }
 
+// ── Weekly Menus (Employee) ───────────────────────────
+const EMP_DAY_NAMES = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+
+async function loadWeeklyMenus() {
+  try {
+    const [programs, packs] = await Promise.all([
+      apiFetch('/api/employee/weekly-programs', {}, empToken),
+      apiFetch('/api/employee/weekly-packs', {}, empToken)
+    ]);
+    // Render programs
+    const pgrid = document.getElementById('empProgramsGrid');
+    if (!programs.length) {
+      pgrid.innerHTML = '<div class="empty-state"><span class="icon">🖼</span>Aucun programme hebdomadaire disponible</div>';
+    } else {
+      pgrid.innerHTML = programs.map(p => `
+        <div class="program-card" onclick="document.getElementById('empProgramLightbox').style.display='flex';document.getElementById('empProgramLightboxImg').src='${p.image_url}'">
+          <img src="${p.image_url}" alt="${p.title || 'Programme'}">
+          <div class="program-card-info">
+            <div style="font-weight:700;font-size:13px;color:var(--brown)">${p.title || 'Programme'}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">${p.restaurant_name}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+    // Render packs
+    const packGrid = document.getElementById('empPacksGrid');
+    if (!packs.length) {
+      packGrid.innerHTML = '<div class="empty-state"><span class="icon">📦</span>Aucun pack hebdomadaire actif</div>';
+    } else {
+      packGrid.innerHTML = packs.map(pack => {
+        const menusHtml = (pack.menus || []).map(menu => {
+          const daysHtml = (menu.days || []).map(day => {
+            const dishesHtml = (day.dishes || []).map(dish => `
+              <div class="dish-row">
+                ${dish.image_url ? `<img src="${dish.image_url}" alt="${dish.name}">` : '<div style="width:40px;height:40px;border-radius:7px;background:var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">🍽</div>'}
+                <div style="flex:1">
+                  <div style="font-weight:600;font-size:13px;color:var(--brown)">${dish.name}</div>
+                  ${dish.description ? `<div style="font-size:11px;color:var(--muted)">${dish.description}</div>` : ''}
+                </div>
+                <div style="font-weight:700;color:var(--orange);font-size:13px;white-space:nowrap">${parseFloat(dish.price||0).toLocaleString()} FCFA</div>
+              </div>
+            `).join('');
+            return `<div style="margin-bottom:14px"><div style="margin-bottom:6px"><span class="day-pill">${EMP_DAY_NAMES[day.day_of_week] || 'Jour '+day.day_of_week}</span>${day.is_optional ? '<span style="font-size:10px;color:var(--muted);margin-left:6px">(optionnel)</span>' : ''}</div><div style="padding:0 4px">${dishesHtml || '<div style="font-size:12px;color:var(--muted)">Aucun plat</div>'}</div></div>`;
+          }).join('');
+          return `<div style="padding:12px 16px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:var(--brown);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">${menu.name}</div>${daysHtml}</div>`;
+        }).join('');
+        return `
+          <div class="pack-card">
+            <div class="pack-card-header" onclick="this.parentElement.querySelector('.pack-card-body').style.display=this.parentElement.querySelector('.pack-card-body').style.display==='none'?'block':'none'">
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:14px;color:var(--brown)">${pack.name}</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:2px">🍽 ${pack.restaurant_name}</div>
+              </div>
+              <span style="font-size:12px;color:var(--muted)">▾</span>
+            </div>
+            <div class="pack-card-body" style="display:none">${menusHtml || '<div style="padding:16px;color:var(--muted);font-size:13px">Aucun menu</div>'}</div>
+          </div>
+        `;
+      }).join('');
+    }
+  } catch(e) { toast('Erreur chargement menus hebdo: ' + e.message, 'error'); }
+}
+
+function switchWeeklyTab(tab) {
+  document.getElementById('empWeeklyProgramsPanel').style.display = tab === 'programs' ? 'block' : 'none';
+  document.getElementById('empWeeklyPacksPanel').style.display = tab === 'packs' ? 'block' : 'none';
+  document.getElementById('empTabPrograms').classList.toggle('active', tab === 'programs');
+  document.getElementById('empTabPacks').classList.toggle('active', tab === 'packs');
+}
+
 // Expose toutes les fonctions appelées depuis les handlers onclick/oninput du HTML
 window.showApp = showApp;
 window.logoutEmp = logoutEmp;
@@ -1104,6 +1201,8 @@ window.changePassword = changePassword;
 window.initNotifications = initNotifications;
 window.toggleNotifDropdown = toggleNotifDropdown;
 window.searchDishes = searchDishes;
+window.loadWeeklyMenus = loadWeeklyMenus;
+window.switchWeeklyTab = switchWeeklyTab;
 });
 </script>
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>

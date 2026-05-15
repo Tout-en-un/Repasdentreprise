@@ -45,7 +45,10 @@
       "Bash(curl -s -X POST http://localhost:3050/api/messages -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6ImNvbXBhbnkiLCJuYW1lIjoiRWwgSW1tZWthIEludGVybmF0aW9uYWwiLCJpYXQiOjE3Nzg3OTc1ODQsImV4cCI6MTc3ODgwMTE4NH0.DKfsD9SsYt59MV7pTW3mOi_BjSd6ZRlDoOrKU2BvP28' -d '{ *)",
       "Bash(curl -s -X POST http://localhost:3050/api/messages -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6InJlc3RhdXJhbnQiLCJuYW1lIjoiRmFpemFGb29kcyIsImlhdCI6MTc3ODc5NzU4NCwiZXhwIjoxNzc4ODAxMTg0fQ.DI-ta-mBG_EXxt1OVAJOh4bmq0ZTy2ybPQfd0uqUAck' -d '{ *)",
       "Bash(curl -s http://localhost:3050/api/cron/reminder_10h)",
-      "Bash(curl -s http://localhost:3050/api/cron/reminder_11h)"
+      "Bash(curl -s http://localhost:3050/api/cron/reminder_11h)",
+      "Bash(curl -s http://localhost:3050/api/admin/conversations -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6ImNvbXBhbnkiLCJuYW1lIjoiRWwgSW1tZWthIiwiaWF0IjoxNzc4ODM1OTU2LCJleHAiOjE3Nzg4Mzk1NTZ9.PxT_MOIEd2MvwWdba4KhPYNGtyCevHb-QYJg4s9dv3c')",
+      "Bash(curl -s http://localhost:3050/api/restaurant/contract -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6InJlc3RhdXJhbnQiLCJuYW1lIjoiRmFpemFGb29kcyIsImlhdCI6MTc3ODgzODU0MywiZXhwIjoxNzc4ODQyMTQzfQ.FVr3minmzbZHZguM5xGya6Urq0bTdcHHhF_gexo0umk')",
+      "Bash(curl -s http://localhost:3050/api/admin/contracts -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6ImFkbWluIiwibmFtZSI6IlN1cGVyIEFkbWluIiwiaWF0IjoxNzc4ODM4NTgzLCJleHAiOjE3Nzg4NDIxODN9.q5O79O4krLVBGrRzjPlCqjCzfJflwJ6V2Hq3n5hU2_g')"
     ]
   }
 }

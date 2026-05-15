@@ -216,6 +216,25 @@ async function initDB(retries = 5, delay = 3000) {
       password_hash VARCHAR(255) NOT NULL, name VARCHAR(255) NOT NULL DEFAULT 'Super Admin',
       created_at TIMESTAMP DEFAULT NOW()
     );
+    CREATE TABLE IF NOT EXISTS restaurant_contracts (
+      id SERIAL PRIMARY KEY,
+      restaurant_id INTEGER REFERENCES restaurants(id) ON DELETE CASCADE UNIQUE,
+      status VARCHAR(10) DEFAULT 'pending' CHECK (status IN ('pending', 'signed')),
+      payment_schedule VARCHAR(10) DEFAULT 'monthly' CHECK (payment_schedule IN ('weekly', 'monthly')),
+      commission_rate DECIMAL(5,2) DEFAULT 1.00,
+      signed_at TIMESTAMP,
+      ip_address VARCHAR(45),
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS affiliation_contracts (
+      id SERIAL PRIMARY KEY,
+      affiliation_id INTEGER REFERENCES affiliations(id) ON DELETE CASCADE UNIQUE,
+      restaurant_signed_at TIMESTAMP,
+      company_signed_at TIMESTAMP,
+      restaurant_ip VARCHAR(45),
+      company_ip VARCHAR(45),
+      created_at TIMESTAMP DEFAULT NOW()
+    );
   `;
   try {
     await pool.query(sql);
@@ -1734,6 +1753,172 @@ app.get('/api/admin/conversations', companyAuth, async (req, res) => {
   res.json(r.rows);
 });
 
+// GET /api/company/weekly-programs — tous les programmes hebdo des restaurants affiliés
+app.get('/api/company/weekly-programs', companyAuth, async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT wp.*, rest.name AS restaurant_name, rest.photo_url AS restaurant_photo
+      FROM weekly_programs wp
+      JOIN affiliations a ON a.restaurant_id = wp.restaurant_id
+      JOIN restaurants rest ON rest.id = wp.restaurant_id
+      WHERE a.company_id = $1
+      ORDER BY wp.created_at DESC
+    `, [req.user.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/company/weekly-packs — tous les packs hebdo actifs des restaurants affiliés
+app.get('/api/company/weekly-packs', companyAuth, async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT wp.*, rest.name AS restaurant_name, rest.photo_url AS restaurant_photo,
+      COALESCE((
+        SELECT json_agg(json_build_object(
+          'id', wm.id, 'name', wm.name, 'sort_order', wm.sort_order,
+          'days', (
+            SELECT COALESCE(json_agg(json_build_object(
+              'id', wmd.id, 'day_of_week', wmd.day_of_week, 'is_optional', wmd.is_optional,
+              'dishes', (
+                SELECT COALESCE(json_agg(json_build_object(
+                  'id', wdd.id, 'name', wdd.name, 'description', wdd.description,
+                  'price', wdd.price, 'image_url', wdd.image_url
+                ) ORDER BY wdd.sort_order), '[]'::json)
+                FROM weekly_day_dishes wdd WHERE wdd.weekly_menu_day_id = wmd.id
+              )
+            ) ORDER BY wmd.day_of_week), '[]'::json)
+            FROM weekly_menu_days wmd WHERE wmd.weekly_menu_id = wm.id
+          )
+        ) ORDER BY wm.sort_order)
+        FROM weekly_menus wm WHERE wm.weekly_pack_id = wp.id
+      ), '[]'::json) AS menus
+      FROM weekly_packs wp
+      JOIN affiliations a ON a.restaurant_id = wp.restaurant_id
+      JOIN restaurants rest ON rest.id = wp.restaurant_id
+      WHERE a.company_id = $1 AND wp.is_active = TRUE
+      ORDER BY rest.name, wp.name
+    `, [req.user.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/restaurant/contract — statut du contrat du restaurant connecté
+app.get('/api/restaurant/contract', restaurantAuth, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT * FROM restaurant_contracts WHERE restaurant_id=$1', [req.user.id]);
+    res.json(r.rows[0] || { status: 'pending', restaurant_id: req.user.id });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/restaurant/contract/sign — signer le contrat
+app.post('/api/restaurant/contract/sign', restaurantAuth, async (req, res) => {
+  const { payment_schedule } = req.body;
+  const schedule = ['weekly','monthly'].includes(payment_schedule) ? payment_schedule : 'monthly';
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.connection?.remoteAddress || 'unknown';
+  try {
+    const r = await pool.query(`
+      INSERT INTO restaurant_contracts (restaurant_id, status, payment_schedule, commission_rate, signed_at, ip_address)
+      VALUES ($1,'signed',$2,1.00,NOW(),$3)
+      ON CONFLICT (restaurant_id) DO UPDATE SET status='signed', payment_schedule=$2, signed_at=NOW(), ip_address=$3
+      RETURNING *
+    `, [req.user.id, schedule, ip]);
+    const rest = await pool.query('SELECT name, email FROM restaurants WHERE id=$1', [req.user.id]);
+    if (rest.rows.length) {
+      createNotification('admin', 1, '📝 Contrat signé', `${rest.rows[0].name} a signé le contrat d'exclusivité.`, 'contract', { restaurantId: req.user.id });
+    }
+    res.json(r.rows[0]);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/contracts — liste tous les contrats (admin)
+app.get('/api/admin/contracts', adminAuth, async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT rc.*, rest.name AS restaurant_name, rest.email AS restaurant_email, rest.phone, rest.address
+      FROM restaurants rest
+      LEFT JOIN restaurant_contracts rc ON rc.restaurant_id = rest.id
+      ORDER BY CASE WHEN rc.status='pending' OR rc.status IS NULL THEN 0 ELSE 1 END, rest.name
+    `);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── Affiliation contracts ────────────────────────────────────────
+
+// GET /api/restaurant/affiliation-contracts — liste les contrats d'affiliation du restaurant
+app.get('/api/restaurant/affiliation-contracts', restaurantAuth, async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT a.id AS affiliation_id, c.name AS company_name, c.logo_url AS company_logo,
+             ac.id AS contract_id, ac.restaurant_signed_at, ac.company_signed_at, ac.created_at
+      FROM affiliations a
+      JOIN companies c ON c.id = a.company_id
+      LEFT JOIN affiliation_contracts ac ON ac.affiliation_id = a.id
+      WHERE a.restaurant_id = $1
+      ORDER BY a.created_at DESC
+    `, [req.user.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/restaurant/affiliation-contracts/:affiliationId/sign — restaurant signe
+app.post('/api/restaurant/affiliation-contracts/:affiliationId/sign', restaurantAuth, async (req, res) => {
+  const affiliationId = parseInt(req.params.affiliationId);
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.connection?.remoteAddress || 'unknown';
+  try {
+    const check = await pool.query('SELECT id FROM affiliations WHERE id=$1 AND restaurant_id=$2', [affiliationId, req.user.id]);
+    if (!check.rows.length) return res.status(403).json({ error: 'Affiliation introuvable' });
+    const r = await pool.query(`
+      INSERT INTO affiliation_contracts (affiliation_id, restaurant_signed_at, restaurant_ip)
+      VALUES ($1, NOW(), $2)
+      ON CONFLICT (affiliation_id) DO UPDATE SET restaurant_signed_at=NOW(), restaurant_ip=$2
+      RETURNING *
+    `, [affiliationId, ip]);
+    const co = await pool.query('SELECT c.id, c.name FROM affiliations a JOIN companies c ON c.id=a.company_id WHERE a.id=$1', [affiliationId]);
+    if (co.rows.length) {
+      createNotification('company', co.rows[0].id, '📝 Contrat d\'affiliation signé', `Le restaurant a signé le contrat d'affiliation.`, 'contract', { affiliationId });
+    }
+    res.json(r.rows[0]);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/company/affiliation-contracts — liste les contrats d'affiliation de l'entreprise
+app.get('/api/company/affiliation-contracts', companyAuth, async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT a.id AS affiliation_id, rest.name AS restaurant_name, rest.photo_url AS restaurant_photo,
+             ac.id AS contract_id, ac.restaurant_signed_at, ac.company_signed_at, ac.created_at
+      FROM affiliations a
+      JOIN restaurants rest ON rest.id = a.restaurant_id
+      LEFT JOIN affiliation_contracts ac ON ac.affiliation_id = a.id
+      WHERE a.company_id = $1
+      ORDER BY a.created_at DESC
+    `, [req.user.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/company/affiliation-contracts/:affiliationId/sign — entreprise signe
+app.post('/api/company/affiliation-contracts/:affiliationId/sign', companyAuth, async (req, res) => {
+  const affiliationId = parseInt(req.params.affiliationId);
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.connection?.remoteAddress || 'unknown';
+  try {
+    const check = await pool.query('SELECT id FROM affiliations WHERE id=$1 AND company_id=$2', [affiliationId, req.user.id]);
+    if (!check.rows.length) return res.status(403).json({ error: 'Affiliation introuvable' });
+    const r = await pool.query(`
+      INSERT INTO affiliation_contracts (affiliation_id, company_signed_at, company_ip)
+      VALUES ($1, NOW(), $2)
+      ON CONFLICT (affiliation_id) DO UPDATE SET company_signed_at=NOW(), company_ip=$2
+      RETURNING *
+    `, [affiliationId, ip]);
+    const rest = await pool.query('SELECT r.id, r.name FROM affiliations a JOIN restaurants r ON r.id=a.restaurant_id WHERE a.id=$1', [affiliationId]);
+    if (rest.rows.length) {
+      createNotification('restaurant', rest.rows[0].id, '📝 Contrat d\'affiliation signé', `L'entreprise a signé le contrat d'affiliation.`, 'contract', { affiliationId });
+    }
+    res.json(r.rows[0]);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ════════════════════════════════════════════════════════════════
 //  EMPLOYEE ROUTES
 // ════════════════════════════════════════════════════════════════
@@ -1766,6 +1951,55 @@ app.get('/api/admin/search', companyAuth, async (req, res) => {
     ORDER BY m.name LIMIT 20
   `, [companyId, `%${q}%`]);
   res.json(r.rows);
+});
+
+// GET /api/employee/weekly-programs
+app.get('/api/employee/weekly-programs', employeeAuth, async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT wp.*, rest.name AS restaurant_name, rest.photo_url AS restaurant_photo
+      FROM weekly_programs wp
+      JOIN affiliations a ON a.restaurant_id = wp.restaurant_id
+      JOIN restaurants rest ON rest.id = wp.restaurant_id
+      WHERE a.company_id = $1
+      ORDER BY wp.created_at DESC
+    `, [req.user.companyId]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/employee/weekly-packs
+app.get('/api/employee/weekly-packs', employeeAuth, async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT wp.*, rest.name AS restaurant_name, rest.photo_url AS restaurant_photo,
+      COALESCE((
+        SELECT json_agg(json_build_object(
+          'id', wm.id, 'name', wm.name, 'sort_order', wm.sort_order,
+          'days', (
+            SELECT COALESCE(json_agg(json_build_object(
+              'id', wmd.id, 'day_of_week', wmd.day_of_week, 'is_optional', wmd.is_optional,
+              'dishes', (
+                SELECT COALESCE(json_agg(json_build_object(
+                  'id', wdd.id, 'name', wdd.name, 'description', wdd.description,
+                  'price', wdd.price, 'image_url', wdd.image_url
+                ) ORDER BY wdd.sort_order), '[]'::json)
+                FROM weekly_day_dishes wdd WHERE wdd.weekly_menu_day_id = wmd.id
+              )
+            ) ORDER BY wmd.day_of_week), '[]'::json)
+            FROM weekly_menu_days wmd WHERE wmd.weekly_menu_id = wm.id
+          )
+        ) ORDER BY wm.sort_order)
+        FROM weekly_menus wm WHERE wm.weekly_pack_id = wp.id
+      ), '[]'::json) AS menus
+      FROM weekly_packs wp
+      JOIN affiliations a ON a.restaurant_id = wp.restaurant_id
+      JOIN restaurants rest ON rest.id = wp.restaurant_id
+      WHERE a.company_id = $1 AND wp.is_active = TRUE
+      ORDER BY rest.name, wp.name
+    `, [req.user.companyId]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/employee/restaurants', employeeAuth, async (req, res) => {

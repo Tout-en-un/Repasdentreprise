@@ -164,6 +164,7 @@
     <div class="nav-section">Comptes</div>
     <div class="nav-item" data-page="restaurants"><span class="icon">🏪</span><span>Restaurants</span></div>
     <div class="nav-item" data-page="companies"><span class="icon">🏢</span><span>Entreprises</span></div>
+    <div class="nav-item" data-page="contracts"><span class="icon">📝</span><span>Contrats</span></div>
     <button class="nav-item-logout" onclick="doLogout()"><span class="icon">🚪</span><span>Déconnexion</span></button>
   </nav>
   <div class="sidebar-footer">
@@ -385,6 +386,36 @@
             <table>
               <thead><tr><th>Nom</th><th>Email</th><th>Secteur</th><th>Employés</th><th>Affiliations</th><th>Inscription</th><th>Actions</th></tr></thead>
               <tbody id="companiesTable"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Chargement...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE CONTRATS ══ -->
+    <div class="page" id="page-contracts">
+      <div class="stats-grid" style="grid-template-columns:repeat(2,1fr)">
+        <div class="stat-card highlight">
+          <div class="stat-icon">✅</div>
+          <div class="stat-number orange" id="s-contracts-signed">—</div>
+          <div class="stat-label">Contrats signés</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-number" id="s-contracts-pending">—</div>
+          <div class="stat-label">En attente de signature</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📝 Contrats d'exclusivité</span>
+          <button class="btn btn-outline btn-sm" onclick="loadContracts()">🔄 Actualiser</button>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Restaurant</th><th>Email</th><th>Statut</th><th>Fréquence</th><th>Commission</th><th>Date de signature</th></tr></thead>
+              <tbody id="contractsTable"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Chargement...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -682,6 +713,43 @@ async function loadRestaurants() {
   }
 }
 
+// ── Contracts ─────────────────────────────────────────────────────
+async function loadContracts() {
+  const tbody = document.getElementById('contractsTable');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">⏳ Chargement...</td></tr>';
+  try {
+    const list = await api('/api/admin/contracts');
+    let signed = 0, pending = 0;
+    list.forEach(c => { if (c.status === 'signed') signed++; else pending++; });
+    const sEl = document.getElementById('s-contracts-signed');
+    const pEl = document.getElementById('s-contracts-pending');
+    if (sEl) sEl.textContent = signed;
+    if (pEl) pEl.textContent = pending;
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><span class="icon">📝</span>Aucun restaurant enregistré</div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(c => {
+      const badge = c.status === 'signed'
+        ? '<span class="badge-signed">&#10003; Signé</span>'
+        : '<span class="badge-pending">&#8987; En attente</span>';
+      const freq = c.payment_schedule === 'weekly' ? 'Hebdomadaire' : c.payment_schedule === 'monthly' ? 'Mensuel' : '—';
+      const signedAt = c.signed_at ? fmtDate(c.signed_at) : '—';
+      const commission = c.commission_rate ? `${c.commission_rate}%` : '1%';
+      return `<tr>
+        <td><strong>${esc(c.restaurant_name)}</strong></td>
+        <td style="color:var(--muted)">${esc(c.restaurant_email || '—')}</td>
+        <td>${badge}</td>
+        <td>${esc(freq)}</td>
+        <td style="font-weight:600;color:var(--orange)">${commission}</td>
+        <td style="color:var(--muted);font-size:12px">${signedAt}</td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#dc2626;padding:24px">${esc(e.message)}</td></tr>`;
+  }
+}
+
 // ── Companies ─────────────────────────────────────────────────────
 async function loadCompanies() {
   const tbody = document.getElementById('companiesTable');
@@ -760,7 +828,8 @@ const pageTitles = {
   menus: 'Menus & Plats',
   orders: 'Commandes en direct',
   restaurants: 'Restaurants',
-  companies: 'Entreprises'
+  companies: 'Entreprises',
+  contracts: 'Contrats d\'exclusivité'
 };
 
 function initNav() {
@@ -776,6 +845,7 @@ function initNav() {
       closeSidebar();
       if (page === 'menus' && !_allMenus.length) loadMenus();
       if (page === 'orders') { loadOrders(); startLiveRefresh(); }
+      if (page === 'contracts') loadContracts();
     });
   });
 }
@@ -833,6 +903,7 @@ window.closeConfirm = closeConfirm;
 window.openPwdModal = openPwdModal;
 window.closePwdModal = closePwdModal;
 window.doResetPwd = doResetPwd;
+window.loadContracts = loadContracts;
 </script>
 </body>
 </html>

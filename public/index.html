@@ -156,7 +156,6 @@
 <!-- section nav dots -->
 <nav class="section-nav" id="sectionNav" aria-label="Navigation sections">
   <div class="s-dot active" data-target="hero-section" data-label="Accueil"></div>
-  <div class="s-dot" data-target="stats-section" data-label="Statistiques"></div>
   <div class="s-dot" data-target="features-section" data-label="Fonctionnalités"></div>
 </nav>
 
@@ -186,38 +185,8 @@
       </button>
     </div>
   </div>
-  <div class="scroll-indicator" id="scrollIndicator">
-    <span>Défiler</span>
-    <div class="scroll-arrow">
-      <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>
-  </div>
 </section>
 
-<!-- stats -->
-<section class="page-section" id="stats-section">
-  <div class="stats-bar reveal">
-    <div class="stat-pill">
-      <span class="stat-pill-num" data-count="1200">0</span>
-      <span class="stat-pill-lbl">Employés</span>
-    </div>
-    <div class="stat-divider"></div>
-    <div class="stat-pill">
-      <span class="stat-pill-num" data-count="85">0</span>
-      <span class="stat-pill-lbl">Restaurants</span>
-    </div>
-    <div class="stat-divider"></div>
-    <div class="stat-pill">
-      <span class="stat-pill-num" data-count="340">0</span>
-      <span class="stat-pill-lbl">Entreprises</span>
-    </div>
-    <div class="stat-divider"></div>
-    <div class="stat-pill">
-      <span class="stat-pill-num" data-count="18000">0</span>
-      <span class="stat-pill-lbl">Commandes</span>
-    </div>
-  </div>
-</section>
 
 <!-- features -->
 <section class="page-section" id="features-section">
@@ -305,15 +274,13 @@ function scrollToSection(id) {
   if (el) el.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Scroll indicator click
-document.getElementById('scrollIndicator').addEventListener('click', () => scrollToSection('stats-section'));
 
 // Back to top
 const backTop = document.getElementById('backTop');
 backTop.addEventListener('click', () => scrollToSection('hero-section'));
 
 // Section nav dots
-const SECTIONS = ['hero-section', 'stats-section', 'features-section'];
+const SECTIONS = ['hero-section', 'features-section'];
 const dots = document.querySelectorAll('.s-dot');
 dots.forEach(dot => dot.addEventListener('click', () => scrollToSection(dot.dataset.target)));
 
@@ -347,28 +314,6 @@ const revealObs = new IntersectionObserver(entries => {
 }, { threshold: 0.12 });
 document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
 
-// Animated counters
-function animateCounter(el, target, duration=1800) {
-  const start = performance.now();
-  const easeOut = t => 1 - Math.pow(1 - t, 3);
-  (function tick(now) {
-    const p = Math.min((now - start) / duration, 1);
-    const val = Math.round(easeOut(p) * target);
-    el.textContent = val >= 1000 ? (val / 1000).toFixed(val >= 10000 ? 0 : 1) + 'k' : val;
-    if (p < 1) requestAnimationFrame(tick);
-    else el.textContent = target >= 1000 ? (target / 1000).toFixed(target >= 10000 ? 0 : 1) + 'k' : target;
-  })(start);
-}
-const statsObs = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      document.querySelectorAll('[data-count]').forEach(el => animateCounter(el, parseInt(el.dataset.count)));
-      statsObs.disconnect();
-    }
-  });
-}, { threshold: 0.3 });
-const statsBar = document.querySelector('.stats-bar');
-if (statsBar) statsObs.observe(statsBar);
 
 // Consolidated scroll listener
 window.addEventListener('scroll', () => {

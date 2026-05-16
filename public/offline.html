@@ -58,9 +58,12 @@
 
     .online .status-dot{background:#86EFAC;animation:none}
     .status-line{font-size:12px;color:var(--muted);display:flex;align-items:center;justify-content:center;margin-top:20px}
+    html{scroll-behavior:smooth}
+    .scroll-progress{position:fixed;top:0;left:0;width:0%;height:3px;background:linear-gradient(90deg,#E85A2A,#F9C74F);z-index:9999;transition:width .08s linear;border-radius:0 2px 2px 0;pointer-events:none}
   </style>
 </head>
 <body>
+<div class="scroll-progress" id="scrollProgress"></div>
 <div class="bg"></div>
 <div class="grid"></div>
 
@@ -111,5 +114,6 @@ window.addEventListener('offline', () => {
   line.innerHTML = '<span class="status-dot"></span> Connexion perdue';
 });
 </script>
+<script>(function(){var sp=document.getElementById('scrollProgress');function upd(){var m=document.documentElement.scrollHeight-window.innerHeight;if(sp)sp.style.width=(m>0?(window.scrollY/m)*100:0)+'%';}window.addEventListener('scroll',upd,{passive:true});})();</script>
 </body>
 </html>

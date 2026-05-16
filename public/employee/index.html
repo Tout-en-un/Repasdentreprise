@@ -52,9 +52,17 @@
     .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(232,90,42,.3)}
     .btn-primary:active{transform:translateY(0)}
     .btn-primary:disabled{opacity:.7;cursor:not-allowed;transform:none}
+    html{scroll-behavior:smooth}
+    .scroll-progress{position:fixed;top:0;left:0;width:0%;height:3px;background:linear-gradient(90deg,#E85A2A,#F9C74F);z-index:9999;transition:width .08s linear;border-radius:0 2px 2px 0;pointer-events:none}
+    .back-top-btn{position:fixed;bottom:24px;right:20px;width:40px;height:40px;background:rgba(232,90,42,.85);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:150;opacity:0;transform:translateY(12px);transition:all .3s;backdrop-filter:blur(4px)}
+    .back-top-btn.show{opacity:1;transform:translateY(0)}
+    .back-top-btn:hover{background:#E85A2A;transform:translateY(-3px) scale(1.08)}
+    .back-top-btn svg{width:17px;height:17px;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
   </style>
 </head>
 <body>
+<div class="scroll-progress" id="scrollProgress"></div>
+<button class="back-top-btn" id="backTopBtn" title="Retour en haut"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></button>
 
 <!-- ═══════════════════════════════════════════════════════════════
      CONTENEUR DES NOTIFICATIONS TOAST
@@ -1205,6 +1213,7 @@ window.loadWeeklyMenus = loadWeeklyMenus;
 window.switchWeeklyTab = switchWeeklyTab;
 });
 </script>
+<script>(function(){var sp=document.getElementById('scrollProgress'),bt=document.getElementById('backTopBtn');function init(){var ct=document.querySelector('.content');if(!ct)return;ct.style.scrollBehavior='smooth';function upd(){var m=ct.scrollHeight-ct.clientHeight;if(sp)sp.style.width=(m>0?(ct.scrollTop/m)*100:0)+'%';if(bt)bt.classList.toggle('show',ct.scrollTop>200);}ct.addEventListener('scroll',upd,{passive:true});if(bt)bt.addEventListener('click',function(){ct.scrollTo({top:0,behavior:'smooth'});});}if(document.readyState!=='loading')init();else document.addEventListener('DOMContentLoaded',init);})();</script>
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

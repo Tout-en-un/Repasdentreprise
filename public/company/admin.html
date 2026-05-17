@@ -1465,7 +1465,7 @@ async function openAdminChat(restId, restName, photo) {
       <input class="chat-input" id="adminChatInput" placeholder="Votre message..." onkeydown="if(event.key==='Enter'){event.preventDefault();sendAdminMsg(${restId})}">
       <span class="record-timer" id="adminRecordTimer"></span>
       <button class="record-btn" id="adminRecordBtn" onclick="toggleAdminVoiceRecord(${restId})" title="Message vocal">🎙</button>
-      <button class="btn btn-primary btn-sm" onclick="sendAdminMsg(${restId})">Envoyer</button>
+      <button class="btn btn-primary btn-sm chat-send-btn" onclick="sendAdminMsg(${restId})"><span class="send-label">Envoyer</span><svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
     </div>
     <button class="chat-scroll-btn" id="adminScrollBtn" title="Aller en bas">&#8595;</button>
   `;

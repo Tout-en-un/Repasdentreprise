@@ -1503,7 +1503,7 @@ function openChat(companyId, companyName, photo) {
         onkeydown="if(event.key==='Enter'){event.preventDefault();sendRestMsg(${companyId})}">
       <span class="record-timer" id="restRecordTimer"></span>
       <button class="record-btn" id="restRecordBtn" onclick="toggleRestVoiceRecord(${companyId})" title="Message vocal">🎙</button>
-      <button class="btn btn-primary btn-sm" onclick="sendRestMsg(${companyId})">Envoyer</button>
+      <button class="btn btn-primary btn-sm chat-send-btn" onclick="sendRestMsg(${companyId})"><span class="send-label">Envoyer</span><svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
     </div>
     <button class="chat-scroll-btn" id="restScrollBtn" title="Aller en bas">&#8595;</button>`;
   const _chatEl = document.getElementById('restChatMessages');

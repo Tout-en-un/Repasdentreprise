@@ -51,7 +51,25 @@
       "Bash(curl -s http://localhost:3050/api/admin/contracts -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6ImFkbWluIiwibmFtZSI6IlN1cGVyIEFkbWluIiwiaWF0IjoxNzc4ODM4NTgzLCJleHAiOjE3Nzg4NDIxODN9.q5O79O4krLVBGrRzjPlCqjCzfJflwJ6V2Hq3n5hU2_g')",
       "Bash(Get-ChildItem -Path \"F:\\\\All projects\\\\repasapp\\\\foodchooseapp\" -Recurse -Directory)",
       "Bash(Select-Object -First 20)",
-      "Bash(Format-Table FullName)"
+      "Bash(Format-Table FullName)",
+      "Bash(Get-ChildItem -Path \"F:\\\\All projects\\\\repasapp\\\\foodchooseapp\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(Format-Table -HideTableHeaders)",
+      "Bash(dir /s /b *.js *.html)",
+      "Bash(Get-Content \"F:/All projects/repasapp/foodchooseapp/public/restaurant/dashboard.html\")",
+      "Bash(Measure-Object -Line)",
+      "PowerShell(\\(Get-Content \"F:/All projects/repasapp/foodchooseapp/public/restaurant/dashboard.html\" | Measure-Object -Line\\).Lines)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(Set-Location \"F:\\\\All projects\\\\repasapp\\\\foodchooseapp\"; $proc = Start-Process -FilePath \"node\" -ArgumentList \"api/index.js\" -NoNewWindow -PassThru -RedirectStandardOutput \"server_out.txt\" -RedirectStandardError \"server_err.txt\"; Start-Sleep -Seconds 3; Get-Content \"server_out.txt\" -ErrorAction SilentlyContinue; Get-Content \"server_err.txt\" -ErrorAction SilentlyContinue; $proc.Id)",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:3050\" -UseBasicParsing -TimeoutSec 5 | Select-Object StatusCode, StatusDescription)",
+      "PowerShell($r = Invoke-WebRequest -Uri \"http://localhost:3050/restaurant/login\" -UseBasicParsing -TimeoutSec 5 -ErrorAction SilentlyContinue; if \\($r\\) { $r.StatusCode } else { \"No response\" })",
+      "PowerShell($adminToken = \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6ImFkbWluIiwibmFtZSI6IlN1cGVyIEFkbWluIiwiaWF0IjoxNzc5MDI3MjMyLCJleHAiOjE3NzkwNTYwMzJ9.zyC8TcAxBTM7jlUB0c3VwoT9XVLT0rbFNc-e-iKqAzw\"; $r = Invoke-RestMethod -Uri \"http://localhost:3050/api/admin/restaurants\" -Headers @{Authorization=\"Bearer $adminToken\"} -TimeoutSec 10; $r | ConvertTo-Json -Depth 3 | Select-String -Pattern '\"id\"|\"name\"|\"email\"' | Select-Object -First 20)",
+      "PowerShell(Select-String -Path \"F:\\\\All projects\\\\repasapp\\\\foodchooseapp\\\\api\\\\index.js\" -Pattern \"restaurants\" | Select-Object -First 20 | ForEach-Object { \"$\\($_.LineNumber\\): $\\($_.Line.Trim\\(\\)\\)\" })",
+      "PowerShell(Select-String -Path \"F:\\\\All projects\\\\repasapp\\\\foodchooseapp\\\\api\\\\index.js\" -Pattern \"api/admin/all-restaurants|api/company/restaurants|allRestaurants|all.restaurants\" | Select-Object -First 10 | ForEach-Object { \"$\\($_.LineNumber\\): $\\($_.Line.Trim\\(\\)\\)\" })",
+      "PowerShell(Select-String -Path \"F:\\\\All projects\\\\repasapp\\\\foodchooseapp\\\\api\\\\index.js\" -Pattern \"weekly.menu.day|menu.day|days\" | Select-Object -First 10 | ForEach-Object { \"$\\($_.LineNumber\\): $\\($_.Line.Trim\\(\\)\\)\" })",
+      "Bash(curl -s -X POST http://localhost:3050/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"testentreprise.dev@test.com\",\"password\":\"Test1234!\"}')",
+      "Bash(python3 -m json.tool)"
     ]
   }
 }

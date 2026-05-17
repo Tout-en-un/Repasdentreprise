@@ -131,7 +131,7 @@
             </select>
           </div>
         </div>
-        <div id="batchesList"></div>
+        <div id="batchesList" class="scroll-box" style="max-height:480px"></div>
       </div>
     </div>
   </div>
@@ -166,8 +166,8 @@
           <span class="card-title">🍜 Mes menus</span>
           <button class="btn btn-outline btn-sm" onclick="loadMenus()">🔄 Actualiser</button>
         </div>
-        <div class="card-body">
-          <div id="menusTableWrap">
+        <div class="card-body" style="padding:0">
+          <div id="menusTableWrap" class="scroll-box" style="max-height:520px;padding:16px 20px">
             <div class="empty-state"><span class="icon">⏳</span>Chargement...</div>
           </div>
         </div>
@@ -211,8 +211,8 @@
         <span class="card-title">⭐ Avis et notes des clients</span>
         <button class="btn btn-outline btn-sm" onclick="loadRatings()">🔄</button>
       </div>
-      <div class="card-body">
-        <div class="table-wrap">
+      <div class="card-body" style="padding:0">
+        <div class="table-wrap scroll-box" style="padding:16px 20px">
           <table>
             <thead><tr><th>Menu</th><th>Employé</th><th>Note</th><th>Commentaire</th><th>Date</th></tr></thead>
             <tbody id="ratingsTableBody"></tbody>
@@ -344,7 +344,7 @@
           <span class="card-title">🧾 Factures envoyées</span>
           <button class="btn btn-outline btn-sm" onclick="loadInvoices()">🔄</button>
         </div>
-        <div class="card-body">
+        <div class="card-body scroll-box">
           <table class="table" id="invoicesTable">
             <thead><tr><th>N° Facture</th><th>Entreprise</th><th>Date emission</th><th>Montant</th><th>Statut</th><th>Actions</th></tr></thead>
             <tbody id="invoicesBody"></tbody>
@@ -461,7 +461,7 @@
           <span class="card-title">📄 Factures hebdomadaires</span>
           <button class="btn btn-outline btn-sm" onclick="loadWeeklyInvoices()">🔄</button>
         </div>
-        <div class="card-body">
+        <div class="card-body scroll-box">
           <table class="table">
             <thead><tr><th>N°</th><th>Entreprise</th><th>Pack</th><th>Montant</th><th>Fréquence</th><th>Date</th><th>Statut</th><th>Actions</th></tr></thead>
             <tbody id="wiTableBody"></tbody>
@@ -1022,6 +1022,7 @@ function switchToPage(page) {
   if (navItem) navItem.classList.add('active');
   const pg = document.getElementById('page-'+page);
   if (pg) pg.classList.add('active');
+  window.scrollTo({top:0,behavior:'instant'});
   if (page === 'dashboard') loadDashboard();
   else if (page === 'orders') { loadCompaniesForFilter(); loadOrders(); }
   else if (page === 'menus') loadMenus();
@@ -1117,7 +1118,7 @@ async function loadMenus() {
         <td><span style="padding:4px 8px;border-radius:6px;background:${m.available ? '#D1FAE5' : '#FEE2E2'};color:${m.available ? '#065F46' : '#991B1B'}">${m.available ? 'Actif' : 'Inactif'}</span></td>
         <td>
           <button class="btn btn-outline btn-sm" onclick="toggleMenu(${m.id}, ${!m.available})">${m.available ? '⏸' : '▶'}</button>
-          <button class="btn btn-outline btn-sm" onclick="editMenu(${m.id},${JSON.stringify(m.name)},${JSON.stringify(m.category||'plat')},${JSON.stringify(m.description||'')},${m.price||0})">✏️</button>
+          <button class="btn btn-outline btn-sm" onclick="editMenu(${m.id},${JSON.stringify(m.name).replace(/"/g,'&quot;')},${JSON.stringify(m.category||'plat').replace(/"/g,'&quot;')},${JSON.stringify(m.description||'').replace(/"/g,'&quot;')},${m.price||0})">✏️</button>
           <button class="btn btn-outline btn-sm" style="color:var(--danger)" onclick="deleteMenu(${m.id})">🗑</button>
         </td>
       </tr>
@@ -1810,7 +1811,7 @@ async function openPackDetail(id) {
                     ${d.image_url ? '<img src="'+d.image_url+'" style="width:36px;height:36px;object-fit:cover;border-radius:6px">' : '<span style="width:36px;height:36px;background:var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px">🍲</span>'}
                     <div style="flex:1;font-size:12px"><strong>${d.name}</strong>${d.description ? '<br><span style="color:var(--muted)">'+d.description.substring(0,30)+'</span>' : ''}</div>
                     <span style="font-size:12px;font-weight:600">${d.price}FCFA</span>
-                    <button class="btn btn-outline btn-sm" onclick="editDish(${d.id})" style="padding:2px 6px;font-size:10px">✏️</button>
+                    <button class="btn btn-outline btn-sm" onclick="editDish(${d.id},${JSON.stringify(d.name).replace(/"/g,'&quot;')},${d.price},${JSON.stringify(d.description||'').replace(/"/g,'&quot;')})" style="padding:2px 6px;font-size:10px">✏️</button>
                     <button class="btn btn-danger btn-sm" onclick="deleteDish(${d.id})" style="padding:2px 6px;font-size:10px">🗑</button>
                   </div>
                 `).join('')
@@ -1906,13 +1907,14 @@ function addDish(dayId) {
   setTimeout(() => document.getElementById('dishModalName').focus(), 120);
 }
 
-function editDish(id) {
+function editDish(id, name, price, desc) {
   document.getElementById('dishModalMode').value = 'edit';
   document.getElementById('dishModalId').value = id;
   document.getElementById('dishModalTitle').textContent = '✏️ Modifier le plat';
-  document.getElementById('dishModalName').value = '';
-  document.getElementById('dishModalPrice').value = '0';
-  document.getElementById('dishDescGroup').style.display = 'none';
+  document.getElementById('dishModalName').value = name || '';
+  document.getElementById('dishModalPrice').value = price != null ? price : '0';
+  document.getElementById('dishModalDesc').value = desc || '';
+  document.getElementById('dishDescGroup').style.display = '';
   document.getElementById('dishModal').classList.add('open');
   setTimeout(() => document.getElementById('dishModalName').focus(), 120);
 }
@@ -1929,7 +1931,8 @@ async function saveDishModal() {
       const desc = document.getElementById('dishModalDesc').value.trim();
       await apiFetch('/api/restaurant/dishes', { method: 'POST', body: { weekly_menu_day_id: parseInt(dayId), name, price, description: desc } }, token);
     } else {
-      await apiFetch(`/api/restaurant/dishes/${id}`, { method: 'PUT', body: { name, price } }, token);
+      const desc = document.getElementById('dishModalDesc').value.trim();
+      await apiFetch(`/api/restaurant/dishes/${id}`, { method: 'PUT', body: { name, price, description: desc } }, token);
     }
     closeModal(document.getElementById('dishModal'));
     openPackDetail(currentPackId);
@@ -2256,7 +2259,7 @@ async function signAffiliationContract(affiliationId) {
 
 }); // end DOMContentLoaded
 </script>
-<script>(function(){var sp=document.getElementById('scrollProgress'),bt=document.getElementById('backTopBtn');function init(){var ct=document.querySelector('.content');if(!ct)return;ct.style.scrollBehavior='smooth';function upd(){var m=ct.scrollHeight-ct.clientHeight;if(sp)sp.style.width=(m>0?(ct.scrollTop/m)*100:0)+'%';if(bt)bt.classList.toggle('show',ct.scrollTop>200);}ct.addEventListener('scroll',upd,{passive:true});if(bt)bt.addEventListener('click',function(){ct.scrollTo({top:0,behavior:'smooth'});});}if(document.readyState!=='loading')init();else document.addEventListener('DOMContentLoaded',init);})();</script>
+<script>(function(){var sp=document.getElementById('scrollProgress'),bt=document.getElementById('backTopBtn');function upd(){var m=document.documentElement.scrollHeight-window.innerHeight;if(sp)sp.style.width=(m>0?(window.scrollY/m)*100:0)+'%';if(bt)bt.classList.toggle('show',window.scrollY>200);}window.addEventListener('scroll',upd,{passive:true});if(bt)bt.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});})();</script>
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

@@ -2134,13 +2134,15 @@ app.get('/api/employee/profile', employeeAuth, async (req, res) => {
 });
 
 app.put('/api/employee/profile', employeeAuth, async (req, res) => {
-  const { newPassword, photoUrl } = req.body;
+  const { newPassword, photoUrl, firstName, lastName } = req.body;
   try {
     if (newPassword) {
       const hash = await bcrypt.hash(newPassword, 10);
       await pool.query('UPDATE users SET password_hash=$1 WHERE id=$2', [hash, req.user.id]);
     }
     if (photoUrl) await pool.query('UPDATE users SET photo_url=$1 WHERE id=$2', [photoUrl, req.user.id]);
+    if (firstName) await pool.query('UPDATE users SET first_name=$1 WHERE id=$2', [firstName, req.user.id]);
+    if (lastName) await pool.query('UPDATE users SET last_name=$1 WHERE id=$2', [lastName, req.user.id]);
     res.json({ message: 'Profil mis à jour' });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -2165,11 +2167,13 @@ app.get('/api/admin/company-profile', companyAuth, async (req, res) => {
 });
 
 app.put('/api/admin/company-profile', companyAuth, async (req, res) => {
-  const { logoUrl } = req.body;
+  const { logoUrl, name, email } = req.body;
   const companyId = req.user.id;
   try {
-    await pool.query('UPDATE companies SET logo_url=COALESCE($1,logo_url) WHERE id=$2', [logoUrl||null, companyId]);
-    res.json({ message: 'Logo mis à jour' });
+    if (logoUrl) await pool.query('UPDATE companies SET logo_url=$1 WHERE id=$2', [logoUrl, companyId]);
+    if (name) await pool.query('UPDATE companies SET name=$1 WHERE id=$2', [name, companyId]);
+    if (email) await pool.query('UPDATE companies SET email=$1 WHERE id=$2', [email, companyId]);
+    res.json({ message: 'Profil mis à jour' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

@@ -1034,3 +1034,10 @@ label#wpDropZone:hover {
 .doc-faq-item.open .doc-faq-a { display:block; }
 .doc-faq-item.open .doc-faq-q { color:var(--orange); }
 @media(max-width:640px) { .doc-toc { grid-template-columns:repeat(2,1fr); } .doc-hero { padding:24px 20px; } .doc-hero-title { font-size:20px; } }
+
+/* ─── Scroll box (tables / lists with overflow) ─────── */
+.scroll-box { overflow-x:auto; overflow-y:auto; max-height:500px; scrollbar-width:thin; scrollbar-color:var(--orange) transparent; }
+.scroll-box::-webkit-scrollbar { width:5px; height:5px; }
+.scroll-box::-webkit-scrollbar-track { background:transparent; }
+.scroll-box::-webkit-scrollbar-thumb { background:var(--orange); border-radius:4px; }
+.scroll-box table { min-width:520px; width:100%; }

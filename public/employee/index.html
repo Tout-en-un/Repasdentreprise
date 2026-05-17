@@ -218,7 +218,7 @@
         <div class="card-header"><span class="card-title">🍽 Restaurants disponibles</span></div>
         <div class="card-body">
           <!-- Liste des restaurants (remplie par loadRestaurants) -->
-          <div class="rest-list" id="restList"></div>
+          <div class="rest-list scroll-box" id="restList" style="max-height:460px"></div>
         </div>
       </div>
     </div>
@@ -293,7 +293,7 @@
         </div>
       </div>
       <!-- Liste des items d'historique injectée par loadEmpHistory() -->
-      <div class="card-body" id="historyList"></div>
+      <div class="card-body scroll-box" id="historyList" style="max-height:500px"></div>
     </div>
   </div>
 
@@ -305,8 +305,7 @@
     <div class="card reveal">
       <div class="card-header"><span class="card-title">⭐ Mes notes de plats</span></div>
       <!-- Contenu injecté par loadRatingsPage() -->
-      <div class="card-body" id="ratingsList">
-        <!-- État vide par défaut avant que la page soit chargée -->
+      <div class="card-body scroll-box" id="ratingsList" style="max-height:480px">
         <div class="empty-state"><span class="icon">⭐</span>Utilisez le bouton "Noter" après avoir commandé</div>
       </div>
     </div>
@@ -338,12 +337,21 @@
         </div>
       </div>
 
+      <!-- Carte : informations personnelles -->
+      <div class="card reveal">
+        <div class="card-header"><span class="card-title">👤 Mes informations</span></div>
+        <div class="card-body">
+          <div id="profileInfo" style="margin-bottom:14px;padding:12px;background:#F9F1EB;border-radius:10px;font-size:13px"></div>
+          <div class="form-group"><label>Prénom</label><input class="form-control" id="empFirstName" placeholder="Votre prénom"></div>
+          <div class="form-group"><label>Nom</label><input class="form-control" id="empLastName" placeholder="Votre nom"></div>
+          <button class="btn btn-primary" style="width:100%" onclick="saveEmpProfile()">💾 Enregistrer</button>
+        </div>
+      </div>
+
       <!-- Carte : changement de mot de passe -->
       <div class="card reveal-right">
         <div class="card-header"><span class="card-title">Changer mon mot de passe</span></div>
         <div class="card-body">
-          <!-- Bloc d'informations de profil (nom, ID, email) — rempli par loadEmpProfile() -->
-          <div id="profileInfo" style="margin-bottom:14px;padding:12px;background:#F9F1EB;border-radius:10px;font-size:13px"></div>
 
           <!-- Champ nouveau mot de passe avec toggle visibilité -->
           <div class="form-group">
@@ -512,6 +520,7 @@ function showApp() {
   // Initialise la navigation entre pages :
   // À chaque changement de page, le callback approprié est déclenché
   function switchToPage(page) {
+    window.scrollTo({top:0,behavior:'instant'});
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
@@ -969,6 +978,10 @@ async function loadEmpProfile() {
       <div style="margin-top:4px">🪪 ID: <strong>${p.employee_id}</strong></div>
       <div style="margin-top:4px">📧 ${p.email}</div>
     `;
+    const fn = document.getElementById('empFirstName');
+    const ln = document.getElementById('empLastName');
+    if (fn) fn.value = p.first_name || '';
+    if (ln) ln.value = p.last_name || '';
 
     // Second passage pour s'assurer que la photo est bien affichée
     if (p.photo_url) {
@@ -986,6 +999,20 @@ async function loadEmpProfile() {
   } catch(e) {
     // Erreur silencieuse — le profil reste vide
   }
+}
+
+async function saveEmpProfile() {
+  const firstName = document.getElementById('empFirstName').value.trim();
+  const lastName = document.getElementById('empLastName').value.trim();
+  if (!firstName && !lastName) return toast('Aucune modification', 'error');
+  try {
+    await apiFetch('/api/employee/profile', { method: 'PUT', body: { firstName, lastName } }, empToken);
+    if (firstName || lastName) {
+      document.getElementById('sidebarName').textContent = `${firstName} ${lastName}`.trim();
+    }
+    toast('Profil mis à jour !', 'success');
+    loadEmpProfile();
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 /**
@@ -1204,6 +1231,7 @@ window.clearHistory = clearHistory;
 window.delHistItem = delHistItem;
 window.loadRatingsPage = loadRatingsPage;
 window.loadEmpProfile = loadEmpProfile;
+window.saveEmpProfile = saveEmpProfile;
 window.handleEmpPhoto = handleEmpPhoto;
 window.changePassword = changePassword;
 window.initNotifications = initNotifications;
@@ -1213,7 +1241,7 @@ window.loadWeeklyMenus = loadWeeklyMenus;
 window.switchWeeklyTab = switchWeeklyTab;
 });
 </script>
-<script>(function(){var sp=document.getElementById('scrollProgress'),bt=document.getElementById('backTopBtn');function init(){var ct=document.querySelector('.content');if(!ct)return;ct.style.scrollBehavior='smooth';function upd(){var m=ct.scrollHeight-ct.clientHeight;if(sp)sp.style.width=(m>0?(ct.scrollTop/m)*100:0)+'%';if(bt)bt.classList.toggle('show',ct.scrollTop>200);}ct.addEventListener('scroll',upd,{passive:true});if(bt)bt.addEventListener('click',function(){ct.scrollTo({top:0,behavior:'smooth'});});}if(document.readyState!=='loading')init();else document.addEventListener('DOMContentLoaded',init);})();</script>
+<script>(function(){var sp=document.getElementById('scrollProgress'),bt=document.getElementById('backTopBtn');function upd(){var m=document.documentElement.scrollHeight-window.innerHeight;if(sp)sp.style.width=(m>0?(window.scrollY/m)*100:0)+'%';if(bt)bt.classList.toggle('show',window.scrollY>200);}window.addEventListener('scroll',upd,{passive:true});if(bt)bt.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});})();</script>
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

@@ -69,7 +69,8 @@
       "PowerShell(Select-String -Path \"F:\\\\All projects\\\\repasapp\\\\foodchooseapp\\\\api\\\\index.js\" -Pattern \"api/admin/all-restaurants|api/company/restaurants|allRestaurants|all.restaurants\" | Select-Object -First 10 | ForEach-Object { \"$\\($_.LineNumber\\): $\\($_.Line.Trim\\(\\)\\)\" })",
       "PowerShell(Select-String -Path \"F:\\\\All projects\\\\repasapp\\\\foodchooseapp\\\\api\\\\index.js\" -Pattern \"weekly.menu.day|menu.day|days\" | Select-Object -First 10 | ForEach-Object { \"$\\($_.LineNumber\\): $\\($_.Line.Trim\\(\\)\\)\" })",
       "Bash(curl -s -X POST http://localhost:3050/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"testentreprise.dev@test.com\",\"password\":\"Test1234!\"}')",
-      "Bash(python3 -m json.tool)"
+      "Bash(python3 -m json.tool)",
+      "Bash(findstr :3050)"
     ]
   }
 }

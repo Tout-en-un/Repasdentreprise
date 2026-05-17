@@ -50,6 +50,22 @@ app.get('/api/cron/test', (req, res) => {
   res.json({ test: 'cron working' });
 });
 
+// Route de migration manuelle — utile pour forcer la création des tables en prod
+app.get('/api/migrate', async (req, res) => {
+  const secret = req.query.secret;
+  if (secret !== process.env.JWT_SECRET && secret !== process.env.MIGRATE_SECRET) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    dbReady = false;
+    dbInitPromise = null;
+    await ensureDB();
+    res.json({ ok: true, message: 'Migration terminée' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 const PUBLIC_DIR = path.join(__dirname, '../public');
 app.use(express.static(PUBLIC_DIR));
 
@@ -258,7 +274,20 @@ async function seedAdmin() {
   } catch (e) { console.error('Seed admin error:', e.message); }
 }
 
-initDB();
+// Sur Vercel, initDB() est appelé à chaque cold start.
+// Le flag garantit qu'on ne lance pas plusieurs migrations en parallèle.
+let dbReady = false;
+let dbInitPromise = null;
+
+function ensureDB() {
+  if (dbReady) return Promise.resolve();
+  if (!dbInitPromise) {
+    dbInitPromise = initDB().then(() => { dbReady = true; }).catch(() => {});
+  }
+  return dbInitPromise;
+}
+
+ensureDB();
 
 // ─── Email ────────────────────────────────────────────────────────
 const cleanPassword = (process.env.SMTP_PASS || '').replace(/\s/g, '');
@@ -1743,14 +1772,16 @@ app.get('/api/admin/export-pdf', companyAuth, async (req, res) => {
 
 app.get('/api/admin/conversations', companyAuth, async (req, res) => {
   const companyId = req.user.id;
-  const r = await pool.query(`
-    SELECT r.id AS restaurant_id, r.name AS restaurant_name, r.photo_url,
-    (SELECT COUNT(*) FROM messages m WHERE m.company_id=$1 AND m.restaurant_id=r.id AND m.read_by_company=FALSE AND m.sender_type='restaurant') AS unread,
-    (SELECT content FROM messages m WHERE m.company_id=$1 AND m.restaurant_id=r.id ORDER BY m.created_at DESC LIMIT 1) AS last_message,
-    (SELECT created_at FROM messages m WHERE m.company_id=$1 AND m.restaurant_id=r.id ORDER BY m.created_at DESC LIMIT 1) AS last_at
-    FROM affiliations a JOIN restaurants r ON a.restaurant_id=r.id WHERE a.company_id=$1 ORDER BY last_at DESC NULLS LAST
-  `, [companyId]);
-  res.json(r.rows);
+  try {
+    const r = await pool.query(`
+      SELECT r.id AS restaurant_id, r.name AS restaurant_name, r.photo_url,
+      (SELECT COUNT(*) FROM messages m WHERE m.company_id=$1 AND m.restaurant_id=r.id AND m.read_by_company=FALSE AND m.sender_type='restaurant') AS unread,
+      (SELECT content FROM messages m WHERE m.company_id=$1 AND m.restaurant_id=r.id ORDER BY m.created_at DESC LIMIT 1) AS last_message,
+      (SELECT created_at FROM messages m WHERE m.company_id=$1 AND m.restaurant_id=r.id ORDER BY m.created_at DESC LIMIT 1) AS last_at
+      FROM affiliations a JOIN restaurants r ON a.restaurant_id=r.id WHERE a.company_id=$1 ORDER BY last_at DESC NULLS LAST
+    `, [companyId]);
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // GET /api/company/weekly-programs — tous les programmes hebdo des restaurants affiliés
@@ -2149,14 +2180,16 @@ app.put('/api/employee/profile', employeeAuth, async (req, res) => {
 
 // ─── Restaurant conversations
 app.get('/api/restaurant/conversations', restaurantAuth, async (req, res) => {
-  const r = await pool.query(`
-    SELECT c.id AS company_id, c.name AS company_name, c.logo_url,
-    (SELECT COUNT(*) FROM messages m WHERE m.restaurant_id=$1 AND m.company_id=c.id AND m.read_by_restaurant=FALSE AND m.sender_type='company') AS unread,
-    (SELECT content FROM messages m WHERE m.restaurant_id=$1 AND m.company_id=c.id ORDER BY m.created_at DESC LIMIT 1) AS last_message,
-    (SELECT created_at FROM messages m WHERE m.restaurant_id=$1 AND m.company_id=c.id ORDER BY m.created_at DESC LIMIT 1) AS last_at
-    FROM affiliations a JOIN companies c ON a.company_id=c.id WHERE a.restaurant_id=$1 ORDER BY last_at DESC NULLS LAST
-  `, [req.user.id]);
-  res.json(r.rows);
+  try {
+    const r = await pool.query(`
+      SELECT c.id AS company_id, c.name AS company_name, c.logo_url,
+      (SELECT COUNT(*) FROM messages m WHERE m.restaurant_id=$1 AND m.company_id=c.id AND m.read_by_restaurant=FALSE AND m.sender_type='company') AS unread,
+      (SELECT content FROM messages m WHERE m.restaurant_id=$1 AND m.company_id=c.id ORDER BY m.created_at DESC LIMIT 1) AS last_message,
+      (SELECT created_at FROM messages m WHERE m.restaurant_id=$1 AND m.company_id=c.id ORDER BY m.created_at DESC LIMIT 1) AS last_at
+      FROM affiliations a JOIN companies c ON a.company_id=c.id WHERE a.restaurant_id=$1 ORDER BY last_at DESC NULLS LAST
+    `, [req.user.id]);
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ─── Company profile (logo)

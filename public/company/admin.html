@@ -721,7 +721,12 @@ function switchToPage(page) {
   else if (page === 'employees') loadEmployees();
   else if (page === 'expenses') loadExpenses();
   else if (page === 'history') {}
-  else if (page === 'messages') { loadAdminConversations(); startMsgPolling(); }
+  else if (page === 'messages') {
+    loadAdminConversations();
+    startMsgPolling();
+    // Sur mobile, afficher la sidebar en premier
+    document.getElementById('adminChatSidebar')?.classList.add('show-mobile');
+  }
   else if (page === 'weeklymenu') loadWeeklyMenus();
   else if (page === 'settings') loadSettings();
   else if (page === 'help') { initCoDocSearch(); }
@@ -1444,9 +1449,12 @@ async function openAdminChat(restId, restName, photo) {
   clearAdminFile();
   const coId = parseInt(localStorage.getItem('fc_id'));
   await apiFetch('/api/messages/read', { method: 'PUT', body: JSON.stringify({ companyId: coId, restaurantId: restId }) }, token).catch(()=>{});
+  // Sur mobile : masquer la sidebar et afficher le chat
+  document.getElementById('adminChatSidebar')?.classList.remove('show-mobile');
   const main = document.getElementById('adminChatMain');
   main.innerHTML = `
     <div class="chat-header">
+      <button class="chat-back-btn" onclick="document.getElementById('adminChatSidebar').classList.add('show-mobile')" title="Retour">&#8592;</button>
       <div class="user-avatar" style="width:30px;height:30px;font-size:14px">${photo?`<img src="${photo}">`:'🍽'}</div>
       ${restName}
     </div>

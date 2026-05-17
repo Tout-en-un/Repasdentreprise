@@ -1028,7 +1028,12 @@ function switchToPage(page) {
   else if (page === 'menus') loadMenus();
   else if (page === 'ratings') loadRatings();
   else if (page === 'profile') loadProfile();
-  else if (page === 'messages') { loadConversations(); startMsgPolling(); }
+  else if (page === 'messages') {
+    loadConversations();
+    startMsgPolling();
+    // Sur mobile, afficher la sidebar en premier
+    document.getElementById('chatSidebar')?.classList.add('show-mobile');
+  }
   else if (page === 'invoices') { loadInvoices(); loadCompaniesForInvoices(); }
   else if (page === 'weekly') { loadWeeklyPacks(); }
   else if (page === 'weekly-invoices') { loadWeeklyInvoices(); }
@@ -1478,12 +1483,15 @@ function openChat(companyId, companyName, photo) {
   restIsRecording = false;
   clearRestFile();
   apiFetch('/api/messages/read', { method: 'PUT', body: { companyId, restaurantId: _restId() } }, token).catch(() => {});
+  // Sur mobile : masquer la sidebar et afficher le chat
+  document.getElementById('chatSidebar')?.classList.remove('show-mobile');
   const main = document.getElementById('chatMain');
   const avatar = photo
     ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
     : '🏢';
   main.innerHTML = `
     <div class="chat-header">
+      <button class="chat-back-btn" onclick="document.getElementById('chatSidebar').classList.add('show-mobile')" title="Retour">&#8592;</button>
       <div class="user-avatar" style="width:32px;height:32px;font-size:14px;flex-shrink:0">${avatar}</div>
       <span style="flex:1;font-weight:600">${companyName || 'Entreprise'}</span>
     </div>

@@ -1467,7 +1467,19 @@ async function openAdminChat(restId, restName, photo) {
       <button class="record-btn" id="adminRecordBtn" onclick="toggleAdminVoiceRecord(${restId})" title="Message vocal">🎙</button>
       <button class="btn btn-primary btn-sm" onclick="sendAdminMsg(${restId})">Envoyer</button>
     </div>
+    <button class="chat-scroll-btn" id="adminScrollBtn" title="Aller en bas">&#8595;</button>
   `;
+  const _chatEl = document.getElementById('adminChatMessages');
+  const _scrollBtn = document.getElementById('adminScrollBtn');
+  _chatEl.addEventListener('scroll', () => {
+    const atBottom = _chatEl.scrollHeight - _chatEl.scrollTop - _chatEl.clientHeight < 80;
+    _scrollBtn.classList.toggle('visible', !atBottom);
+    if (atBottom) { const b = _scrollBtn.querySelector('.chat-scroll-badge'); if (b) b.remove(); }
+  });
+  _scrollBtn.addEventListener('click', () => {
+    _chatEl.scrollTo({ top: _chatEl.scrollHeight, behavior: 'smooth' });
+    const b = _scrollBtn.querySelector('.chat-scroll-badge'); if (b) b.remove();
+  });
   loadAdminMessages(restId);
   loadAdminConversations();
 }
@@ -1478,8 +1490,20 @@ async function loadAdminMessages(restId) {
     const msgs = await apiFetch(`/api/messages?companyId=${coId}&restaurantId=${restId}`, {}, token);
     const el = document.getElementById('adminChatMessages');
     if (!el) return;
+    const prevCount = el.querySelectorAll('.msg').length;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
     el.innerHTML = msgs.map(m => renderAdminMsg(m)).join('');
-    el.scrollTop = el.scrollHeight;
+    if (prevCount === 0 || atBottom) {
+      el.scrollTop = el.scrollHeight;
+    } else if (msgs.length > prevCount) {
+      const btn = document.getElementById('adminScrollBtn');
+      if (btn) {
+        btn.classList.add('visible');
+        let badge = btn.querySelector('.chat-scroll-badge');
+        if (!badge) { badge = document.createElement('span'); badge.className = 'chat-scroll-badge'; btn.appendChild(badge); }
+        badge.textContent = msgs.length - prevCount > 9 ? '9+' : String(msgs.length - prevCount);
+      }
+    }
   } catch(e) {}
 }
 

@@ -1504,7 +1504,19 @@ function openChat(companyId, companyName, photo) {
       <span class="record-timer" id="restRecordTimer"></span>
       <button class="record-btn" id="restRecordBtn" onclick="toggleRestVoiceRecord(${companyId})" title="Message vocal">🎙</button>
       <button class="btn btn-primary btn-sm" onclick="sendRestMsg(${companyId})">Envoyer</button>
-    </div>`;
+    </div>
+    <button class="chat-scroll-btn" id="restScrollBtn" title="Aller en bas">&#8595;</button>`;
+  const _chatEl = document.getElementById('restChatMessages');
+  const _scrollBtn = document.getElementById('restScrollBtn');
+  _chatEl.addEventListener('scroll', () => {
+    const atBottom = _chatEl.scrollHeight - _chatEl.scrollTop - _chatEl.clientHeight < 80;
+    _scrollBtn.classList.toggle('visible', !atBottom);
+    if (atBottom) { const b = _scrollBtn.querySelector('.chat-scroll-badge'); if (b) b.remove(); }
+  });
+  _scrollBtn.addEventListener('click', () => {
+    _chatEl.scrollTo({ top: _chatEl.scrollHeight, behavior: 'smooth' });
+    const b = _scrollBtn.querySelector('.chat-scroll-badge'); if (b) b.remove();
+  });
   loadMessages(companyId);
   loadConversations();
 }
@@ -1518,8 +1530,20 @@ async function loadMessages(companyId) {
       el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">Aucun message — commencez la conversation !</div>';
       return;
     }
+    const prevCount = el.querySelectorAll('.msg').length;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
     el.innerHTML = msgs.map(m => renderRestMsg(m)).join('');
-    el.scrollTop = el.scrollHeight;
+    if (prevCount === 0 || atBottom) {
+      el.scrollTop = el.scrollHeight;
+    } else if (msgs.length > prevCount) {
+      const btn = document.getElementById('restScrollBtn');
+      if (btn) {
+        btn.classList.add('visible');
+        let badge = btn.querySelector('.chat-scroll-badge');
+        if (!badge) { badge = document.createElement('span'); badge.className = 'chat-scroll-badge'; btn.appendChild(badge); }
+        badge.textContent = msgs.length - prevCount > 9 ? '9+' : String(msgs.length - prevCount);
+      }
+    }
   } catch(e) { console.error('loadMessages:', e); }
 }
 

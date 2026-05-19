@@ -985,12 +985,21 @@ label#wpDropZone:hover {
 
 /* Weekly pack cards */
 .pack-card { border:1px solid var(--border); border-radius:14px; background:var(--cream); overflow:hidden; margin-bottom:16px; }
-.pack-card-header { padding:14px 18px; display:flex; align-items:center; gap:12px; cursor:pointer; border-bottom:1px solid var(--border); }
+.pack-card-header { padding:14px 18px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:background .15s; }
 .pack-card-header:hover { background:#FFF0EA; }
+.pack-card-body { display:none; border-top:1px solid var(--border); }
+.pack-card-body.open { display:block; }
 .day-pill { display:inline-block; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:600; background:var(--orange); color:white; margin-right:4px; }
 .dish-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
 .dish-row:last-child { border-bottom:none; }
 .dish-row img { width:40px; height:40px; border-radius:7px; object-fit:cover; flex-shrink:0; }
+/* Quantity +/- buttons */
+.qty-btn { width:32px; height:32px; border-radius:50%; border:1.5px solid var(--orange); background:white; color:var(--orange); font-size:18px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .15s; line-height:1; }
+.qty-btn:hover { background:var(--orange); color:white; }
+/* Status badges */
+.status-badge { display:inline-block; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:600; background:#FFF0EA; color:var(--orange); }
+.status-badge.confirmed { background:#D1FAE5; color:#065F46; }
+.status-badge.cancelled { background:#FEE2E2; color:#991B1B; }
 
 /* Contract modal */
 .contract-modal-overlay { position:fixed; inset:0; z-index:9999; background:rgba(44,24,16,.85); display:flex; align-items:center; justify-content:center; padding:20px; }
@@ -1050,8 +1059,191 @@ label#wpDropZone:hover {
 @media(max-width:640px) { .doc-toc { grid-template-columns:repeat(2,1fr); } .doc-hero { padding:24px 20px; } .doc-hero-title { font-size:20px; } }
 
 /* ─── Scroll box (tables / lists with overflow) ─────── */
-.scroll-box { overflow-x:auto; overflow-y:auto; max-height:500px; scrollbar-width:thin; scrollbar-color:var(--orange) transparent; }
+.scroll-box { overflow-x:auto; overflow-y:auto; max-height:500px; scrollbar-width:thin; scrollbar-color:var(--orange) transparent; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
 .scroll-box::-webkit-scrollbar { width:5px; height:5px; }
 .scroll-box::-webkit-scrollbar-track { background:transparent; }
 .scroll-box::-webkit-scrollbar-thumb { background:var(--orange); border-radius:4px; }
 .scroll-box table { min-width:520px; width:100%; }
+
+/* ═══════════════════════════════════════════════════════
+   SCROLL SYSTEM — Horizontal + Vertical
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── Horizontal scroll container ───────────────────── */
+.scroll-x {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(232,90,42,.45) transparent;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+}
+.scroll-x::-webkit-scrollbar { height: 4px; }
+.scroll-x::-webkit-scrollbar-track { background: rgba(44,24,16,.06); border-radius: 2px; }
+.scroll-x::-webkit-scrollbar-thumb { background: rgba(232,90,42,.45); border-radius: 2px; }
+.scroll-x::-webkit-scrollbar-thumb:hover { background: var(--orange); }
+
+/* ─── Vertical scroll container ─────────────────────── */
+.scroll-y {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(232,90,42,.35) transparent;
+  overscroll-behavior-y: contain;
+}
+.scroll-y::-webkit-scrollbar { width: 4px; }
+.scroll-y::-webkit-scrollbar-track { background: transparent; }
+.scroll-y::-webkit-scrollbar-thumb { background: rgba(232,90,42,.4); border-radius: 2px; }
+
+/* ─── Fade edges on scrollable containers ────────────── */
+.scroll-fade-x {
+  position: relative;
+  overflow: hidden;
+}
+.scroll-fade-x > * {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.scroll-fade-x::before,
+.scroll-fade-x::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 24px;
+  z-index: 2;
+  pointer-events: none;
+  transition: opacity .2s;
+}
+.scroll-fade-x::before { left: 0; background: linear-gradient(to right, var(--cream), transparent); }
+.scroll-fade-x::after  { right: 0; background: linear-gradient(to left, var(--cream), transparent); }
+
+/* ─── Table wrap with touch + sticky header ─────────── */
+.table-wrap {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  border-radius: 0 0 14px 14px;
+}
+.table-wrap table { min-width: 480px; width: 100%; }
+
+/* ─── Tab bar — scrollable on mobile ────────────────── */
+.tab-bar {
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  flex-wrap: nowrap !important;
+}
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab-btn { scroll-snap-align: start; flex-shrink: 0; white-space: nowrap; }
+
+/* ─── Main content area: clip horizontal overflow ────── */
+.main { overflow-x: hidden; }
+.content { min-width: 0; overflow-x: hidden; }
+
+/* ─── Cards: prevent overflow bleed ─────────────────── */
+.card { overflow: hidden; min-width: 0; }
+.card-body { min-width: 0; }
+
+/* ─── Pack day grid: horizontal scroll on narrow screens  */
+.pack-day-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(180px, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .pack-day-grid { grid-template-columns: repeat(4, minmax(160px, 1fr)); }
+}
+@media (max-width: 600px) {
+  .pack-day-grid { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+}
+
+/* ─── Stats grid scroll on very small screens ────────── */
+@media (max-width: 380px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .stat-number { font-size: 22px; }
+}
+
+/* ─── Reveal animation delays via CSS var ────────────── */
+.reveal[style*='--reveal-delay'] { transition-delay: var(--reveal-delay, 0s); }
+.reveal-left[style*='--reveal-delay'] { transition-delay: var(--reveal-delay, 0s); }
+.reveal-right[style*='--reveal-delay'] { transition-delay: var(--reveal-delay, 0s); }
+.reveal-scale[style*='--reveal-delay'] { transition-delay: var(--reveal-delay, 0s); }
+
+/* ─── Page visible: trigger all reveals immediately ─── */
+.page.active .reveal,
+.page.active .reveal-left,
+.page.active .reveal-right,
+.page.active .reveal-scale { transition-delay: var(--reveal-delay, 0s); }
+
+/* ─── Horizontal chip row ────────────────────────────── */
+.chip-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.chip-row::-webkit-scrollbar { display: none; }
+
+/* ─── Smooth anchor scroll ───────────────────────────── */
+html { scroll-behavior: smooth; scroll-padding-top: 70px; }
+
+/* ─── Mobile: touch-friendly tap targets ─────────────── */
+@media (max-width: 768px) {
+  .btn { min-height: 38px; }
+  .form-control { min-height: 40px; }
+  .nav-item { min-height: 44px; }
+  td { word-break: break-word; }
+  .card-body { overflow-x: hidden; }
+  .modal { max-width: calc(100vw - 32px); }
+}
+
+/* ─── Subscription extras day chips ─────────────────── */
+.day-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.day-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: white;
+  transition: all .15s;
+  flex-shrink: 0;
+  user-select: none;
+}
+.day-chip.active {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: white;
+  box-shadow: 0 2px 6px rgba(232,90,42,.35);
+}
+
+/* ─── Scrollbar track in cards ───────────────────────── */
+.card .scroll-x::-webkit-scrollbar-track,
+.card .scroll-y::-webkit-scrollbar-track { background: #F9F1EB; border-radius: 2px; }
+.card .table-wrap::-webkit-scrollbar { height: 4px; }
+.card .table-wrap::-webkit-scrollbar-track { background: #F9F1EB; }
+.card .table-wrap::-webkit-scrollbar-thumb { background: rgba(232,90,42,.4); border-radius: 2px; }

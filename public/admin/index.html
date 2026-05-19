@@ -115,6 +115,21 @@
     .restaurant-section-header{background:rgba(44,24,16,.06);border-radius:10px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
     .restaurant-section-header h4{font-size:14px;font-weight:600;color:var(--brown);margin:0}
     .restaurant-section-header .meta{font-size:12px;color:var(--muted)}
+    /* Pack detail modal */
+    .pd-menu{border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden}
+    .pd-menu-header{background:rgba(44,24,16,.05);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+    .pd-menu-header h4{font-size:14px;font-weight:600;color:var(--brown);margin:0}
+    .pd-menu-body{padding:0}
+    .pd-day{border-top:1px solid var(--border);padding:12px 16px}
+    .pd-day-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--orange);margin-bottom:8px}
+    .pd-dish{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(44,24,16,.06)}
+    .pd-dish:last-child{border-bottom:none}
+    .pd-dish-img{width:38px;height:38px;border-radius:8px;object-fit:cover;flex-shrink:0;background:var(--border)}
+    .pd-dish-info{flex:1;min-width:0}
+    .pd-dish-name{font-size:13px;font-weight:600;color:var(--brown);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .pd-dish-desc{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .pd-dish-price{font-size:13px;font-weight:700;color:var(--orange);white-space:nowrap}
+    .pd-empty{text-align:center;padding:20px;color:var(--muted);font-size:13px}
     @media(max-width:1100px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:700px){.stats-grid{grid-template-columns:1fr 1fr}.auth-card{padding:32px 24px}.comm-amounts{gap:12px}.comm-amt .val{font-size:18px}}
     @media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr}}
@@ -167,6 +182,7 @@
     <div class="nav-item active" data-page="dashboard"><span class="icon">📊</span><span>Vue d'ensemble</span></div>
     <div class="nav-section">Catalogue</div>
     <div class="nav-item" data-page="menus"><span class="icon">🍽️</span><span>Menus & Plats</span></div>
+    <div class="nav-item" data-page="packs"><span class="icon">🍱</span><span>Packs hebdomadaires</span></div>
     <div class="nav-section">Activité</div>
     <div class="nav-item" data-page="orders"><span class="icon">🔴</span><span>Commandes en direct</span></div>
     <div class="nav-section">Comptes</div>
@@ -317,6 +333,118 @@
       </div>
     </div>
 
+    <!-- ══ PAGE PACKS HEBDOMADAIRES ══ -->
+    <div class="page" id="page-packs">
+
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+        <div class="stat-card highlight">
+          <div class="stat-icon">🍱</div>
+          <div class="stat-number orange" id="s-packs-total">—</div>
+          <div class="stat-label">Packs définis</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">✅</div>
+          <div class="stat-number" id="s-packs-active">—</div>
+          <div class="stat-label">Packs actifs</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📋</div>
+          <div class="stat-number" id="s-selections-total">—</div>
+          <div class="stat-label">Souscriptions entreprises</div>
+        </div>
+      </div>
+
+      <div class="tab-bar" style="margin-bottom:20px">
+        <button class="tab-btn active" id="pkTab1" onclick="switchPackTab('restaurants')">🍱 Packs restaurants</button>
+        <button class="tab-btn" id="pkTab2" onclick="switchPackTab('companies')">📋 Souscriptions entreprises</button>
+      </div>
+
+      <!-- Onglet packs restaurants -->
+      <div id="pkPanelRestaurants">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🍱 Packs hebdomadaires — tous les restaurants</span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select id="filterPackRestaurant" onchange="renderAdminPacks()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;color:var(--brown);background:white">
+                <option value="">Tous les restaurants</option>
+              </select>
+              <select id="filterPackStatus" onchange="renderAdminPacks()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;color:var(--brown);background:white">
+                <option value="">Tous les statuts</option>
+                <option value="active">Actifs</option>
+                <option value="inactive">Inactifs</option>
+              </select>
+              <button class="btn btn-outline btn-sm" onclick="loadAdminPacks()">🔄</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Restaurant</th>
+                    <th>Nom du pack</th>
+                    <th>Description</th>
+                    <th>Prix (FCFA)</th>
+                    <th>Qté min.</th>
+                    <th>Menus</th>
+                    <th>Souscriptions</th>
+                    <th>Statut</th>
+                    <th>Créé le</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="packsAdminTable"><tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px">Chargement...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Onglet souscriptions entreprises -->
+      <div id="pkPanelCompanies" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📋 Souscriptions hebdomadaires entreprises</span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select id="filterSelCompany" onchange="renderAdminSelections()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;color:var(--brown);background:white">
+                <option value="">Toutes les entreprises</option>
+              </select>
+              <select id="filterSelRestaurant" onchange="renderAdminSelections()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;color:var(--brown);background:white">
+                <option value="">Tous les restaurants</option>
+              </select>
+              <select id="filterSelStatus" onchange="renderAdminSelections()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;color:var(--brown);background:white">
+                <option value="">Tous les statuts</option>
+                <option value="pending">En attente</option>
+                <option value="confirmed">Confirmées</option>
+                <option value="cancelled">Annulées</option>
+              </select>
+              <button class="btn btn-outline btn-sm" onclick="loadAdminSelections()">🔄</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Entreprise</th>
+                    <th>Restaurant</th>
+                    <th>Pack</th>
+                    <th>Semaine du</th>
+                    <th>Qté plats</th>
+                    <th>Statut</th>
+                    <th>Extras</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="selectionsAdminTable"><tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Chargement...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
     <!-- ══ PAGE COMMANDES EN DIRECT ══ -->
     <div class="page" id="page-orders">
       <div class="card">
@@ -402,37 +530,158 @@
 
     <!-- ══ PAGE CONTRATS ══ -->
     <div class="page" id="page-contracts">
-      <div class="stats-grid" style="grid-template-columns:repeat(2,1fr)">
+
+      <!-- Compteurs -->
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
         <div class="stat-card highlight">
           <div class="stat-icon">✅</div>
           <div class="stat-number orange" id="s-contracts-signed">—</div>
-          <div class="stat-label">Contrats signés</div>
+          <div class="stat-label">Contrats exclusivité signés</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon">⏳</div>
           <div class="stat-number" id="s-contracts-pending">—</div>
-          <div class="stat-label">En attente de signature</div>
+          <div class="stat-label">En attente</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🤝</div>
+          <div class="stat-number" id="s-affiliations-total">—</div>
+          <div class="stat-label">Contrats d'affiliation</div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">📝 Contrats d'exclusivité</span>
-          <button class="btn btn-outline btn-sm" onclick="loadContracts()">🔄 Actualiser</button>
-        </div>
-        <div class="card-body">
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Restaurant</th><th>Email</th><th>Statut</th><th>Fréquence</th><th>Commission</th><th>Date de signature</th></tr></thead>
-              <tbody id="contractsTable"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Chargement...</td></tr></tbody>
-            </table>
+
+      <!-- Onglets -->
+      <div class="tab-bar" style="margin-bottom:20px">
+        <button class="tab-btn active" id="cTab1" onclick="switchContractTab('terms')">⚙️ Termes plateforme</button>
+        <button class="tab-btn" id="cTab2" onclick="switchContractTab('exclusivity')">📝 Contrats restaurants</button>
+        <button class="tab-btn" id="cTab3" onclick="switchContractTab('affiliations')">🤝 Contrats d'affiliation</button>
+      </div>
+
+      <!-- Onglet 1 : Termes de la plateforme -->
+      <div id="cPanelTerms">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">⚙️ Termes contractuels de la plateforme</span>
+            <button class="btn btn-outline btn-sm" onclick="loadPlatformTerms()">🔄</button>
+          </div>
+          <div class="card-body" style="padding:24px">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:20px">Ces termes sont définis par FoodChooseApp (El Immeka) et s'intègrent dans tous les contrats d'exclusivité et d'affiliation de la plateforme.</p>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:20px">
+              <div class="form-group" style="margin:0">
+                <label style="display:block;font-size:12px;font-weight:600;color:var(--brown);margin-bottom:6px;letter-spacing:.3px">Taux de commission (%)</label>
+                <input class="form-control" type="number" id="ptCommission" min="0" max="100" step="0.01" placeholder="1.00">
+                <span style="font-size:11px;color:var(--muted);margin-top:4px;display:block">Commission prélevée sur chaque plat vendu</span>
+              </div>
+              <div class="form-group" style="margin:0">
+                <label style="display:block;font-size:12px;font-weight:600;color:var(--brown);margin-bottom:6px;letter-spacing:.3px">Durée standard (mois)</label>
+                <input class="form-control" type="number" id="ptDuration" min="1" max="60" placeholder="12">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label style="display:block;font-size:12px;font-weight:600;color:var(--brown);margin-bottom:6px;letter-spacing:.3px">Préavis de résiliation (jours)</label>
+                <input class="form-control" type="number" id="ptNotice" min="0" max="365" placeholder="30">
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:14px">
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--brown);margin-bottom:6px;letter-spacing:.3px">Clause d'exclusivité</label>
+              <textarea class="form-control" id="ptExclusivity" rows="3" placeholder="Ex : Le Restaurant s'engage à utiliser FoodChooseApp comme plateforme exclusive de commande pour les repas d'entreprise..."></textarea>
+            </div>
+            <div class="form-group" style="margin-bottom:14px">
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--brown);margin-bottom:6px;letter-spacing:.3px">Obligations de la plateforme</label>
+              <textarea class="form-control" id="ptObligations" rows="3" placeholder="Ex : FoodChooseApp s'engage à mettre à disposition une infrastructure numérique fiable, à traiter les commandes dans les délais convenus..."></textarea>
+            </div>
+            <div class="form-group" style="margin-bottom:14px">
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--brown);margin-bottom:6px;letter-spacing:.3px">Conditions de paiement</label>
+              <textarea class="form-control" id="ptPayment" rows="3" placeholder="Ex : Les commissions sont calculées mensuellement et reversées dans un délai de 15 jours après clôture du mois..."></textarea>
+            </div>
+            <div class="form-group" style="margin-bottom:14px">
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--brown);margin-bottom:6px;letter-spacing:.3px">Résolution des litiges</label>
+              <textarea class="form-control" id="ptDispute" rows="2" placeholder="Ex : Tout litige sera soumis à la juridiction compétente du siège social de El Immeka..."></textarea>
+            </div>
+            <div class="form-group" style="margin-bottom:20px">
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--brown);margin-bottom:6px;letter-spacing:.3px">Clauses complémentaires</label>
+              <textarea class="form-control" id="ptExtra" rows="3" placeholder="Toute clause additionnelle spécifique à la plateforme..."></textarea>
+            </div>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px">
+              <button class="btn btn-primary" onclick="savePlatformTerms()">💾 Enregistrer les termes</button>
+              <button class="btn btn-outline btn-sm" onclick="togglePtPreview()">👁 Aperçu du contrat</button>
+            </div>
+            <div id="ptPreview" style="display:none;background:#F9F1EB;border-radius:12px;padding:16px;font-size:12px;font-family:monospace;white-space:pre-wrap;line-height:1.7;max-height:400px;overflow-y:auto;border:1px solid var(--border)"></div>
+            <div id="ptSavedAt" style="font-size:12px;color:var(--muted);margin-top:8px"></div>
           </div>
         </div>
       </div>
+
+      <!-- Onglet 2 : Contrats restaurants -->
+      <div id="cPanelExclusivity" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📝 Contrats d'exclusivité restaurants</span>
+            <button class="btn btn-outline btn-sm" onclick="loadContracts()">🔄 Actualiser</button>
+          </div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Restaurant</th><th>Email</th><th>Statut</th><th>Fréquence</th><th>Commission</th><th>Date de signature</th></tr></thead>
+                <tbody id="contractsTable"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Chargement...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Onglet 3 : Contrats d'affiliation -->
+      <div id="cPanelAffiliations" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🤝 Contrats d'affiliation (Restaurant ↔ Entreprise)</span>
+            <button class="btn btn-outline btn-sm" onclick="loadAffiliationContractsAdmin()">🔄 Actualiser</button>
+          </div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Restaurant</th>
+                    <th>Entreprise</th>
+                    <th>Pack</th>
+                    <th>Statut</th>
+                    <th>Restaurant signé</th>
+                    <th>Entreprise signée</th>
+                    <th>Début</th>
+                    <th>Fin</th>
+                    <th>Qté / sem.</th>
+                  </tr>
+                </thead>
+                <tbody id="affiliationsAdminTable"><tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px">Chargement...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
   </div>
 </main>
 </div>
+</div>
+
+<!-- Modal contenu pack -->
+<div class="modal-overlay" id="packDetailModal" onclick="if(event.target===this)closePackDetail()">
+  <div class="modal-box wide" style="max-width:700px;max-height:88vh;overflow-y:auto;padding:0">
+    <div style="position:sticky;top:0;background:var(--cream);z-index:2;padding:20px 24px 14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+      <div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px" id="pdRestaurantName"></div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:20px;color:var(--brown);margin:0" id="pdPackName"></h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px" id="pdPackMeta"></div>
+      </div>
+      <button onclick="closePackDetail()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);flex-shrink:0;line-height:1">✕</button>
+    </div>
+    <div id="pdBody" style="padding:20px 24px 24px"></div>
+  </div>
 </div>
 
 <!-- Modal confirmation suppression -->
@@ -721,6 +970,344 @@ async function loadRestaurants() {
   }
 }
 
+// ── Pack detail modal ─────────────────────────────────────────────
+const DAY_NAMES = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+
+async function openPackDetail(packId) {
+  document.getElementById('pdPackName').textContent = '⏳ Chargement…';
+  document.getElementById('pdRestaurantName').textContent = '';
+  document.getElementById('pdPackMeta').innerHTML = '';
+  document.getElementById('pdBody').innerHTML = '<div style="padding:32px;text-align:center;color:var(--muted)">⏳ Chargement du contenu…</div>';
+  document.getElementById('packDetailModal').classList.add('open');
+  try {
+    const p = await api(`/api/super-admin/weekly-packs/${packId}`);
+    renderPackDetail(p);
+  } catch (e) {
+    document.getElementById('pdBody').innerHTML = `<div class="pd-empty">❌ ${esc(e.message)}</div>`;
+  }
+}
+
+function closePackDetail() {
+  document.getElementById('packDetailModal').classList.remove('open');
+}
+
+function renderPackDetail(p) {
+  document.getElementById('pdRestaurantName').textContent = p.restaurant_name || '';
+  document.getElementById('pdPackName').textContent = p.name || 'Pack sans nom';
+  const meta = [];
+  if (p.price)          meta.push(`<span class="tag tag-orange">${fmtCFA(p.price)} FCFA</span>`);
+  if (p.min_order_qty)  meta.push(`<span class="tag tag-brown">Min. ${p.min_order_qty} plats</span>`);
+  meta.push(p.is_active ? '<span class="tag tag-green">Actif</span>' : '<span class="tag tag-red">Inactif</span>');
+  if (p.description)    meta.push(`<span style="font-size:12px;color:var(--muted)">${esc(p.description)}</span>`);
+  document.getElementById('pdPackMeta').innerHTML = meta.join('');
+
+  const menus = Array.isArray(p.menus) ? p.menus : [];
+  if (!menus.length) {
+    document.getElementById('pdBody').innerHTML = '<div class="pd-empty"><span style="font-size:32px;display:block;margin-bottom:8px">🍱</span>Ce pack ne contient pas encore de menus.</div>';
+    return;
+  }
+
+  document.getElementById('pdBody').innerHTML = menus.map((menu, mi) => {
+    const days = Array.isArray(menu.days) ? menu.days : [];
+    const daysHtml = days.length ? days.map(day => {
+      const dishes = Array.isArray(day.dishes) ? day.dishes : [];
+      const dayName = DAY_NAMES[(day.day_of_week - 1) % 7] || `Jour ${day.day_of_week}`;
+      const optTag = day.is_optional ? ' <span style="font-size:10px;color:var(--muted)">(optionnel)</span>' : '';
+      const dishesHtml = dishes.length
+        ? dishes.map(d => `
+            <div class="pd-dish">
+              ${d.image_url ? `<img class="pd-dish-img" src="${esc(d.image_url)}" alt="${esc(d.name)}">` : `<div class="pd-dish-img" style="display:flex;align-items:center;justify-content:center;font-size:18px">🍽️</div>`}
+              <div class="pd-dish-info">
+                <div class="pd-dish-name">${esc(d.name)}</div>
+                ${d.description ? `<div class="pd-dish-desc">${esc(d.description)}</div>` : ''}
+              </div>
+              ${d.price ? `<div class="pd-dish-price">${fmtCFA(d.price)} FCFA</div>` : ''}
+            </div>`).join('')
+        : '<div style="font-size:12px;color:var(--muted);padding:4px 0">Aucun plat défini pour ce jour</div>';
+      return `<div class="pd-day">
+        <div class="pd-day-label">${esc(dayName)}${optTag}</div>
+        ${dishesHtml}
+      </div>`;
+    }).join('')
+    : '<div class="pd-day"><div style="font-size:12px;color:var(--muted)">Aucun jour défini pour ce menu</div></div>';
+
+    const totalDishes = days.reduce((s, d) => s + (d.dishes ? d.dishes.length : 0), 0);
+    return `<div class="pd-menu">
+      <div class="pd-menu-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">
+        <h4>${esc(menu.name || `Menu ${mi + 1}`)}</h4>
+        <span style="font-size:12px;color:var(--muted)">${days.length} jour(s) · ${totalDishes} plat(s)</span>
+      </div>
+      <div class="pd-menu-body">${daysHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Packs hebdomadaires ───────────────────────────────────────────
+let _adminPacks = [], _adminSelections = [];
+
+function switchPackTab(tab) {
+  document.getElementById('pkPanelRestaurants').style.display = tab === 'restaurants' ? '' : 'none';
+  document.getElementById('pkPanelCompanies').style.display = tab === 'companies' ? '' : 'none';
+  document.getElementById('pkTab1').classList.toggle('active', tab === 'restaurants');
+  document.getElementById('pkTab2').classList.toggle('active', tab === 'companies');
+  if (tab === 'companies' && !_adminSelections.length) loadAdminSelections();
+}
+
+async function loadAdminPacks() {
+  const tbody = document.getElementById('packsAdminTable');
+  tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px">⏳ Chargement...</td></tr>';
+  try {
+    _adminPacks = await api('/api/super-admin/weekly-packs');
+    const el = document.getElementById('s-packs-total');
+    const el2 = document.getElementById('s-packs-active');
+    if (el) el.textContent = _adminPacks.length;
+    if (el2) el2.textContent = _adminPacks.filter(p => p.is_active).length;
+    const sel = document.getElementById('filterPackRestaurant');
+    const cur = sel.value;
+    const names = [...new Set(_adminPacks.map(p => p.restaurant_name))].sort();
+    sel.innerHTML = '<option value="">Tous les restaurants</option>' +
+      names.map(n => `<option value="${esc(n)}"${cur===n?' selected':''}>${esc(n)}</option>`).join('');
+    renderAdminPacks();
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#dc2626;padding:24px">${esc(e.message)}</td></tr>`;
+  }
+}
+
+function renderAdminPacks() {
+  const restF = document.getElementById('filterPackRestaurant').value;
+  const stF   = document.getElementById('filterPackStatus').value;
+  const tbody = document.getElementById('packsAdminTable');
+  let data = _adminPacks.filter(p => {
+    if (restF && p.restaurant_name !== restF) return false;
+    if (stF === 'active' && !p.is_active) return false;
+    if (stF === 'inactive' && p.is_active) return false;
+    return true;
+  });
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><span class="icon">🍱</span>Aucun pack trouvé</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(p => {
+    const statusTag = p.is_active
+      ? '<span class="tag tag-green">Actif</span>'
+      : '<span class="tag tag-red">Inactif</span>';
+    const subsTag = parseInt(p.subscribers_count) > 0
+      ? `<span class="tag tag-orange">${p.subscribers_count} entreprise(s)</span>`
+      : '<span style="color:var(--muted)">—</span>';
+    return `<tr>
+      <td><strong>${esc(p.restaurant_name)}</strong></td>
+      <td><strong>${esc(p.name)}</strong></td>
+      <td style="color:var(--muted);font-size:12px;max-width:180px">${p.description ? esc(p.description).substring(0,70)+(p.description.length>70?'…':'') : '—'}</td>
+      <td style="font-weight:600">${p.price ? fmtCFA(p.price) : '—'}</td>
+      <td>${p.min_order_qty ?? '—'}</td>
+      <td><span class="tag tag-brown">${p.menus_count} menu(s)</span></td>
+      <td>${subsTag}</td>
+      <td>${statusTag}</td>
+      <td style="color:var(--muted);font-size:12px;white-space:nowrap">${fmtDate(p.created_at)}</td>
+      <td><button class="btn btn-outline btn-sm" onclick="openPackDetail(${p.id})">👁 Voir</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadAdminSelections() {
+  const tbody = document.getElementById('selectionsAdminTable');
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">⏳ Chargement...</td></tr>';
+  try {
+    _adminSelections = await api('/api/super-admin/company-selections');
+    const el = document.getElementById('s-selections-total');
+    if (el) el.textContent = _adminSelections.length;
+    // Populate filters
+    const coSel = document.getElementById('filterSelCompany');
+    const rSel  = document.getElementById('filterSelRestaurant');
+    const coNames = [...new Set(_adminSelections.map(s => s.company_name))].sort();
+    const rNames  = [...new Set(_adminSelections.map(s => s.restaurant_name))].sort();
+    coSel.innerHTML = '<option value="">Toutes les entreprises</option>' +
+      coNames.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+    rSel.innerHTML = '<option value="">Tous les restaurants</option>' +
+      rNames.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+    renderAdminSelections();
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#dc2626;padding:24px">${esc(e.message)}</td></tr>`;
+  }
+}
+
+function renderAdminSelections() {
+  const coF  = document.getElementById('filterSelCompany').value;
+  const rF   = document.getElementById('filterSelRestaurant').value;
+  const stF  = document.getElementById('filterSelStatus').value;
+  const tbody = document.getElementById('selectionsAdminTable');
+  let data = _adminSelections.filter(s => {
+    if (coF && s.company_name !== coF) return false;
+    if (rF  && s.restaurant_name !== rF) return false;
+    if (stF && s.status !== stF) return false;
+    return true;
+  });
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><span class="icon">📋</span>Aucune souscription trouvée</div></td></tr>';
+    return;
+  }
+  const stMap = {
+    pending:   '<span class="tag tag-gray">En attente</span>',
+    confirmed: '<span class="tag tag-green">Confirmée</span>',
+    cancelled: '<span class="tag tag-red">Annulée</span>'
+  };
+  tbody.innerHTML = data.map(s => {
+    const extras = Array.isArray(s.extras) ? s.extras : [];
+    const extraHtml = extras.length
+      ? extras.map(e => `<span class="tag tag-blue" title="${esc(e.day_list||'')}" style="margin:1px">${esc(e.item_name)} ×${e.quantity}</span>`).join(' ')
+      : '<span style="color:var(--muted)">—</span>';
+    const weekStr = s.week_start ? new Date(s.week_start).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+    return `<tr>
+      <td><strong>${esc(s.company_name)}</strong></td>
+      <td>${esc(s.restaurant_name)}</td>
+      <td>${s.pack_name ? `<strong>${esc(s.pack_name)}</strong>${s.pack_price?'<br><span style="font-size:11px;color:var(--muted)">'+fmtCFA(s.pack_price)+' FCFA</span>':''}` : '<span style="color:var(--muted)">—</span>'}</td>
+      <td style="white-space:nowrap">${weekStr}</td>
+      <td style="font-weight:600">${s.dish_qty ?? '—'}</td>
+      <td>${stMap[s.status] || `<span class="tag tag-gray">${esc(s.status||'—')}</span>`}</td>
+      <td style="max-width:200px">${extraHtml}</td>
+      <td style="color:var(--muted);font-size:12px;max-width:160px">${s.notes ? esc(s.notes).substring(0,60)+(s.notes.length>60?'…':'') : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Platform terms ────────────────────────────────────────────────
+let _ptData = null;
+
+async function loadPlatformTerms() {
+  try {
+    _ptData = await api('/api/super-admin/platform-terms');
+    document.getElementById('ptCommission').value = _ptData.commission_rate ?? 1;
+    document.getElementById('ptDuration').value = _ptData.duration_months ?? 12;
+    document.getElementById('ptNotice').value = _ptData.termination_notice_days ?? 30;
+    document.getElementById('ptExclusivity').value = _ptData.exclusivity_description || '';
+    document.getElementById('ptObligations').value = _ptData.platform_obligations || '';
+    document.getElementById('ptPayment').value = _ptData.payment_terms || '';
+    document.getElementById('ptDispute').value = _ptData.dispute_resolution || '';
+    document.getElementById('ptExtra').value = _ptData.extra_platform_terms || '';
+    if (_ptData.updated_at) {
+      document.getElementById('ptSavedAt').textContent = 'Dernière mise à jour : ' + new Date(_ptData.updated_at).toLocaleString('fr-FR');
+    }
+  } catch (e) { toast('Erreur chargement termes : ' + e.message, 'error'); }
+}
+
+async function savePlatformTerms() {
+  const body = {
+    commission_rate: document.getElementById('ptCommission').value,
+    duration_months: document.getElementById('ptDuration').value,
+    termination_notice_days: document.getElementById('ptNotice').value,
+    exclusivity_description: document.getElementById('ptExclusivity').value.trim(),
+    platform_obligations: document.getElementById('ptObligations').value.trim(),
+    payment_terms: document.getElementById('ptPayment').value.trim(),
+    dispute_resolution: document.getElementById('ptDispute').value.trim(),
+    extra_platform_terms: document.getElementById('ptExtra').value.trim()
+  };
+  try {
+    await api('/api/super-admin/platform-terms', { method: 'PUT', body: JSON.stringify(body) });
+    toast('Termes de la plateforme enregistrés', 'success');
+    _ptData = { ..._ptData, ...body };
+    document.getElementById('ptSavedAt').textContent = 'Dernière mise à jour : ' + new Date().toLocaleString('fr-FR');
+    // Refresh preview if open
+    const prev = document.getElementById('ptPreview');
+    if (prev.style.display !== 'none') prev.textContent = buildPlatformContractText(body);
+  } catch (e) { toast('Erreur : ' + e.message, 'error'); }
+}
+
+function buildPlatformContractText(t) {
+  const rate = t.commission_rate ?? 1;
+  const dur = t.duration_months ?? 12;
+  const notice = t.termination_notice_days ?? 30;
+  return `CONTRAT DE PARTENARIAT — FOODCHOOSEAPP / EL IMMEKA
+══════════════════════════════════════════════════
+
+ARTICLE 1 — OBJET
+Le présent contrat définit les conditions dans lesquelles FoodChooseApp (El Immeka)
+met sa plateforme à disposition des restaurants et entreprises partenaires.
+
+ARTICLE 2 — EXCLUSIVITÉ
+${t.exclusivity_description || 'Le partenaire s\'engage à utiliser FoodChooseApp comme plateforme exclusive de commande.'}
+
+ARTICLE 3 — COMMISSION PLATEFORME
+FoodChooseApp perçoit une commission de ${rate}% sur chaque plat vendu via la plateforme.
+${t.payment_terms || ''}
+
+ARTICLE 4 — OBLIGATIONS DE LA PLATEFORME
+${t.platform_obligations || 'FoodChooseApp s\'engage à maintenir une infrastructure fiable et sécurisée.'}
+
+ARTICLE 5 — DURÉE ET RÉSILIATION
+Le présent contrat est conclu pour une durée de ${dur} mois, renouvelable par tacite reconduction.
+Un préavis de ${notice} jours est requis pour toute résiliation.
+
+ARTICLE 6 — LITIGES
+${t.dispute_resolution || 'Tout litige sera soumis à la juridiction compétente du siège social de El Immeka.'}
+${t.extra_platform_terms ? '\nCLAUSES COMPLÉMENTAIRES\n' + t.extra_platform_terms : ''}`;
+}
+
+function togglePtPreview() {
+  const prev = document.getElementById('ptPreview');
+  if (prev.style.display === 'none') {
+    const t = {
+      commission_rate: document.getElementById('ptCommission').value,
+      duration_months: document.getElementById('ptDuration').value,
+      termination_notice_days: document.getElementById('ptNotice').value,
+      exclusivity_description: document.getElementById('ptExclusivity').value.trim(),
+      platform_obligations: document.getElementById('ptObligations').value.trim(),
+      payment_terms: document.getElementById('ptPayment').value.trim(),
+      dispute_resolution: document.getElementById('ptDispute').value.trim(),
+      extra_platform_terms: document.getElementById('ptExtra').value.trim()
+    };
+    prev.textContent = buildPlatformContractText(t);
+    prev.style.display = 'block';
+  } else {
+    prev.style.display = 'none';
+  }
+}
+
+// ── Tab switcher contracts ─────────────────────────────────────────
+function switchContractTab(tab) {
+  document.getElementById('cPanelTerms').style.display = tab === 'terms' ? '' : 'none';
+  document.getElementById('cPanelExclusivity').style.display = tab === 'exclusivity' ? '' : 'none';
+  document.getElementById('cPanelAffiliations').style.display = tab === 'affiliations' ? '' : 'none';
+  document.getElementById('cTab1').classList.toggle('active', tab === 'terms');
+  document.getElementById('cTab2').classList.toggle('active', tab === 'exclusivity');
+  document.getElementById('cTab3').classList.toggle('active', tab === 'affiliations');
+  if (tab === 'exclusivity') loadContracts();
+  if (tab === 'affiliations') loadAffiliationContractsAdmin();
+}
+
+// ── Affiliation contracts (admin view) ────────────────────────────
+async function loadAffiliationContractsAdmin() {
+  const tbody = document.getElementById('affiliationsAdminTable');
+  tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px">⏳ Chargement...</td></tr>';
+  try {
+    const list = await api('/api/super-admin/affiliation-contracts');
+    const el = document.getElementById('s-affiliations-total');
+    if (el) el.textContent = list.length;
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><span class="icon">🤝</span>Aucun contrat d\'affiliation</div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(c => {
+      const rSigned = c.restaurant_signed_at ? `<span class="tag tag-green">✓ ${fmtDate(c.restaurant_signed_at)}</span>` : '<span class="tag tag-gray">En attente</span>';
+      const coSigned = c.company_signed_at ? `<span class="tag tag-green">✓ ${fmtDate(c.company_signed_at)}</span>` : '<span class="tag tag-gray">En attente</span>';
+      const statusMap = { pending:'<span class="tag tag-gray">En attente</span>', confirmed:'<span class="tag tag-green">Confirmé</span>', cancelled:'<span class="tag tag-red">Annulé</span>' };
+      const statusTag = statusMap[c.status] || `<span class="tag tag-gray">${esc(c.status||'—')}</span>`;
+      return `<tr>
+        <td><strong>${esc(c.restaurant_name)}</strong><br><span style="font-size:11px;color:var(--muted)">${esc(c.restaurant_email)}</span></td>
+        <td><strong>${esc(c.company_name)}</strong><br><span style="font-size:11px;color:var(--muted)">${esc(c.company_email)}</span></td>
+        <td>${c.pack_name ? esc(c.pack_name) : '<span style="color:var(--muted)">—</span>'}</td>
+        <td>${statusTag}</td>
+        <td>${rSigned}</td>
+        <td>${coSigned}</td>
+        <td style="white-space:nowrap">${c.start_date ? fmtDate(c.start_date) : '—'}</td>
+        <td style="white-space:nowrap">${c.end_date ? fmtDate(c.end_date) : '—'}</td>
+        <td>${c.quantity ?? '—'}</td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#dc2626;padding:24px">${esc(e.message)}</td></tr>`;
+  }
+}
+
 // ── Contracts ─────────────────────────────────────────────────────
 async function loadContracts() {
   const tbody = document.getElementById('contractsTable');
@@ -834,10 +1421,11 @@ async function doResetPwd() {
 const pageTitles = {
   dashboard: 'Vue d\'ensemble',
   menus: 'Menus & Plats',
+  packs: 'Packs hebdomadaires',
   orders: 'Commandes en direct',
   restaurants: 'Restaurants',
   companies: 'Entreprises',
-  contracts: 'Contrats d\'exclusivité'
+  contracts: 'Gestion des contrats'
 };
 
 function initNav() {
@@ -852,8 +1440,9 @@ function initNav() {
       document.getElementById('pageTitle').textContent = pageTitles[page] || page;
       closeSidebar();
       if (page === 'menus' && !_allMenus.length) loadMenus();
+      if (page === 'packs') loadAdminPacks();
       if (page === 'orders') { loadOrders(); startLiveRefresh(); }
-      if (page === 'contracts') loadContracts();
+      if (page === 'contracts') { loadPlatformTerms(); }
     });
   });
 }
@@ -912,7 +1501,50 @@ window.openPwdModal = openPwdModal;
 window.closePwdModal = closePwdModal;
 window.doResetPwd = doResetPwd;
 window.loadContracts = loadContracts;
+window.openPackDetail = openPackDetail;
+window.closePackDetail = closePackDetail;
+window.loadAdminPacks = loadAdminPacks;
+window.renderAdminPacks = renderAdminPacks;
+window.loadAdminSelections = loadAdminSelections;
+window.renderAdminSelections = renderAdminSelections;
+window.switchPackTab = switchPackTab;
+window.loadPlatformTerms = loadPlatformTerms;
+window.savePlatformTerms = savePlatformTerms;
+window.togglePtPreview = togglePtPreview;
+window.switchContractTab = switchContractTab;
+window.loadAffiliationContractsAdmin = loadAffiliationContractsAdmin;
 </script>
-<script>(function(){var sp=document.getElementById('scrollProgress'),bt=document.getElementById('backTopBtn');function init(){var ct=document.querySelector('.content');if(!ct)return;ct.style.scrollBehavior='smooth';function upd(){var m=ct.scrollHeight-ct.clientHeight;if(sp)sp.style.width=(m>0?(ct.scrollTop/m)*100:0)+'%';if(bt)bt.classList.toggle('show',ct.scrollTop>200);}ct.addEventListener('scroll',upd,{passive:true});if(bt)bt.addEventListener('click',function(){ct.scrollTo({top:0,behavior:'smooth'});});}if(document.readyState!=='loading')init();else document.addEventListener('DOMContentLoaded',init);})();</script>
+<script>(function(){
+  var sp=document.getElementById('scrollProgress'),bt=document.getElementById('backTopBtn'),tb=document.querySelector('.topbar');
+  function init(){
+    var ct=document.querySelector('.content');
+    if(!ct)return;
+    ct.style.scrollBehavior='smooth';
+    function upd(){
+      var m=ct.scrollHeight-ct.clientHeight;
+      if(sp)sp.style.width=(m>0?(ct.scrollTop/m)*100:0)+'%';
+      if(bt)bt.classList.toggle('show',ct.scrollTop>200);
+      if(tb)tb.classList.toggle('topbar-scrolled',ct.scrollTop>20);
+    }
+    ct.addEventListener('scroll',upd,{passive:true});
+    if(bt)bt.addEventListener('click',function(){ct.scrollTo({top:0,behavior:'smooth'});});
+    function observeReveal(){
+      var els=ct.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale');
+      if(!els.length)return;
+      var io=new IntersectionObserver(function(entries){
+        entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}});
+      },{threshold:0.12,root:ct});
+      els.forEach(function(el){if(!el.classList.contains('visible'))io.observe(el);});
+    }
+    observeReveal();
+    var mo=new MutationObserver(function(muts){
+      muts.forEach(function(m){
+        if(m.attributeName==='class'&&m.target.classList.contains('active')){setTimeout(observeReveal,80);}
+      });
+    });
+    ct.querySelectorAll('.page').forEach(function(p){mo.observe(p,{attributes:true});});
+  }
+  if(document.readyState!=='loading')init();else document.addEventListener('DOMContentLoaded',init);
+})();</script>
 </body>
 </html>

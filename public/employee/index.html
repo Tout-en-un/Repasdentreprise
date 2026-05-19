@@ -387,12 +387,16 @@
         <div class="tab-bar">
           <button class="tab-btn active" id="empTabPrograms" onclick="switchWeeklyTab('programs')">Programmes</button>
           <button class="tab-btn" id="empTabPacks" onclick="switchWeeklyTab('packs')">Packs de menus</button>
+          <button class="tab-btn" id="empTabWeek" onclick="switchWeeklyTab('week')">Menu de la semaine</button>
         </div>
         <div id="empWeeklyProgramsPanel">
           <div id="empProgramsGrid" class="program-grid"></div>
         </div>
         <div id="empWeeklyPacksPanel" style="display:none">
           <div id="empPacksGrid"></div>
+        </div>
+        <div id="empWeeklySelPanel" style="display:none">
+          <div id="empWeeklySelGrid"></div>
         </div>
       </div>
     </div>
@@ -1146,9 +1150,10 @@ const EMP_DAY_NAMES = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'S
 
 async function loadWeeklyMenus() {
   try {
-    const [programs, packs] = await Promise.all([
+    const [programs, packs, selections] = await Promise.all([
       apiFetch('/api/employee/weekly-programs', {}, empToken),
-      apiFetch('/api/employee/weekly-packs', {}, empToken)
+      apiFetch('/api/employee/weekly-packs', {}, empToken),
+      apiFetch('/api/employee/weekly-selections', {}, empToken)
     ]);
     // Render programs
     const pgrid = document.getElementById('empProgramsGrid');
@@ -1189,26 +1194,93 @@ async function loadWeeklyMenus() {
         }).join('');
         return `
           <div class="pack-card">
-            <div class="pack-card-header" onclick="this.parentElement.querySelector('.pack-card-body').style.display=this.parentElement.querySelector('.pack-card-body').style.display==='none'?'block':'none'">
+            <div class="pack-card-header" onclick="this.parentElement.querySelector('.pack-card-body').classList.toggle('open')">
               <div style="flex:1">
                 <div style="font-weight:700;font-size:14px;color:var(--brown)">${pack.name}</div>
                 <div style="font-size:12px;color:var(--muted);margin-top:2px">🍽 ${pack.restaurant_name}</div>
+                <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
+                  <span style="font-size:11px;background:var(--orange-light,#fff3e0);color:var(--orange);border-radius:6px;padding:2px 8px;font-weight:600">${parseFloat(pack.price||0).toLocaleString()} FCFA</span>
+                  <span style="font-size:11px;background:var(--border);color:var(--muted);border-radius:6px;padding:2px 8px">Min. ${pack.min_order_qty||1} plats</span>
+                </div>
               </div>
               <span style="font-size:12px;color:var(--muted)">▾</span>
             </div>
-            <div class="pack-card-body" style="display:none">${menusHtml || '<div style="padding:16px;color:var(--muted);font-size:13px">Aucun menu</div>'}</div>
+            <div class="pack-card-body">${menusHtml || '<div style="padding:16px;color:var(--muted);font-size:13px">Aucun menu</div>'}</div>
           </div>
         `;
       }).join('');
     }
+    // Render company weekly selections
+    renderEmpWeeklySelections(selections);
   } catch(e) { toast('Erreur chargement menus hebdo: ' + e.message, 'error'); }
+}
+
+function renderEmpWeeklySelections(selections) {
+  const grid = document.getElementById('empWeeklySelGrid');
+  if (!selections || !selections.length) {
+    grid.innerHTML = '<div class="empty-state"><span class="icon">📅</span>Aucune commande hebdomadaire passée par votre entreprise</div>';
+    return;
+  }
+  // Group by week_start
+  const byWeek = {};
+  selections.forEach(s => {
+    if (!byWeek[s.week_start]) byWeek[s.week_start] = [];
+    byWeek[s.week_start].push(s);
+  });
+  const statusLabel = { pending: 'En attente', confirmed: 'Confirmé', cancelled: 'Annulé' };
+  const statusColor = { pending: 'var(--muted)', confirmed: 'var(--success,#2e7d32)', cancelled: '#c0392b' };
+  grid.innerHTML = Object.entries(byWeek).map(([weekStart, rows]) => {
+    const weekDate = new Date(weekStart);
+    const weekLabel = weekDate.toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
+    const rowsHtml = rows.map(s => {
+      const extrasHtml = (s.extras || []).length ? `
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:700;color:var(--brown);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px">Extras</div>
+          ${(s.extras).map(e => `
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:4px">
+              <span style="color:var(--text)">${e.item_name} <span style="color:var(--muted);font-size:11px">(${e.item_type})</span></span>
+              <span style="font-weight:600;color:var(--orange)">${e.quantity} × ${parseFloat(e.unit_price||0).toLocaleString()} FCFA</span>
+            </div>
+          `).join('')}
+        </div>
+      ` : '';
+      return `
+        <div style="background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:14px;color:var(--brown)">${s.pack_name || '—'}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">🍽 ${s.restaurant_name}</div>
+            </div>
+            <span style="font-size:11px;font-weight:600;color:${statusColor[s.status]||'var(--muted)'};background:var(--border);border-radius:20px;padding:3px 10px;white-space:nowrap">${statusLabel[s.status]||s.status}</span>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+            <span style="font-size:11px;background:var(--orange-light,#fff3e0);color:var(--orange);border-radius:6px;padding:2px 8px;font-weight:600">${parseFloat(s.pack_price||0).toLocaleString()} FCFA</span>
+            <span style="font-size:11px;background:var(--border);color:var(--muted);border-radius:6px;padding:2px 8px">${s.dish_qty} plats commandés</span>
+            <span style="font-size:11px;background:var(--border);color:var(--muted);border-radius:6px;padding:2px 8px">Min. ${s.min_order_qty||1} plats</span>
+          </div>
+          ${s.notes ? `<div style="margin-top:8px;font-size:12px;color:var(--muted);font-style:italic">${s.notes}</div>` : ''}
+          ${extrasHtml}
+        </div>
+      `;
+    }).join('');
+    return `
+      <div style="margin-bottom:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--brown);margin-bottom:8px;display:flex;align-items:center;gap:8px">
+          <span style="background:var(--orange);color:#fff;border-radius:8px;padding:2px 10px;font-size:11px">Semaine du ${weekLabel}</span>
+        </div>
+        ${rowsHtml}
+      </div>
+    `;
+  }).join('');
 }
 
 function switchWeeklyTab(tab) {
   document.getElementById('empWeeklyProgramsPanel').style.display = tab === 'programs' ? 'block' : 'none';
   document.getElementById('empWeeklyPacksPanel').style.display = tab === 'packs' ? 'block' : 'none';
+  document.getElementById('empWeeklySelPanel').style.display = tab === 'week' ? 'block' : 'none';
   document.getElementById('empTabPrograms').classList.toggle('active', tab === 'programs');
   document.getElementById('empTabPacks').classList.toggle('active', tab === 'packs');
+  document.getElementById('empTabWeek').classList.toggle('active', tab === 'week');
 }
 
 // Expose toutes les fonctions appelées depuis les handlers onclick/oninput du HTML
@@ -1239,9 +1311,37 @@ window.toggleNotifDropdown = toggleNotifDropdown;
 window.searchDishes = searchDishes;
 window.loadWeeklyMenus = loadWeeklyMenus;
 window.switchWeeklyTab = switchWeeklyTab;
+window.renderEmpWeeklySelections = renderEmpWeeklySelections;
 });
 </script>
-<script>(function(){var sp=document.getElementById('scrollProgress'),bt=document.getElementById('backTopBtn');function upd(){var m=document.documentElement.scrollHeight-window.innerHeight;if(sp)sp.style.width=(m>0?(window.scrollY/m)*100:0)+'%';if(bt)bt.classList.toggle('show',window.scrollY>200);}window.addEventListener('scroll',upd,{passive:true});if(bt)bt.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});})();</script>
+<script>(function(){
+  var sp=document.getElementById('scrollProgress'),bt=document.getElementById('backTopBtn'),tb=document.querySelector('.topbar');
+  function upd(){
+    var m=document.documentElement.scrollHeight-window.innerHeight;
+    if(sp)sp.style.width=(m>0?(window.scrollY/m)*100:0)+'%';
+    if(bt)bt.classList.toggle('show',window.scrollY>200);
+    if(tb)tb.classList.toggle('topbar-scrolled',window.scrollY>20);
+  }
+  window.addEventListener('scroll',upd,{passive:true});
+  if(bt)bt.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+  function observeReveal(){
+    var els=document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale');
+    if(!els.length)return;
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}});
+    },{threshold:0.12});
+    els.forEach(function(el){if(!el.classList.contains('visible'))io.observe(el);});
+  }
+  observeReveal();
+  var mo=new MutationObserver(function(muts){
+    muts.forEach(function(m){
+      if(m.attributeName==='class'&&m.target.classList.contains('active')){
+        setTimeout(observeReveal,80);
+      }
+    });
+  });
+  document.querySelectorAll('.page').forEach(function(p){mo.observe(p,{attributes:true});});
+})();</script>
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

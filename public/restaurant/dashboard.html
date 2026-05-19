@@ -357,39 +357,31 @@
   <!-- ═══ WEEKLY PROGRAM ═══ -->
   <div class="page" id="page-weekly">
     <div class="page-grid">
-      <div class="card reveal">
-        <div class="card-header"><span class="card-title">📸 Image du programme hebdomadaire</span></div>
-        <div class="card-body">
-          <div class="form-group">
-            <label>Titre (optionnel)</label>
-            <input class="form-control" id="wpTitle" placeholder="Ex: Menu Semaine du 10 Juin">
-          </div>
-          <div class="form-group">
-            <label>Image du programme</label>
-            <label for="wpImageInput" style="display:block;border:2px dashed var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s" id="wpDropZone">
-              <div style="font-size:32px;margin-bottom:8px">📷</div>
-              <div style="font-size:13px;color:var(--brown);font-weight:500">Cliquez pour choisir une image</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:4px">JPG, PNG, WebP — max 5 Mo</div>
-              <input type="file" class="form-control" id="wpImageInput" accept="image/*" style="display:none" onchange="previewWeeklyProgramImage(event)">
-            </label>
-            <img id="wpPreview" style="display:none;width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin-top:10px;box-shadow:0 4px 16px rgba(44,24,16,.12)">
-          </div>
-          <button class="btn btn-primary" style="width:100%" onclick="uploadWeeklyProgram()">📤 Enregistrer l'image</button>
-          <div id="wpHistory" style="margin-top:16px"></div>
-        </div>
-      </div>
-      <div class="card reveal-right">
+      <div class="card reveal" style="grid-column:1/-1">
         <div class="card-header"><span class="card-title">📦 Packs hebdomadaires</span></div>
         <div class="card-body">
-          <div style="background:#FFF8F3;border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--muted);line-height:1.6">
-            <strong style="color:var(--brown);display:block;margin-bottom:4px">À quoi sert un pack ?</strong>
-            Un pack hebdomadaire est un abonnement structuré : vous définissez les plats proposés chaque jour de la semaine. Les entreprises s'y abonnent et vous les facturez via <em>Factures hebdo</em>. C'est différent des commandes à la carte faites par les employés chaque jour.
+          <div class="tab-bar" style="margin-bottom:14px">
+            <button class="tab-btn active" id="rTabPacks" onclick="switchRestWeeklyTab('packs')">Mes packs</button>
+            <button class="tab-btn" id="rTabSubs" onclick="switchRestWeeklyTab('subs')">Abonnements</button>
           </div>
-          <div style="display:flex;gap:8px;margin-bottom:12px">
-            <input class="form-control" id="newPackName" placeholder="Nom du pack (ex: Semaine 1)" style="flex:1">
-            <button class="btn btn-primary" onclick="createWeeklyPack()">➕ Créer</button>
+          <div id="rWeeklyPacksPanel">
+            <div style="background:#FFF8F3;border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--muted);line-height:1.6">
+              <strong style="color:var(--brown);display:block;margin-bottom:4px">À quoi sert un pack ?</strong>
+              Un pack hebdomadaire est un abonnement structuré : vous définissez les plats proposés chaque jour de la semaine. Les entreprises s'y abonnent et vous les facturez via <em>Factures hebdo</em>. C'est différent des commandes à la carte faites par les employés chaque jour.
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <input class="form-control" id="newPackName" placeholder="Nom du menu (ex: Menu 1)">
+              <input class="form-control" id="newPackPrice" type="number" min="0" placeholder="Prix (FCFA)">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:12px">
+              <input class="form-control" id="newPackMinQty" type="number" min="1" placeholder="Nbre minimum de plats à commander">
+              <button class="btn btn-primary" onclick="createWeeklyPack()">➕ Créer</button>
+            </div>
+            <div id="packsList"></div>
           </div>
-          <div id="packsList"></div>
+          <div id="rWeeklySubsPanel" style="display:none">
+            <div id="rSubsGrid"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -461,11 +453,24 @@
           <span class="card-title">📄 Factures hebdomadaires</span>
           <button class="btn btn-outline btn-sm" onclick="loadWeeklyInvoices()">🔄</button>
         </div>
-        <div class="card-body scroll-box">
-          <table class="table">
-            <thead><tr><th>N°</th><th>Entreprise</th><th>Pack</th><th>Montant</th><th>Fréquence</th><th>Date</th><th>Statut</th><th>Actions</th></tr></thead>
-            <tbody id="wiTableBody"></tbody>
-          </table>
+        <div class="card-body">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Du</label>
+              <input type="date" class="form-control" id="wiFilterFrom" style="padding:6px 10px;font-size:13px" oninput="loadWeeklyInvoices()">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Au</label>
+              <input type="date" class="form-control" id="wiFilterTo" style="padding:6px 10px;font-size:13px" oninput="loadWeeklyInvoices()">
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('wiFilterFrom').value='';document.getElementById('wiFilterTo').value='';loadWeeklyInvoices()" style="margin-bottom:1px">✕ Réinitialiser</button>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>N°</th><th>Restaurant → Entreprise</th><th>Pack</th><th>Période</th><th>Montant</th><th>Statut</th><th>Envoi</th><th>Actions</th></tr></thead>
+              <tbody id="wiTableBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -624,17 +629,18 @@
       </div>
 
       <!-- CONTRATS -->
-      <div class="doc-section" id="doc-contract" data-keywords="contrat exclusivité affiliation signer commission paiement hebdomadaire mensuel entreprise">
+      <div class="doc-section" id="doc-contract" data-keywords="contrat exclusivité affiliation signer commission paiement hebdomadaire mensuel entreprise offre service jours">
         <div class="doc-section-header" onclick="toggleDocSection('doc-contract')">
           <div class="doc-section-icon">📝</div>
           <div class="doc-section-title">Contrats</div>
           <div class="doc-section-chevron">▼</div>
         </div>
         <div class="doc-section-body">
-          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Contrat d'exclusivité FoodChooseApp</div><div class="doc-step-desc">Ce contrat vous lie à l'administrateur de la plateforme. Il établit la commission de 1% par commande reversée à FoodChooseApp, et la fréquence de paiement (hebdomadaire ou mensuelle). Il est signé une seule fois à la première connexion.</div></div></div>
-          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Consulter votre contrat</div><div class="doc-step-desc">Accédez à <strong>Mon contrat</strong> dans la barre latérale pour voir le statut de votre contrat (signé/en attente), la date de signature et les modalités. Si vous n'avez pas encore signé, vous pouvez le faire depuis cette page.</div></div></div>
-          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Contrats d'affiliation</div><div class="doc-step-desc">Quand une entreprise s'affilie à votre restaurant, un contrat d'affiliation doit être signé des deux côtés. Ce contrat couvre les menus, les prix, les horaires et les programmes. Signez-le depuis la section <strong>Contrats d'affiliation</strong> de la page Mon contrat.</div></div></div>
-          <div class="doc-warn"><strong>Attention :</strong> Sans contrat d'exclusivité signé, votre accès aux fonctionnalités peut être limité. Sans contrat d'affiliation signé des deux côtés, l'affiliation n'est pas pleinement active.</div>
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Définir votre offre de service</div><div class="doc-step-desc">Dans <strong>Mon contrat → Mon offre de service</strong>, décrivez ce que vous proposez aux entreprises : description de l'offre, jours de service (cochez chaque jour), zone de service, politique d'annulation et conditions particulières. Cliquez sur <strong>💾 Enregistrer l'offre</strong>. Ces informations seront intégrées automatiquement dans le contrat d'affiliation que les entreprises signeront.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Contrat d'exclusivité FoodChooseApp</div><div class="doc-step-desc">Ce contrat vous lie à l'administrateur de la plateforme. Il établit la commission de 1% par commande reversée à FoodChooseApp et la fréquence de paiement. Il est signé une seule fois — un modal apparaît à la première connexion. Vous pouvez aussi le signer depuis la page <strong>Mon contrat</strong>.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Contrats d'affiliation</div><div class="doc-step-desc">Quand une entreprise s'affilie, un contrat d'affiliation bilatéral est généré. Il intègre votre offre de service et les termes de souscription de l'entreprise (pack choisi, période, quantité). Cliquez sur <strong>✍️ Lire & Signer</strong> pour lire le document complet, cocher votre acceptation et signer. L'entreprise doit faire de même.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">4</div><div class="doc-step-content"><div class="doc-step-title">Suivi des signatures</div><div class="doc-step-desc">Chaque contrat d'affiliation affiche le statut des deux côtés. Un badge orange sur <strong>Mon contrat</strong> dans la barre latérale indique combien de contrats attendent votre signature. Un contrat est actif uniquement quand les deux parties ont signé.</div></div></div>
+          <div class="doc-warn"><strong>Conseil :</strong> Complétez votre offre de service avant de signer le contrat d'exclusivité — ainsi, dès qu'une entreprise s'affilie, le contrat d'affiliation sera déjà riche en contenu.</div>
         </div>
       </div>
 
@@ -689,7 +695,45 @@
   <!-- ═══ CONTRACT PAGE ═══ -->
   <div class="page" id="page-contract">
     <div class="page-grid">
-      <!-- Admin-restaurant contract -->
+
+      <!-- 1. Offre de service -->
+      <div class="card reveal" style="grid-column:1/-1">
+        <div class="card-header">
+          <span class="card-title">📋 Mon offre de service</span>
+          <span id="offerSavedBadge" style="display:none;font-size:11px;font-weight:600;color:#166534;background:#dcfce7;padding:3px 10px;border-radius:12px">Enregistrée ✓</span>
+        </div>
+        <div class="card-body">
+          <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Définissez ici ce que vous proposez aux entreprises. Ces informations apparaîtront dans le contrat d'affiliation que les entreprises signeront.</p>
+          <div class="form-group">
+            <label>Description de l'offre *</label>
+            <textarea class="form-control" id="offerDesc" rows="3" placeholder="Ex : Restauration d'entreprise, plats chauds et froids, service du midi…"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Jours de service</label>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px" id="offerDaysSelector">
+              <!-- filled by JS -->
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label>Zone de service / livraison</label>
+              <input class="form-control" id="offerZone" placeholder="Ex : Centre-ville, Plateau…">
+            </div>
+            <div class="form-group">
+              <label>Politique d'annulation</label>
+              <input class="form-control" id="offerCancel" placeholder="Ex : 30 jours de préavis">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Conditions particulières (optionnel)</label>
+            <textarea class="form-control" id="offerExtra" rows="2" placeholder="Toute autre condition ou précision utile…"></textarea>
+          </div>
+          <div id="offerPacksSummary" style="margin-bottom:14px"></div>
+          <button class="btn btn-primary" onclick="saveRestOffer()">💾 Enregistrer l'offre</button>
+        </div>
+      </div>
+
+      <!-- 2. Contrat d'exclusivité FoodChooseApp -->
       <div class="card reveal" style="grid-column:1/-1">
         <div class="card-header">
           <span class="card-title">📝 Contrat d'exclusivité FoodChooseApp</span>
@@ -699,7 +743,8 @@
           <div style="text-align:center;padding:32px;color:var(--muted)">Chargement…</div>
         </div>
       </div>
-      <!-- Affiliation contracts -->
+
+      <!-- 3. Contrats d'affiliation -->
       <div class="card reveal" style="grid-column:1/-1">
         <div class="card-header">
           <span class="card-title">🤝 Contrats d'affiliation</span>
@@ -709,6 +754,7 @@
           <div style="text-align:center;padding:24px;color:var(--muted)">Chargement…</div>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -795,10 +841,14 @@
 <!-- EDIT PACK MODAL -->
 <div class="modal-overlay" id="editPackModal">
   <div class="modal" style="max-width:440px">
-    <div class="modal-title">✏️ Modifier le pack</div>
+    <div class="modal-title">✏️ Modifier le menu hebdomadaire</div>
     <input type="hidden" id="editPackId">
-    <div class="form-group"><label>Nom *</label><input class="form-control" id="editPackName" placeholder="Nom du pack"></div>
+    <div class="form-group"><label>Nom *</label><input class="form-control" id="editPackName" placeholder="Nom du menu"></div>
     <div class="form-group"><label>Description</label><input class="form-control" id="editPackDesc" placeholder="Description (optionnelle)"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Prix (FCFA)</label><input class="form-control" id="editPackPrice" type="number" min="0" placeholder="0"></div>
+      <div class="form-group"><label>Min. plats à commander</label><input class="form-control" id="editPackMinQty" type="number" min="1" placeholder="8"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal(document.getElementById('editPackModal'))">Annuler</button>
       <button class="btn btn-primary" onclick="saveEditPack()">💾 Enregistrer</button>
@@ -816,6 +866,18 @@
     <div class="form-group"><label>Nom *</label><input class="form-control" id="dishModalName" placeholder="Nom du plat"></div>
     <div class="form-group"><label>Prix (FCFA)</label><input type="number" class="form-control" id="dishModalPrice" min="0" value="0"></div>
     <div class="form-group" id="dishDescGroup"><label>Description</label><textarea class="form-control" id="dishModalDesc" rows="2" placeholder="Description (optionnelle)"></textarea></div>
+    <div class="form-group">
+      <label>Photo du plat (optionnelle)</label>
+      <label for="dishModalImageInput" id="dishModalDropZone" style="display:flex;align-items:center;gap:12px;border:2px dashed var(--border);border-radius:12px;padding:12px 16px;cursor:pointer;transition:border-color .2s,background .2s">
+        <img id="dishModalPreview" src="" style="display:none;width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0">
+        <div id="dishModalPreviewPlaceholder" style="width:56px;height:56px;border-radius:8px;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🍽</div>
+        <div>
+          <div style="font-size:13px;color:var(--brown);font-weight:500">Cliquez pour choisir une photo</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">JPG, PNG, WebP — max 5 Mo</div>
+        </div>
+        <input type="file" id="dishModalImageInput" accept="image/*" style="display:none" onchange="previewDishImage(event)">
+      </label>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal(document.getElementById('dishModal'))">Annuler</button>
       <button class="btn btn-primary" onclick="saveDishModal()">💾 Enregistrer</button>
@@ -1723,73 +1785,27 @@ loadDashboard();
 
 // ═══ WEEKLY PROGRAM SYSTEM ═══
 let currentPackId = null;
+let currentPackData = null;
 let wiItemIndex = 0;
 
-function previewWeeklyProgramImage(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    const preview = document.getElementById('wpPreview');
-    preview.src = ev.target.result;
-    preview.style.display = 'block';
-  };
-  reader.readAsDataURL(file);
-}
-
-async function uploadWeeklyProgram() {
-  const fileInput = document.getElementById('wpImageInput');
-  const title = document.getElementById('wpTitle').value.trim();
-  if (!fileInput.files.length) return toast('Sélectionnez une image', 'error');
-  const reader = new FileReader();
-  reader.onload = async function(ev) {
-    try {
-      await apiFetch('/api/restaurant/weekly-program', { method: 'POST', body: { image: ev.target.result, title: title || null } }, token);
-      toast('Image enregistrée!', 'success');
-      fileInput.value = '';
-      document.getElementById('wpPreview').style.display = 'none';
-      document.getElementById('wpTitle').value = '';
-      loadWeeklyPrograms();
-    } catch(e) { toast(e.message, 'error'); }
-  };
-  reader.readAsDataURL(fileInput.files[0]);
-}
-
-async function loadWeeklyPrograms() {
-  try {
-    const programs = await apiFetch('/api/restaurant/weekly-programs', {}, token);
-    const el = document.getElementById('wpHistory');
-    if (!programs.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px">Aucune image</div>'; return; }
-    el.innerHTML = programs.map(p => `
-      <div style="display:flex;align-items:center;gap:12px;padding:8px;background:#F9F1EB;border-radius:10px;margin-bottom:8px">
-        <img src="${p.image_url}" style="width:60px;height:60px;object-fit:cover;border-radius:8px">
-        <div style="flex:1"><strong>${p.title || 'Sans titre'}</strong><br><span style="font-size:11px;color:var(--muted)">${new Date(p.created_at).toLocaleDateString('fr-FR')}</span></div>
-        <button class="btn btn-danger btn-sm" onclick="deleteWeeklyProgram(${p.id})">🗑</button>
-      </div>
-    `).join('');
-  } catch(e) { toast(e.message, 'error'); }
-}
-
-async function deleteWeeklyProgram(id) {
-  try {
-    await apiFetch(`/api/restaurant/weekly-program/${id}`, { method: 'DELETE' }, token);
-    loadWeeklyPrograms();
-  } catch(e) { toast(e.message, 'error'); }
-}
-
 async function loadWeeklyPacks() {
-  loadWeeklyPrograms();
   try {
     const packs = await apiFetch('/api/restaurant/weekly-packs', {}, token);
     const el = document.getElementById('packsList');
     if (!packs.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px">Aucun pack. Créez-en un !</div>'; return; }
     el.innerHTML = packs.map(p => `
       <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#F9F1EB;border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="openPackDetail(${p.id})">
-        <span style="font-size:24px">📦</span>
-        <div style="flex:1"><strong>${p.name}</strong>${p.description ? '<br><span style="font-size:12px;color:var(--muted)">'+p.description+'</span>' : ''}</div>
-        <span style="font-size:11px;color:var(--muted)">${p.is_active ? '✅ Actif' : '💤 Inactif'}</span>
-        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editWeeklyPack(${p.id},'${p.name}','${(p.description||'').replace(/'/g,"\\'")}')" style="padding:2px 6px;font-size:10px">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteWeeklyPack(${p.id})" style="padding:2px 6px;font-size:10px">🗑</button>
+        <span style="font-size:24px">📋</span>
+        <div style="flex:1">
+          <strong>${p.name}</strong>
+          <div style="display:flex;gap:10px;margin-top:3px;flex-wrap:wrap">
+            <span style="font-size:11px;color:var(--orange);font-weight:700">${parseFloat(p.price||0).toLocaleString()} FCFA</span>
+            <span style="font-size:11px;color:var(--muted)">Min. ${p.min_order_qty||8} plats</span>
+            <span style="font-size:11px;color:var(--muted)">${p.is_active ? '✅ Actif' : '💤 Inactif'}</span>
+          </div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editWeeklyPack(${p.id},'${p.name.replace(/'/g,"\\'")}','${(p.description||'').replace(/'/g,"\\'")}',${p.price||0},${p.min_order_qty||8})" style="padding:2px 8px;font-size:11px">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteWeeklyPack(${p.id})" style="padding:2px 8px;font-size:11px">🗑</button>
       </div>
     `).join('');
   } catch(e) { toast(e.message, 'error'); }
@@ -1797,11 +1813,15 @@ async function loadWeeklyPacks() {
 
 async function createWeeklyPack() {
   const name = document.getElementById('newPackName').value.trim();
-  if (!name) return toast('Entrez un nom de pack', 'error');
+  if (!name) return toast('Entrez un nom de menu', 'error');
+  const price = parseFloat(document.getElementById('newPackPrice').value) || 0;
+  const min_order_qty = parseInt(document.getElementById('newPackMinQty').value) || 8;
   try {
-    await apiFetch('/api/restaurant/weekly-packs', { method: 'POST', body: { name } }, token);
+    await apiFetch('/api/restaurant/weekly-packs', { method: 'POST', body: { name, price, min_order_qty } }, token);
     document.getElementById('newPackName').value = '';
-    toast('Pack créé avec menus par défaut!', 'success');
+    document.getElementById('newPackPrice').value = '';
+    document.getElementById('newPackMinQty').value = '';
+    toast('Menu hebdomadaire créé !', 'success');
     loadWeeklyPacks();
   } catch(e) { toast(e.message, 'error'); }
 }
@@ -1819,9 +1839,16 @@ async function openPackDetail(id) {
   document.getElementById('packDetailCard').style.display = 'block';
   try {
     const pack = await apiFetch(`/api/restaurant/weekly-packs/${id}`, {}, token);
-    document.getElementById('packDetailTitle').textContent = '📦 ' + pack.name;
+    currentPackData = pack;
+    document.getElementById('packDetailTitle').textContent = '📋 ' + pack.name;
     const dayNames = {1:'Lundi',2:'Mardi',3:'Mercredi',4:'Jeudi',5:'Vendredi',6:'Samedi',7:'Dimanche'};
     const el = document.getElementById('packDetailBody');
+    // Bandeau infos
+    const infoBar = `<div style="display:flex;gap:16px;flex-wrap:wrap;padding:10px 14px;background:#FFF0EA;border-radius:10px;margin-bottom:14px;font-size:13px">
+      <span>💰 <strong>${parseFloat(pack.price||0).toLocaleString()} FCFA</strong> / semaine</span>
+      <span>📊 Min. <strong>${pack.min_order_qty||8}</strong> plats à commander</span>
+      <span>${pack.is_active ? '✅ Actif' : '💤 Inactif'}</span>
+    </div>`;
     el.innerHTML = pack.menus.map(menu => `
       <div style="background:#FFF8F3;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
@@ -1843,7 +1870,7 @@ async function openPackDetail(id) {
                     ${d.image_url ? '<img src="'+d.image_url+'" style="width:36px;height:36px;object-fit:cover;border-radius:6px">' : '<span style="width:36px;height:36px;background:var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px">🍲</span>'}
                     <div style="flex:1;font-size:12px"><strong>${d.name}</strong>${d.description ? '<br><span style="color:var(--muted)">'+d.description.substring(0,30)+'</span>' : ''}</div>
                     <span style="font-size:12px;font-weight:600">${d.price}FCFA</span>
-                    <button class="btn btn-outline btn-sm" onclick="editDish(${d.id},${JSON.stringify(d.name).replace(/"/g,'&quot;')},${d.price},${JSON.stringify(d.description||'').replace(/"/g,'&quot;')})" style="padding:2px 6px;font-size:10px">✏️</button>
+                    <button class="btn btn-outline btn-sm" onclick="editDish(${d.id},${JSON.stringify(d.name).replace(/"/g,'&quot;')},${d.price},${JSON.stringify(d.description||'').replace(/"/g,'&quot;')},${JSON.stringify(d.image_url||'').replace(/"/g,'&quot;')})" style="padding:2px 6px;font-size:10px">✏️</button>
                     <button class="btn btn-danger btn-sm" onclick="deleteDish(${d.id})" style="padding:2px 6px;font-size:10px">🗑</button>
                   </div>
                 `).join('')
@@ -1853,13 +1880,38 @@ async function openPackDetail(id) {
         </div>
       </div>
     `).join('');
+    el.innerHTML = infoBar + el.innerHTML;
+    // Commandes reçues pour ce pack
+    try {
+      const sels = await apiFetch(`/api/restaurant/weekly-selections`, {}, token);
+      const packSels = sels.filter(s => s.weekly_pack_id == id);
+      if (packSels.length) {
+        const selHtml = `<div style="margin-top:16px"><strong style="font-size:13px;color:var(--brown)">📋 Commandes entreprises</strong>
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+            ${packSels.map(s => `
+              <div style="padding:10px 12px;background:white;border:1px solid var(--border);border-radius:10px;font-size:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <strong>${s.company_name}</strong>
+                  <span style="color:var(--muted)">Semaine du ${new Date(s.week_start).toLocaleDateString('fr-FR')}</span>
+                </div>
+                <div style="margin-top:4px;color:var(--muted)">🍽 ${s.dish_qty} plats/jour${s.notes ? ' · ' + s.notes : ''}
+                  ${(s.extras||[]).length ? '<br>Extras : ' + s.extras.map(e => { const dn=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']; const d=e.day_list?e.day_list.split(',').filter(Boolean).map(n=>dn[+n-1]||n).join(', '):''; return `${e.item_name} ×${e.quantity}${d?' ('+d+')':''}`; }).join(', ') : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div></div>`;
+        el.innerHTML += selHtml;
+      }
+    } catch(_) {}
   } catch(e) { toast(e.message, 'error'); }
 }
 
-function editWeeklyPack(id, currentName, currentDesc) {
+function editWeeklyPack(id, currentName, currentDesc, currentPrice, currentMinQty) {
   document.getElementById('editPackId').value = id;
   document.getElementById('editPackName').value = currentName || '';
   document.getElementById('editPackDesc').value = currentDesc || '';
+  document.getElementById('editPackPrice').value = currentPrice || '';
+  document.getElementById('editPackMinQty').value = currentMinQty || '';
   document.getElementById('editPackModal').classList.add('open');
   setTimeout(() => document.getElementById('editPackName').focus(), 120);
 }
@@ -1869,19 +1921,19 @@ async function saveEditPack() {
   const name = document.getElementById('editPackName').value.trim();
   if (!name) return toast('Le nom est requis', 'error');
   const description = document.getElementById('editPackDesc').value.trim();
+  const price = parseFloat(document.getElementById('editPackPrice').value) || 0;
+  const min_order_qty = parseInt(document.getElementById('editPackMinQty').value) || 8;
   try {
-    await apiFetch(`/api/restaurant/weekly-packs/${id}`, { method: 'PUT', body: { name, description: description || null } }, token);
-    toast('Pack modifié!', 'success');
+    await apiFetch(`/api/restaurant/weekly-packs/${id}`, { method: 'PUT', body: { name, description: description || null, price, min_order_qty } }, token);
+    toast('Menu modifié !', 'success');
     closeModal(document.getElementById('editPackModal'));
     loadWeeklyPacks();
   } catch(e) { toast(e.message, 'error'); }
 }
 
 function editCurrentPack() {
-  if (!currentPackId) return;
-  const titleEl = document.getElementById('packDetailTitle');
-  const currentName = titleEl.textContent.replace('📦 ', '');
-  editWeeklyPack(currentPackId, currentName, '');
+  if (!currentPackId || !currentPackData) return;
+  editWeeklyPack(currentPackId, currentPackData.name, currentPackData.description || '', currentPackData.price || 0, currentPackData.min_order_qty || 8);
 }
 
 async function deleteCurrentPack() {
@@ -1894,25 +1946,156 @@ async function deleteCurrentPack() {
   } catch(e) { toast(e.message, 'error'); }
 }
 
+function switchRestWeeklyTab(tab) {
+  document.getElementById('rWeeklyPacksPanel').style.display = tab === 'packs' ? '' : 'none';
+  document.getElementById('rWeeklySubsPanel').style.display = tab === 'subs' ? '' : 'none';
+  document.getElementById('rTabPacks').classList.toggle('active', tab === 'packs');
+  document.getElementById('rTabSubs').classList.toggle('active', tab === 'subs');
+  if (tab === 'subs') { document.getElementById('packDetailCard').style.display = 'none'; currentPackId = null; currentPackData = null; loadWeeklySubscriptions(); }
+}
+
+async function loadWeeklySubscriptions() {
+  const el = document.getElementById('rSubsGrid');
+  el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:10px">Chargement...</div>';
+  try {
+    const sels = await apiFetch('/api/restaurant/weekly-selections', {}, token);
+    if (!sels.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:24px">Aucun abonnement reçu pour le moment.</div>'; return; }
+    const DAY_NAMES_FULL = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+    const DAY_NAMES = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+    const today = new Date(); today.setHours(0,0,0,0);
+    const byWeek = {};
+    for (const s of sels) {
+      const wk = s.week_start ? new Date(s.week_start+'T12:00:00').toLocaleDateString('fr-FR') : '?';
+      if (!byWeek[wk]) byWeek[wk] = [];
+      byWeek[wk].push(s);
+    }
+    el.innerHTML = Object.entries(byWeek).map(([wk, items]) => `
+      <div style="margin-bottom:20px">
+        <div style="font-weight:600;font-size:13px;color:var(--brown);margin-bottom:8px;padding:6px 0;border-bottom:1px solid var(--border)">📅 Semaine du ${wk}</div>
+        ${items.map(s => {
+          const stColor = s.status==='confirmed'?'#22c55e':s.status==='cancelled'?'#ef4444':'#f59e0b';
+          const stLabel = s.status==='confirmed'?'Confirmé':s.status==='cancelled'?'Annulé':'En attente';
+          const logs = Array.isArray(s.delivery_logs) ? s.delivery_logs : [];
+          const extrasHtml = (s.extras||[]).length ? `<div style="margin-top:8px;padding:8px;background:#FFF8F3;border-radius:8px;font-size:11px"><strong>Extras :</strong> ${s.extras.map(e=>{const d=e.day_list?e.day_list.split(',').filter(Boolean).map(n=>DAY_NAMES[+n-1]||n).join(', '):'';return `<span style="display:inline-block;margin:2px 4px;padding:2px 8px;background:white;border-radius:4px;border:1px solid var(--border)">${e.item_name} ×${e.quantity}${d?' — '+d:''}</span>`;}).join('')}</div>` : '';
+
+          // Section livraisons
+          let delivHtml = '';
+          if (s.status === 'confirmed') {
+            if (!logs.length) {
+              delivHtml = `<div style="margin-top:10px;padding:10px;background:#FFF8F3;border-radius:8px">
+                <div style="font-size:12px;color:var(--muted);margin-bottom:6px">📦 Planifier les livraisons</div>
+                <button class="btn btn-outline btn-sm" onclick="initDeliveries(${s.id})" style="font-size:11px">🗓 Initialiser les jours de livraison</button>
+              </div>`;
+            } else {
+              const logItems = logs.map(log => {
+                const dDate = new Date(log.delivery_date+'T12:00:00');
+                const dayLabel = DAY_NAMES_FULL[log.day_of_week-1] || `Jour ${log.day_of_week}`;
+                const dateStr = dDate.toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'short'});
+                const isPast = dDate < today;
+                let badge = '', btn = '';
+                if (log.status === 'received') {
+                  badge = '<span style="font-size:10px;font-weight:700;color:#16a34a;background:#dcfce7;padding:2px 8px;border-radius:10px">✅ Réceptionné</span>';
+                } else if (log.status === 'sent') {
+                  badge = '<span style="font-size:10px;font-weight:700;color:#2563eb;background:#dbeafe;padding:2px 8px;border-radius:10px">📤 Envoyé — en attente réception</span>';
+                } else {
+                  badge = '<span style="font-size:10px;font-weight:700;color:#f59e0b;background:#fef3c7;padding:2px 8px;border-radius:10px">⏳ En attente</span>';
+                  if (!isPast) {
+                    btn = `<button class="btn btn-outline btn-sm" onclick="markDeliverySent(${log.id})" style="font-size:10px;padding:2px 8px;color:#E85A2A;border-color:#E85A2A">📦 Marquer livré</button>`;
+                  }
+                }
+                return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);flex-wrap:wrap">
+                  <span style="font-size:12px;font-weight:600;color:var(--brown);min-width:120px">${dateStr}</span>
+                  ${badge}
+                  ${btn}
+                </div>`;
+              }).join('');
+              const sentCount = logs.filter(l=>l.status==='sent'||l.status==='received').length;
+              const recvCount = logs.filter(l=>l.status==='received').length;
+              delivHtml = `<div style="margin-top:10px;padding:10px;background:#F9F6F3;border-radius:8px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:12px;font-weight:600;color:var(--brown)">📦 Livraisons (${sentCount}/${logs.length} envoyées · ${recvCount} réceptionnées)</span>
+                </div>
+                ${logItems}
+              </div>`;
+            }
+          }
+
+          return `<div style="padding:12px 14px;background:white;border:1px solid var(--border);border-radius:12px;margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
+              <div style="display:flex;gap:10px;align-items:center">
+                ${s.company_logo?`<img src="${s.company_logo}" style="width:32px;height:32px;border-radius:50%;object-fit:cover">`:'<div style="width:32px;height:32px;background:#F9F1EB;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px">🏢</div>'}
+                <div>
+                  <strong style="font-size:13px">${s.company_name}</strong>
+                  <div style="font-size:11px;color:var(--muted)">Pack : ${s.pack_name||'-'} · 🍽 ${s.dish_qty} plats/jour</div>
+                  ${s.notes?`<div style="font-size:11px;color:var(--muted)">📝 ${s.notes}</div>`:''}
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <span style="font-size:11px;font-weight:700;color:${stColor};background:${stColor}18;padding:3px 10px;border-radius:12px">${stLabel}</span>
+                ${s.status!=='confirmed'?`<button class="btn btn-outline btn-sm" onclick="confirmRestSub(${s.id})" style="font-size:11px;padding:3px 8px;color:#22c55e;border-color:#22c55e">✅ Confirmer</button>`:''}
+                ${s.status!=='cancelled'?`<button class="btn btn-outline btn-sm" onclick="cancelRestSub(${s.id})" style="font-size:11px;padding:3px 8px;color:#ef4444;border-color:#ef4444">❌ Annuler</button>`:''}
+              </div>
+            </div>
+            ${extrasHtml}
+            ${delivHtml}
+          </div>`;
+        }).join('')}
+      </div>
+    `).join('');
+  } catch(e) { el.innerHTML = `<div style="color:red;font-size:13px">${e.message}</div>`; }
+}
+
+async function initDeliveries(selId) {
+  try {
+    const r = await apiFetch(`/api/restaurant/weekly-selections/${selId}/deliveries/init`, { method: 'POST', body: {} }, token);
+    toast(`${r.inserted} jour(s) de livraison initialisés`, 'success');
+    loadWeeklySubscriptions();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function markDeliverySent(logId) {
+  try {
+    await apiFetch(`/api/restaurant/delivery/${logId}/send`, { method: 'PUT', body: {} }, token);
+    toast('Livraison marquée comme envoyée', 'success');
+    loadWeeklySubscriptions();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function confirmRestSub(id) {
+  try {
+    await apiFetch(`/api/restaurant/weekly-selections/${id}`, { method: 'PUT', body: { status: 'confirmed' } }, token);
+    toast('Abonnement confirmé !', 'success');
+    loadWeeklySubscriptions();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function cancelRestSub(id) {
+  if (!confirm('Annuler cet abonnement ?')) return;
+  try {
+    await apiFetch(`/api/restaurant/weekly-selections/${id}`, { method: 'PUT', body: { status: 'cancelled' } }, token);
+    toast('Abonnement annulé.', 'success');
+    loadWeeklySubscriptions();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
 function closePackDetail() {
   currentPackId = null;
+  currentPackData = null;
   document.getElementById('packDetailCard').style.display = 'none';
 }
 
-function addMenuToPack() {
+async function addMenuToPack() {
   if (!currentPackId) return;
-  showPromptModal('➕ Nouveau menu', 'Nom du menu (ex: Menu 4)', '', async (name) => {
-    try {
-      await apiFetch(`/api/restaurant/weekly-packs/${currentPackId}/menus`, { method: 'POST', body: { name } }, token);
-      openPackDetail(currentPackId);
-    } catch(e) { toast(e.message, 'error'); }
-  });
+  try {
+    await apiFetch(`/api/restaurant/weekly-packs/${currentPackId}/menus`, { method: 'POST', body: {} }, token);
+    openPackDetail(currentPackId);
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 function renameMenu(id) {
   showPromptModal('✏️ Renommer le menu', 'Nouveau nom', '', async (name) => {
     try {
-      await apiFetch(`/api/restaurant/menus/${id}`, { method: 'PUT', body: { name } }, token);
+      await apiFetch(`/api/restaurant/weekly-menus/${id}`, { method: 'PUT', body: { name } }, token);
       openPackDetail(currentPackId);
     } catch(e) { toast(e.message, 'error'); }
   });
@@ -1921,9 +2104,37 @@ function renameMenu(id) {
 async function deleteMenu2(id) {
   if (!confirm('Supprimer ce menu et tous ses plats ?')) return;
   try {
-    await apiFetch(`/api/restaurant/menus/${id}`, { method: 'DELETE' }, token);
+    await apiFetch(`/api/restaurant/weekly-menus/${id}`, { method: 'DELETE' }, token);
     openPackDetail(currentPackId);
   } catch(e) { toast(e.message, 'error'); }
+}
+
+function _resetDishImage(existingUrl) {
+  const preview = document.getElementById('dishModalPreview');
+  const placeholder = document.getElementById('dishModalPreviewPlaceholder');
+  document.getElementById('dishModalImageInput').value = '';
+  if (existingUrl) {
+    preview.src = existingUrl;
+    preview.style.display = 'block';
+    placeholder.style.display = 'none';
+  } else {
+    preview.src = '';
+    preview.style.display = 'none';
+    placeholder.style.display = 'flex';
+  }
+}
+
+function previewDishImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const preview = document.getElementById('dishModalPreview');
+    preview.src = ev.target.result;
+    preview.style.display = 'block';
+    document.getElementById('dishModalPreviewPlaceholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
 }
 
 function addDish(dayId) {
@@ -1934,19 +2145,19 @@ function addDish(dayId) {
   document.getElementById('dishModalName').value = '';
   document.getElementById('dishModalPrice').value = '0';
   document.getElementById('dishModalDesc').value = '';
-  document.getElementById('dishDescGroup').style.display = '';
+  _resetDishImage(null);
   document.getElementById('dishModal').classList.add('open');
   setTimeout(() => document.getElementById('dishModalName').focus(), 120);
 }
 
-function editDish(id, name, price, desc) {
+function editDish(id, name, price, desc, imageUrl) {
   document.getElementById('dishModalMode').value = 'edit';
   document.getElementById('dishModalId').value = id;
   document.getElementById('dishModalTitle').textContent = '✏️ Modifier le plat';
   document.getElementById('dishModalName').value = name || '';
   document.getElementById('dishModalPrice').value = price != null ? price : '0';
   document.getElementById('dishModalDesc').value = desc || '';
-  document.getElementById('dishDescGroup').style.display = '';
+  _resetDishImage(imageUrl || null);
   document.getElementById('dishModal').classList.add('open');
   setTimeout(() => document.getElementById('dishModalName').focus(), 120);
 }
@@ -1957,14 +2168,25 @@ async function saveDishModal() {
   const name = document.getElementById('dishModalName').value.trim();
   if (!name) return toast('Le nom est requis', 'error');
   const price = parseFloat(document.getElementById('dishModalPrice').value) || 0;
+  const desc = document.getElementById('dishModalDesc').value.trim();
+  const fileInput = document.getElementById('dishModalImageInput');
   try {
+    const buildBody = (extra) => new Promise((resolve) => {
+      if (fileInput.files.length) {
+        const reader = new FileReader();
+        reader.onload = ev => resolve({ ...extra, image: ev.target.result });
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        resolve(extra);
+      }
+    });
     if (mode === 'add') {
       const dayId = document.getElementById('dishModalDayId').value;
-      const desc = document.getElementById('dishModalDesc').value.trim();
-      await apiFetch('/api/restaurant/dishes', { method: 'POST', body: { weekly_menu_day_id: parseInt(dayId), name, price, description: desc } }, token);
+      const body = await buildBody({ weekly_menu_day_id: parseInt(dayId), name, price, description: desc });
+      await apiFetch('/api/restaurant/dishes', { method: 'POST', body }, token);
     } else {
-      const desc = document.getElementById('dishModalDesc').value.trim();
-      await apiFetch(`/api/restaurant/dishes/${id}`, { method: 'PUT', body: { name, price, description: desc } }, token);
+      const body = await buildBody({ name, price, description: desc });
+      await apiFetch(`/api/restaurant/dishes/${id}`, { method: 'PUT', body }, token);
     }
     closeModal(document.getElementById('dishModal'));
     openPackDetail(currentPackId);
@@ -1987,24 +2209,43 @@ async function loadWeeklyInvoices() {
     if (sel) {
       sel.innerHTML = '<option value="">Choisir...</option>' + companies.map(c => '<option value="'+c.id+'">'+c.name+'</option>').join('');
     }
-    const invoices = await apiFetch('/api/restaurant/weekly-invoices', {}, token);
+    const from = document.getElementById('wiFilterFrom')?.value || '';
+    const to   = document.getElementById('wiFilterTo')?.value || '';
+    const qs   = [from?'from='+from:'', to?'to='+to:''].filter(Boolean).join('&');
+    const invoices = await apiFetch('/api/restaurant/weekly-invoices' + (qs?'?'+qs:''), {}, token);
     const tb = document.getElementById('wiTableBody');
     if (!tb) return;
-    if (!invoices.length) { tb.innerHTML = '<tr><td colspan="8" class="empty-state">Aucune facture hebdomadaire</td></tr>'; return; }
-    tb.innerHTML = invoices.map(inv => `
-      <tr>
-        <td>${inv.invoice_number}</td>
-        <td>${inv.company_name || '—'}</td>
-        <td>${inv.pack_name || '—'}</td>
-        <td>${parseFloat(inv.total_amount).toLocaleString()} FCFA</td>
-        <td>${inv.billing_frequency === 'yearly' ? 'Annuelle' : 'Mensuelle'}</td>
-        <td>${new Date(inv.created_at).toLocaleDateString('fr-FR')}</td>
-        <td><span class="badge badge-${inv.status === 'confirmed' ? 'success' : 'pending'}">${inv.status}</span></td>
-        <td>
-          <button class="btn btn-outline btn-sm" onclick="window.open('/api/restaurant/weekly-invoices/${inv.id}/pdf?token=${token}','_blank')">📄</button>
+    if (!invoices.length) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">Aucune facture hebdomadaire</td></tr>'; return; }
+    const fmtD = d => d ? new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—';
+    tb.innerHTML = invoices.map(inv => {
+      const periodeHtml = (inv.from_date && inv.to_date) ? `<span style="font-size:11px">${fmtD(inv.from_date)} → ${fmtD(inv.to_date)}</span>` : `<span style="color:var(--muted);font-size:11px">${new Date(inv.created_at).toLocaleDateString('fr-FR')}</span>`;
+      const sentTag = inv.sent
+        ? '<span style="font-size:10px;color:#2563eb;background:#dbeafe;padding:2px 7px;border-radius:10px;font-weight:700">📤 Envoyée</span>'
+        : `<button class="btn btn-outline btn-sm" onclick="markWiSent(${inv.id})" style="font-size:10px;padding:2px 7px">📤 Envoyer</button>`;
+      const stBg = inv.status==='confirmed'?'#dcfce7':inv.status==='pending'?'#fef3c7':'#fee2e2';
+      const stColor = inv.status==='confirmed'?'#16a34a':inv.status==='pending'?'#b45309':'#dc2626';
+      const stLabel = inv.status==='confirmed'?'Confirmée':inv.status==='pending'?'En attente':'Annulée';
+      return `<tr>
+        <td style="font-size:11px;white-space:nowrap">${inv.invoice_number}</td>
+        <td><strong style="font-size:12px">${inv.restaurant_name||'—'}</strong><br><span style="font-size:11px;color:var(--muted)">→ ${inv.company_name||'—'}</span></td>
+        <td style="font-size:12px">${inv.pack_name||'—'}</td>
+        <td>${periodeHtml}</td>
+        <td style="font-weight:600;white-space:nowrap">${parseFloat(inv.total_amount).toLocaleString()} FCFA</td>
+        <td><span style="font-size:11px;font-weight:700;background:${stBg};color:${stColor};padding:2px 8px;border-radius:10px">${stLabel}</span></td>
+        <td>${sentTag}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-outline btn-sm" onclick="window.open('/api/restaurant/weekly-invoices/${inv.id}/pdf?token=${token}','_blank')" title="Télécharger PDF">📄</button>
         </td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function markWiSent(invId) {
+  try {
+    await apiFetch(`/api/restaurant/weekly-invoices/${invId}`, { method: 'PUT', body: { sent: true } }, token);
+    toast('Facture marquée comme envoyée', 'success');
+    loadWeeklyInvoices();
   } catch(e) { toast(e.message, 'error'); }
 }
 
@@ -2114,11 +2355,16 @@ window.loadConfirmedOrders = loadConfirmedOrders;
 window.openDeleteModal = openDeleteModal;
 window.handlePhoto = handlePhoto;
 window.startMsgPolling = startMsgPolling;
-window.uploadWeeklyProgram = uploadWeeklyProgram;
-window.deleteWeeklyProgram = deleteWeeklyProgram;
 window.loadWeeklyPacks = loadWeeklyPacks;
 window.createWeeklyPack = createWeeklyPack;
 window.deleteWeeklyPack = deleteWeeklyPack;
+window.switchRestWeeklyTab = switchRestWeeklyTab;
+window.loadWeeklySubscriptions = loadWeeklySubscriptions;
+window.confirmRestSub = confirmRestSub;
+window.cancelRestSub = cancelRestSub;
+window.initDeliveries = initDeliveries;
+window.markDeliverySent = markDeliverySent;
+window.markWiSent = markWiSent;
 window.openPackDetail = openPackDetail;
 window.closePackDetail = closePackDetail;
 window.addMenuToPack = addMenuToPack;
@@ -2132,7 +2378,7 @@ window.loadWiPacks = loadWiPacks;
 window.addWiItem = addWiItem;
 window.calcWiTotal = calcWiTotal;
 window.createWeeklyInvoice = createWeeklyInvoice;
-window.previewWeeklyProgramImage = previewWeeklyProgramImage;
+window.previewDishImage = previewDishImage;
 window.editWeeklyPack = editWeeklyPack;
 window.saveEditPack = saveEditPack;
 window.editCurrentPack = editCurrentPack;
@@ -2177,32 +2423,89 @@ window.initDocSearch = initDocSearch;
 window.loadContractPage = loadContractPage;
 window.loadAffiliationContracts = loadAffiliationContracts;
 window.signAffiliationContract = signAffiliationContract;
+window.saveRestOffer = saveRestOffer;
+window.showAffContractSign = showAffContractSign;
+window.refreshOfferDayStyle = refreshOfferDayStyle;
+
+const OFFER_DAYS_LIST = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+
+function initOfferDaysSelector(selectedDays) {
+  const el = document.getElementById('offerDaysSelector');
+  if (!el) return;
+  el.innerHTML = OFFER_DAYS_LIST.map((d,i) => {
+    const active = selectedDays.includes(d);
+    return `<label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:5px 10px;border-radius:8px;border:1px solid ${active ? 'var(--orange)' : 'var(--border)'};background:${active ? '#FFF0EA' : 'white'};font-size:12px;transition:all .2s">
+      <input type="checkbox" value="${d}" ${active ? 'checked' : ''} style="accent-color:var(--orange)" onchange="refreshOfferDayStyle(this)"> ${d}
+    </label>`;
+  }).join('');
+}
+function refreshOfferDayStyle(cb) {
+  const lbl = cb.closest('label');
+  lbl.style.borderColor = cb.checked ? 'var(--orange)' : 'var(--border)';
+  lbl.style.background = cb.checked ? '#FFF0EA' : 'white';
+}
+
+async function saveRestOffer() {
+  const offer_description = document.getElementById('offerDesc').value.trim();
+  if (!offer_description) return toast('Décrivez votre offre de service', 'error');
+  const checkedDays = [...document.querySelectorAll('#offerDaysSelector input:checked')].map(c => c.value);
+  const service_days = checkedDays.join(',') || 'Lun,Mar,Mer,Jeu,Ven';
+  const delivery_zone = document.getElementById('offerZone').value.trim();
+  const cancellation_policy = document.getElementById('offerCancel').value.trim() || '30 jours de préavis';
+  const extra_terms = document.getElementById('offerExtra').value.trim();
+  try {
+    await apiFetch('/api/restaurant/contract', { method: 'PUT', body: { offer_description, service_days, delivery_zone, cancellation_policy, extra_terms } }, token);
+    document.getElementById('offerSavedBadge').style.display = '';
+    toast('Offre de service enregistrée !', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
 
 async function loadContractPage() {
   try {
     const contract = await apiFetch('/api/restaurant/contract', {}, token);
+    // Populate offer form
+    document.getElementById('offerDesc').value = contract.offer_description || '';
+    document.getElementById('offerZone').value = contract.delivery_zone || '';
+    document.getElementById('offerCancel').value = contract.cancellation_policy || '';
+    document.getElementById('offerExtra').value = contract.extra_terms || '';
+    const savedDays = (contract.service_days || 'Lun,Mar,Mer,Jeu,Ven').split(',').map(d => d.trim());
+    initOfferDaysSelector(savedDays);
+    if (contract.offer_description) document.getElementById('offerSavedBadge').style.display = '';
+    // Packs summary
+    const packsSummary = document.getElementById('offerPacksSummary');
+    if (contract.packs && contract.packs.length) {
+      packsSummary.innerHTML = `<div style="background:#FFF8F3;border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px">
+        <strong style="color:var(--brown)">Packs hebdomadaires inclus dans l'offre :</strong>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+          ${contract.packs.map(p => `<span style="padding:3px 10px;background:white;border:1px solid var(--border);border-radius:8px">${p.name} — ${parseFloat(p.price||0).toLocaleString()} FCFA · Min. ${p.min_order_qty} plats</span>`).join('')}
+        </div>
+      </div>`;
+    } else {
+      packsSummary.innerHTML = '<div style="font-size:12px;color:var(--muted)">Aucun pack actif. Créez-en dans <strong>Programme hebdo</strong> pour les inclure dans votre offre.</div>';
+    }
+    // Exclusivity contract status
     const body = document.getElementById('contractPageBody');
     const badge = document.getElementById('contractPageBadge');
     const signed = contract && contract.status === 'signed';
     badge.textContent = signed ? 'Signé ✓' : 'En attente';
     badge.className = signed ? 'badge-signed' : 'badge-pending';
+    const contractBodyText = document.querySelector('.contract-text') ? document.querySelector('.contract-text').innerHTML : '';
     if (signed) {
       body.innerHTML = `
         <div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:12px;padding:20px;margin-bottom:20px">
           <div style="font-size:16px;font-weight:700;color:#166534;margin-bottom:8px">✅ Contrat signé</div>
-          <div style="font-size:13px;color:#166534">Signé le ${new Date(contract.signed_at).toLocaleDateString('fr-FR', {day:'2-digit',month:'long',year:'numeric'})} • Commission : ${contract.commission_rate}% • Paiement : ${contract.payment_schedule === 'weekly' ? 'Hebdomadaire' : 'Mensuel'}</div>
+          <div style="font-size:13px;color:#166534">Signé le ${new Date(contract.signed_at).toLocaleDateString('fr-FR', {day:'2-digit',month:'long',year:'numeric'})} · Commission : ${contract.commission_rate}% · Paiement : ${contract.payment_schedule === 'weekly' ? 'Hebdomadaire' : 'Mensuel'}</div>
         </div>
-        <div class="contract-text" style="max-height:420px;overflow-y:auto">${document.querySelector('.contract-text').innerHTML}</div>
-      `;
+        <div class="contract-text" style="max-height:360px;overflow-y:auto">${contractBodyText}</div>`;
     } else {
       body.innerHTML = `
-        <div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:12px;padding:20px;margin-bottom:20px">
-          <div style="font-size:14px;font-weight:600;color:#92400E;margin-bottom:8px">⚠️ Contrat non signé</div>
-          <div style="font-size:13px;color:#92400E">Vous devez signer le contrat d'exclusivité pour utiliser toutes les fonctionnalités.</div>
+        <div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:12px;padding:16px;margin-bottom:16px">
+          <div style="font-size:14px;font-weight:600;color:#92400E;margin-bottom:6px">⚠️ Contrat non signé</div>
+          <div style="font-size:12px;color:#92400E">Enregistrez d'abord votre offre de service ci-dessus, puis signez le contrat d'exclusivité.</div>
         </div>
-        <div class="contract-text" style="max-height:320px;overflow-y:auto">${document.querySelector('.contract-text').innerHTML}</div>
+        <div class="contract-text" style="max-height:300px;overflow-y:auto">${contractBodyText}</div>
         <div style="margin-top:20px">
-          <div style="font-weight:600;font-size:13px;color:var(--brown);margin-bottom:10px">Fréquence de paiement :</div>
+          <div style="font-weight:600;font-size:13px;color:var(--brown);margin-bottom:10px">Fréquence de paiement de la commission :</div>
           <div style="display:flex;gap:20px;margin-bottom:16px">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
               <input type="radio" name="contractSchedule2" value="weekly" style="accent-color:var(--orange);width:16px;height:16px"> Hebdomadaire
@@ -2216,8 +2519,7 @@ async function loadContractPage() {
             J'ai lu et j'accepte les termes de ce contrat
           </label>
           <button class="btn btn-primary" id="contractSignBtn2" style="width:100%" disabled onclick="signContractFromPage()">✍️ Signer le contrat</button>
-        </div>
-      `;
+        </div>`;
     }
   } catch(e) {
     document.getElementById('contractPageBody').innerHTML = '<div style="color:var(--danger);padding:16px">Erreur de chargement.</div>';
@@ -2244,6 +2546,46 @@ async function signContractFromPage() {
 }
 window.signContractFromPage = signContractFromPage;
 
+function buildAffContractText(c, restName) {
+  const days = c.service_days || 'Lun–Ven';
+  const zone = c.delivery_zone || 'Non précisée';
+  const cancel = c.cancellation_policy || '30 jours de préavis';
+  const offerDesc = c.offer_description || 'Le Restaurant s\'engage à fournir des repas de qualité selon les menus publiés sur la plateforme.';
+  const extra = c.extra_terms ? `\nConditions particulières : ${c.extra_terms}` : '';
+  const pack = c.pack_name ? `Pack : ${c.pack_name}` : 'Pack : À définir';
+  const period = c.start_date ? `Du ${new Date(c.start_date).toLocaleDateString('fr-FR')} au ${c.end_date ? new Date(c.end_date).toLocaleDateString('fr-FR') : 'Non précisée'}` : 'Période : À définir';
+  const qty = c.quantity ? `${c.quantity} repas/jour` : 'Quantité : À définir';
+  const notes = c.company_notes ? `Notes entreprise : ${c.company_notes}` : '';
+  return `CONTRAT D'AFFILIATION ET D'ABONNEMENT
+ENTRE : ${restName} (ci-après "le Restaurant")
+ET : L'Entreprise signataire (ci-après "l'Entreprise")
+────────────────────────────────────────
+
+ARTICLE 1 — OBJET
+Le présent contrat régit le partenariat entre le Restaurant et l'Entreprise sur la plateforme FoodChooseApp pour la fourniture de repas aux employés de l'Entreprise.
+
+ARTICLE 2 — OFFRE DU RESTAURANT
+${offerDesc}
+Jours de service : ${days}
+Zone de service : ${zone}
+Politique d'annulation : ${cancel}${extra}
+
+ARTICLE 3 — SOUSCRIPTION DE L'ENTREPRISE
+${pack}
+${period}
+Quantité : ${qty}
+${notes}
+
+ARTICLE 4 — QUALITÉ ET PRIX
+Le Restaurant s'engage à respecter les prix affichés sur la plateforme et à maintenir la qualité et la fraîcheur des plats. Tout changement de tarif sera notifié à l'avance via la messagerie.
+
+ARTICLE 5 — RÉSILIATION
+La résiliation anticipée doit respecter la politique d'annulation définie à l'Article 2, notifiée via la messagerie de la plateforme.
+
+ARTICLE 6 — ACCEPTATION
+En signant ce contrat, chaque partie reconnaît avoir lu, compris et accepté l'intégralité des présentes conditions.`;
+}
+
 async function loadAffiliationContracts() {
   const el = document.getElementById('affiliationContractsBody');
   try {
@@ -2256,19 +2598,32 @@ async function loadAffiliationContracts() {
       const restSigned = !!c.restaurant_signed_at;
       const coSigned = !!c.company_signed_at;
       const bothSigned = restSigned && coSigned;
+      const stColor = bothSigned ? '#166534' : restSigned ? '#1d4ed8' : '#92400E';
+      const stLabel = bothSigned ? '✅ Actif — les deux parties ont signé' : restSigned ? '⏳ En attente de signature entreprise' : '⚠️ En attente de votre signature';
+      const subInfo = c.pack_name ? `<span style="font-size:11px;color:var(--muted)"> · Pack : ${c.pack_name}${c.quantity ? ' · '+c.quantity+' repas/j' : ''}</span>` : '';
       return `
-        <div style="display:flex;align-items:center;gap:14px;padding:14px;background:#F9F1EB;border-radius:12px;margin-bottom:10px">
-          ${c.company_logo ? `<img src="${c.company_logo}" style="width:44px;height:44px;object-fit:cover;border-radius:10px">` : `<div style="width:44px;height:44px;background:var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">🏢</div>`}
-          <div style="flex:1">
-            <div style="font-weight:600;font-size:14px">${c.company_name}</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px">
-              Restaurant : ${restSigned ? '✅ Signé le '+new Date(c.restaurant_signed_at).toLocaleDateString('fr-FR') : '⏳ En attente de signature'}
-              &nbsp;|&nbsp;
-              Entreprise : ${coSigned ? '✅ Signé le '+new Date(c.company_signed_at).toLocaleDateString('fr-FR') : '⏳ En attente'}
+        <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:14px;padding:14px;background:#F9F1EB">
+            ${c.company_logo ? `<img src="${c.company_logo}" style="width:44px;height:44px;object-fit:cover;border-radius:10px">` : `<div style="width:44px;height:44px;background:var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">🏢</div>`}
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:14px">${c.company_name}${subInfo}</div>
+              <div style="font-size:11px;color:${stColor};font-weight:600;margin-top:3px">${stLabel}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">
+                Vous : ${restSigned ? '✅ '+new Date(c.restaurant_signed_at).toLocaleDateString('fr-FR') : '⏳ Non signé'}
+                &nbsp;|&nbsp;
+                Entreprise : ${coSigned ? '✅ '+new Date(c.company_signed_at).toLocaleDateString('fr-FR') : '⏳ Non signé'}
+              </div>
             </div>
-            ${bothSigned ? '<div style="font-size:11px;color:#166534;font-weight:500;margin-top:4px">✅ Contrat d\'affiliation actif</div>' : ''}
+            ${!restSigned ? `<button class="btn btn-primary btn-sm" onclick="showAffContractSign(${c.affiliation_id})">✍️ Lire & Signer</button>` : ''}
           </div>
-          ${!restSigned ? `<button class="btn btn-primary btn-sm" onclick="signAffiliationContract(${c.affiliation_id})">✍️ Signer</button>` : ''}
+          <div id="affContractPanel_${c.affiliation_id}" style="display:none;padding:14px;background:white;border-top:1px solid var(--border)">
+            <div style="font-size:11px;font-family:monospace;white-space:pre-wrap;max-height:220px;overflow-y:auto;line-height:1.6;padding:12px;background:#F9F1EB;border-radius:8px;margin-bottom:12px">${buildAffContractText(c, 'Votre restaurant')}</div>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;margin-bottom:10px">
+              <input type="checkbox" id="affAccept_${c.affiliation_id}" style="accent-color:var(--orange);width:15px;height:15px" onchange="document.getElementById('affSignBtn_${c.affiliation_id}').disabled=!this.checked">
+              J'ai lu et j'accepte les termes de ce contrat
+            </label>
+            <button class="btn btn-primary btn-sm" id="affSignBtn_${c.affiliation_id}" disabled onclick="signAffiliationContract(${c.affiliation_id})">✍️ Signer</button>
+          </div>
         </div>
       `;
     }).join('');
@@ -2281,6 +2636,11 @@ async function loadAffiliationContracts() {
   }
 }
 
+function showAffContractSign(affiliationId) {
+  const panel = document.getElementById('affContractPanel_' + affiliationId);
+  if (panel) panel.style.display = panel.style.display === 'none' ? '' : 'none';
+}
+
 async function signAffiliationContract(affiliationId) {
   try {
     await apiFetch(`/api/restaurant/affiliation-contracts/${affiliationId}/sign`, { method: 'POST' }, token);
@@ -2291,7 +2651,34 @@ async function signAffiliationContract(affiliationId) {
 
 }); // end DOMContentLoaded
 </script>
-<script>(function(){var sp=document.getElementById('scrollProgress'),bt=document.getElementById('backTopBtn');function upd(){var m=document.documentElement.scrollHeight-window.innerHeight;if(sp)sp.style.width=(m>0?(window.scrollY/m)*100:0)+'%';if(bt)bt.classList.toggle('show',window.scrollY>200);}window.addEventListener('scroll',upd,{passive:true});if(bt)bt.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});})();</script>
+<script>(function(){
+  var sp=document.getElementById('scrollProgress'),bt=document.getElementById('backTopBtn'),tb=document.querySelector('.topbar');
+  function upd(){
+    var m=document.documentElement.scrollHeight-window.innerHeight;
+    if(sp)sp.style.width=(m>0?(window.scrollY/m)*100:0)+'%';
+    if(bt)bt.classList.toggle('show',window.scrollY>200);
+    if(tb)tb.classList.toggle('topbar-scrolled',window.scrollY>20);
+  }
+  window.addEventListener('scroll',upd,{passive:true});
+  if(bt)bt.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+  function observeReveal(){
+    var els=document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale');
+    if(!els.length)return;
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}});
+    },{threshold:0.12});
+    els.forEach(function(el){if(!el.classList.contains('visible'))io.observe(el);});
+  }
+  observeReveal();
+  var mo=new MutationObserver(function(muts){
+    muts.forEach(function(m){
+      if(m.attributeName==='class'&&m.target.classList.contains('active')){
+        setTimeout(observeReveal,80);
+      }
+    });
+  });
+  document.querySelectorAll('.page').forEach(function(p){mo.observe(p,{attributes:true});});
+})();</script>
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

@@ -86,10 +86,10 @@
   <!-- ═══ DASHBOARD ═══ -->
   <div class="page active" id="page-dashboard">
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="stat-number" id="s-emp">—</div><div class="stat-label">Employés</div></div>
-      <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div><div class="stat-number" id="s-aff">—</div><div class="stat-label">Affiliations</div></div>
-      <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div><div class="stat-number" id="s-today">—</div><div class="stat-label">Commandes aujourd'hui</div></div>
-      <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-number" id="s-pending">—</div><div class="stat-label">En attente validation</div></div>
+      <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="stat-number" id="s-emp">0</div><div class="stat-label">Employés</div></div>
+      <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div><div class="stat-number" id="s-aff">0</div><div class="stat-label">Affiliations</div></div>
+      <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div><div class="stat-number" id="s-today">0</div><div class="stat-label">Commandes aujourd'hui</div></div>
+      <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-number" id="s-pending">0</div><div class="stat-label">En attente validation</div></div>
     </div>
     <div class="page-grid">
       <div class="card">
@@ -797,12 +797,18 @@ apiFetch('/api/company/affiliation-contracts', {}, token).then(contracts => {
 
 // ── Dashboard ─────────────────────────────────────────
 async function loadDashboard() {
+  const cache = JSON.parse(localStorage.getItem('_codash') || '{}');
+  document.getElementById('s-emp').textContent     = cache.emp     ?? 0;
+  document.getElementById('s-aff').textContent     = cache.aff     ?? 0;
+  document.getElementById('s-today').textContent   = cache.today   ?? 0;
+  document.getElementById('s-pending').textContent = cache.pending ?? 0;
   try {
     const s = await apiFetch('/api/admin/stats', {}, token);
-    document.getElementById('s-emp').textContent = s.employees;
-    document.getElementById('s-aff').textContent = s.affiliations;
-    document.getElementById('s-today').textContent = s.todayOrders;
+    document.getElementById('s-emp').textContent     = s.employees;
+    document.getElementById('s-aff').textContent     = s.affiliations;
+    document.getElementById('s-today').textContent   = s.todayOrders;
     document.getElementById('s-pending').textContent = s.pendingOrders;
+    localStorage.setItem('_codash', JSON.stringify({ emp: s.employees, aff: s.affiliations, today: s.todayOrders, pending: s.pendingOrders }));
     // Affiliated restaurants
     const affs = await apiFetch('/api/admin/affiliations', {}, token);
     const dashAff = document.getElementById('dashAffiliations');

@@ -95,20 +95,14 @@ body { font-family: 'DM Sans', sans-serif; background: #F5EDE6; color: var(--tex
 @keyframes pageIn { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
 /* ─── Cards ──────────────────────────────────────────── */
-.card { background: var(--cream); border-radius: 14px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; animation: bounceIn .5s cubic-bezier(.34,1.56,.64,1) both; }
-.card:nth-child(2) { animation-delay: .1s; }
-.card:nth-child(3) { animation-delay: .2s; }
+.card { background: var(--cream); border-radius: 14px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; }
 .card-header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
 .card-title { font-size: 14px; font-weight: 600; color: var(--brown); }
 .card-body { padding: 16px 20px; }
 
 /* ─── Stats grid ─────────────────────────────────────── */
 .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 22px; }
-.stat-card { background: var(--cream); border-radius: 14px; padding: 18px; border: 1px solid var(--border); animation: bounceIn .5s cubic-bezier(.34,1.56,.64,1) both; }
-.stat-card:nth-child(1) { animation-delay: .05s; }
-.stat-card:nth-child(2) { animation-delay: .12s; }
-.stat-card:nth-child(3) { animation-delay: .19s; }
-.stat-card:nth-child(4) { animation-delay: .26s; }
+.stat-card { background: var(--cream); border-radius: 14px; padding: 18px; border: 1px solid var(--border); }
 .stat-card:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 12px 28px rgba(0,0,0,.08); transition: all .3s cubic-bezier(.34,1.56,.64,1); }
 .stat-icon { font-size: 22px; margin-bottom: 8px; display: inline-block; }
 .stat-card:hover .stat-icon { animation: wiggle .4s ease; }
@@ -757,9 +751,7 @@ tbody tr:nth-child(9){animation-delay:.27s} tbody tr:nth-child(10){animation-del
 @keyframes toastOut { to { opacity:0; transform:translateX(26px) scale(.95); } }
 .toast.out { animation:toastOut .28s ease forwards !important; }
 
-/* ─── Stat icon gentle float ─────────────────────────── */
-.stat-icon { animation:iconFloat 3.8s ease-in-out infinite; }
-@keyframes iconFloat { 0%,100%{transform:translateY(0)} 45%{transform:translateY(-5px) rotate(-2deg)} 75%{transform:translateY(-2px) rotate(1.5deg)} }
+/* ─── Stat icon hover only ───────────────────────────── */
 .stat-card:hover .stat-icon { animation:wiggle .4s ease !important; }
 
 /* ─── Notification badge: bounce on new notifs ───────── */

@@ -942,7 +942,6 @@ label#wpDropZone:hover {
 }
 
 /* ─── Dashboard page transition enhancement ──────────── */
-.page { transition: opacity .18s ease; }
 .page:not(.active) { display: none; }
 
 /* ─── Stat card color variants ───────────────────────── */
@@ -950,6 +949,14 @@ label#wpDropZone:hover {
 .stat-card:nth-child(2) { border-top: 3px solid var(--gold); }
 .stat-card:nth-child(3) { border-top: 3px solid #86EFAC; }
 .stat-card:nth-child(4) { border-top: 3px solid #93C5FD; }
+
+/* ─── Dashboard overview : totalement statique ───────── */
+#page-dashboard { animation: none !important; transition: none !important; }
+#page-dashboard .stats-grid,
+#page-dashboard .stat-card,
+#page-dashboard .stat-number,
+#page-dashboard .stat-icon,
+#page-dashboard .card { animation: none !important; transition: none !important; }
 
 /* ─── Better empty states ────────────────────────────── */
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; gap: 10px; color: var(--muted); font-size: 13.5px; }

@@ -24,6 +24,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const cron = require('node-cron');
+const webpush = require('web-push');
 const cloudinary = require('cloudinary').v2;
 
 cloudinary.config({
@@ -32,6 +33,12 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
   secure: true
 });
+
+webpush.setVapidDetails(
+  `mailto:${process.env.ADMIN_EMAIL}`,
+  process.env.VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
+);
 
 const app = express();
 const PORT = process.env.PORT || 3050;
@@ -409,12 +416,38 @@ function welcomeEmailHtml(name, extra = '') {
   </div>`;
 }
 
+const PUSH_URL_BY_ROLE = { restaurant: '/restaurant/dashboard', company: '/company/admin', admin: '/admin', employee: '/employee' };
+
+async function sendPushToUser(targetType, targetId, payload) {
+  try {
+    const subs = await pool.query(
+      'SELECT id, endpoint, subscription FROM push_subscriptions WHERE target_type=$1 AND target_id=$2',
+      [targetType, targetId]
+    );
+    for (const row of subs.rows) {
+      webpush.sendNotification(row.subscription, JSON.stringify(payload)).catch(async err => {
+        // 410 Gone ou 404 = abonnement expiré, on le supprime
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          await pool.query('DELETE FROM push_subscriptions WHERE id=$1', [row.id]);
+        }
+      });
+    }
+  } catch (e) { console.error('Push error:', e.message); }
+}
+
 async function createNotification(targetType, targetId, title, message, type, data = {}) {
   try {
     await pool.query(
       'INSERT INTO notifications (target_type, target_id, title, message, type, data) VALUES ($1,$2,$3,$4,$5,$6)',
       [targetType, targetId, title, message, type, JSON.stringify(data)]
     );
+    sendPushToUser(targetType, targetId, {
+      title,
+      body: message,
+      icon: '/assets/images/icon-192.png',
+      badge: '/assets/images/icon-96.png',
+      url: PUSH_URL_BY_ROLE[targetType] || '/'
+    });
   } catch (e) { console.error('Notif error:', e.message); }
 }
 
@@ -451,6 +484,14 @@ const restaurantAuth = makeAuth('restaurant');
 const companyAuth = makeAuth('company');
 const employeeAuth = makeAuth('employee');
 const adminAuth = makeAuth('admin');
+
+// Middleware acceptant tous les rôles — utilisé pour les endpoints partagés (push, notifications…)
+function anyAuth(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Token manquant' });
+  try { req.user = jwt.verify(token, JWT_SECRET); next(); }
+  catch { res.status(401).json({ error: 'Token invalide' }); }
+}
 
 function todayStr() { return new Date().toISOString().split('T')[0]; }
 
@@ -866,6 +907,226 @@ app.get('/api/restaurant/companies', restaurantAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ─── PDF helpers ─────────────────────────────────────────────────────────────
+
+const LOGO_PATH = path.join(__dirname, '../public/assets/images/icon-192.png');
+const PDF_ORANGE = '#E85A2A';
+const PDF_DARK   = '#2C1810';
+const PDF_CREAM  = '#FFF8F3';
+const PDF_LIGHT  = '#FFF0E8';
+const PDF_MUTED  = '#8B6554';
+const PDF_BROWN  = '#4A3728';
+
+function pdfDrawHeader(doc, title, invNumber, invDate, fromDate, toDate) {
+  const W = doc.page.width;
+  doc.rect(0, 0, W, 130).fill(PDF_ORANGE);
+  let textX = 50;
+  if (fs.existsSync(LOGO_PATH)) {
+    try { doc.image(LOGO_PATH, 50, 18, { width: 65, height: 65 }); textX = 125; } catch(e) {}
+  }
+  doc.fillColor(PDF_CREAM).fontSize(22).font('Helvetica-Bold').text('FoodChooseApp', textX, 27);
+  doc.fontSize(9).font('Helvetica').text('Gestion des repas d\'entreprise', textX, 54);
+  doc.fontSize(14).font('Helvetica-Bold').text(title, W - 260, 24, { width: 210, align: 'right' });
+  doc.fontSize(9).font('Helvetica').text(`N° ${invNumber}`, W - 260, 46, { width: 210, align: 'right' });
+  doc.text(`Émise le ${invDate}`, W - 260, 60, { width: 210, align: 'right' });
+  if (fromDate && toDate) {
+    doc.text(`Période : ${fromDate} → ${toDate}`, W - 260, 74, { width: 210, align: 'right' });
+  }
+}
+
+function pdfDrawParties(doc, fromName, fromAddr, toName, toAddr) {
+  const W = doc.page.width;
+  const y = 145;
+  doc.fillColor(PDF_MUTED).fontSize(8).font('Helvetica-Bold').text('DE', 50, y);
+  doc.fillColor(PDF_DARK).fontSize(12).font('Helvetica-Bold').text(fromName || '—', 50, y + 14);
+  if (fromAddr) doc.fillColor(PDF_BROWN).fontSize(9).font('Helvetica').text(fromAddr, 50, y + 30, { width: 220 });
+  doc.moveTo(W / 2, y).lineTo(W / 2, y + 60).lineWidth(0.5).stroke('#DDCFC6');
+  doc.fillColor(PDF_MUTED).fontSize(8).font('Helvetica-Bold').text('POUR', W / 2 + 15, y);
+  doc.fillColor(PDF_DARK).fontSize(12).font('Helvetica-Bold').text(toName || '—', W / 2 + 15, y + 14);
+  if (toAddr) doc.fillColor(PDF_BROWN).fontSize(9).font('Helvetica').text(toAddr, W / 2 + 15, y + 30, { width: 220 });
+  return y + 70;
+}
+
+function pdfDrawTableHeader(doc, y, cols) {
+  const W = doc.page.width;
+  doc.rect(50, y, W - 100, 22).fill(PDF_DARK);
+  doc.fillColor(PDF_CREAM).fontSize(8).font('Helvetica-Bold');
+  cols.forEach(c => {
+    if (c.align === 'right') {
+      doc.text(c.label, c.x, y + 7, { width: c.w, align: 'right' });
+    } else {
+      doc.text(c.label, c.x + 4, y + 7, { width: c.w - 4 });
+    }
+  });
+  return y + 28;
+}
+
+function pdfDrawFooter(doc) {
+  const W = doc.page.width;
+  const H = doc.page.height;
+  doc.rect(0, H - 40, W, 40).fill(PDF_DARK);
+  doc.fillColor(PDF_MUTED).fontSize(8).font('Helvetica')
+    .text('FoodChooseApp — Gestion des repas d\'entreprise', 50, H - 24)
+    .text('Merci de votre confiance', W - 200, H - 24, { width: 150, align: 'right' });
+}
+
+function renderStandardInvoicePdf(doc, inv_data, items, invoiceId) {
+  const W = doc.page.width;
+  const H = doc.page.height;
+  const invDate = inv_data.created_at
+    ? new Date(String(inv_data.created_at).replace(' ', 'T')).toLocaleDateString('fr-FR')
+    : new Date().toLocaleDateString('fr-FR');
+
+  pdfDrawHeader(doc, 'FACTURE', `FAC-${String(invoiceId).padStart(5,'0')}`, invDate);
+  let y = pdfDrawParties(doc, inv_data.restaurant_name, inv_data.restaurant_address || null, inv_data.company_name, inv_data.company_address || null);
+
+  // Info bar
+  doc.rect(50, y, W - 100, 24).fill(PDF_LIGHT).lineWidth(0.5).rect(50, y, W - 100, 24).stroke('#DDCFC6');
+  doc.fillColor(PDF_DARK).fontSize(9).font('Helvetica')
+    .text(`Nombre de commandes : `, 58, y + 7, { continued: true })
+    .font('Helvetica-Bold').fillColor(PDF_ORANGE).text(`${items.length}`)
+    .fillColor(PDF_DARK).font('Helvetica');
+  doc.text(`Date d'émission : ${invDate}`, W - 255, y + 7, { width: 200, align: 'right' });
+  y += 32;
+
+  // Table
+  const cols = [
+    { label: 'DATE',            x: 50,  w: 65,  align: 'left'  },
+    { label: 'EMPLOYÉ',         x: 115, w: 120, align: 'left'  },
+    { label: 'RESTAURANT',      x: 235, w: 100, align: 'left'  },
+    { label: 'PLAT COMMANDÉ',   x: 335, w: 120, align: 'left'  },
+    { label: 'P.U.',            x: 455, w: 45,  align: 'right' },
+    { label: 'TOTAL',           x: 500, w: 45,  align: 'right' }
+  ];
+  y = pdfDrawTableHeader(doc, y, cols);
+
+  items.forEach((item, i) => {
+    const rowH = 18;
+    if (y + rowH > H - 60) {
+      pdfDrawFooter(doc);
+      doc.addPage();
+      y = 50;
+      y = pdfDrawTableHeader(doc, y, cols);
+    }
+    doc.rect(50, y - 2, W - 100, rowH).fill(i % 2 === 0 ? PDF_LIGHT : '#FFFFFF');
+    const orderDate = item.order_date
+      ? new Date(String(item.order_date).replace(' ', 'T')).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+      : '—';
+    const empName   = item.employee_name || '—';
+    const restName  = item.restaurant_name || inv_data.restaurant_name || '—';
+    const dishName  = item.name || '—';
+    const pu        = parseFloat(item.price || 0);
+    doc.fillColor(PDF_DARK).fontSize(8).font('Helvetica')
+      .text(orderDate,                cols[0].x + 4, y, { width: cols[0].w - 4, ellipsis: true })
+      .text(empName,                  cols[1].x + 4, y, { width: cols[1].w - 8, ellipsis: true })
+      .text(restName,                 cols[2].x + 4, y, { width: cols[2].w - 8, ellipsis: true })
+      .text(dishName,                 cols[3].x + 4, y, { width: cols[3].w - 8, ellipsis: true })
+      .text(`${pu.toLocaleString('fr-FR')} F`,  cols[4].x, y, { width: cols[4].w, align: 'right' })
+      .text(`${pu.toLocaleString('fr-FR')} F`,  cols[5].x, y, { width: cols[5].w, align: 'right' });
+    y += rowH + 2;
+  });
+
+  y += 12;
+  doc.rect(W - 210, y, 160, 38).fill(PDF_ORANGE);
+  doc.fillColor(PDF_CREAM).fontSize(8).font('Helvetica').text('TOTAL TTC', W - 205, y + 6, { width: 150, align: 'right' });
+  doc.fontSize(15).font('Helvetica-Bold').text(`${parseFloat(inv_data.total_amount || 0).toLocaleString('fr-FR')} FCFA`, W - 205, y + 17, { width: 150, align: 'right' });
+
+  pdfDrawFooter(doc);
+}
+
+function renderWeeklyInvoicePdf(doc, inv_data, items) {
+  const W = doc.page.width;
+  const H = doc.page.height;
+  const invDate = inv_data.created_at
+    ? new Date(String(inv_data.created_at).replace(' ', 'T')).toLocaleDateString('fr-FR')
+    : new Date().toLocaleDateString('fr-FR');
+  const fromD = inv_data.from_date ? new Date(inv_data.from_date + 'T12:00:00').toLocaleDateString('fr-FR') : null;
+  const toD   = inv_data.to_date   ? new Date(inv_data.to_date   + 'T12:00:00').toLocaleDateString('fr-FR') : null;
+  const invNum = inv_data.invoice_number || `FAC-HB-${String(inv_data.id).padStart(5,'0')}`;
+
+  pdfDrawHeader(doc, 'FACTURE HEBDOMADAIRE', invNum, invDate, fromD, toD);
+  let y = pdfDrawParties(doc, inv_data.restaurant_name, inv_data.restaurant_address || null, inv_data.company_name, inv_data.company_address || null);
+
+  // Pack info bar
+  if (inv_data.pack_name) {
+    doc.rect(50, y, W - 100, 34).fill(PDF_LIGHT).lineWidth(0.5).rect(50, y, W - 100, 34).stroke('#DDCFC6');
+    doc.fillColor(PDF_MUTED).fontSize(8).font('Helvetica-Bold').text('PACK SOUSCRIT', 58, y + 5);
+    doc.fillColor(PDF_DARK).fontSize(11).font('Helvetica-Bold').text(inv_data.pack_name, 58, y + 17);
+    if (inv_data.pack_description) {
+      doc.fillColor(PDF_BROWN).fontSize(8).font('Helvetica').text(inv_data.pack_description, W / 2, y + 10, { width: W / 2 - 60, ellipsis: true });
+    }
+    y += 42;
+  }
+  y += 6;
+
+  const cols = [
+    { label: 'DÉSIGNATION', x: 50,  w: 285, align: 'left'  },
+    { label: 'QTÉ',         x: 335, w: 70,  align: 'right' },
+    { label: 'P.U.',        x: 405, w: 70,  align: 'right' },
+    { label: 'TOTAL',       x: 475, w: 70,  align: 'right' }
+  ];
+  y = pdfDrawTableHeader(doc, y, cols);
+
+  const packPrice = parseFloat(inv_data.total_amount || 0);
+  const packQty   = inv_data.min_order_qty || items.reduce((s, i) => s + (parseFloat(i.qty) || 0), 0) || 1;
+
+  if (inv_data.pack_name) {
+    // Main pack row
+    const rowH = inv_data.pack_description ? 32 : 20;
+    doc.rect(50, y - 2, W - 100, rowH).fill(PDF_LIGHT);
+    doc.fillColor(PDF_DARK).fontSize(9).font('Helvetica-Bold').text(inv_data.pack_name, cols[0].x + 4, y, { width: cols[0].w - 8 });
+    if (inv_data.pack_description) {
+      doc.fillColor(PDF_BROWN).fontSize(8).font('Helvetica').text(inv_data.pack_description, cols[0].x + 4, y + 13, { width: cols[0].w - 8, ellipsis: true });
+    }
+    const textY = rowH > 20 ? y + 8 : y;
+    doc.fillColor(PDF_DARK).fontSize(9).font('Helvetica')
+      .text(String(packQty),                                   cols[1].x, textY, { width: cols[1].w, align: 'right' })
+      .text(`${packPrice.toLocaleString('fr-FR')} F`,          cols[2].x, textY, { width: cols[2].w, align: 'right' })
+      .text(`${packPrice.toLocaleString('fr-FR')} F`,          cols[3].x, textY, { width: cols[3].w, align: 'right' });
+    y += rowH + 4;
+
+    // Detail rows
+    if (items.length > 0) {
+      y += 6;
+      doc.fillColor(PDF_MUTED).fontSize(8).font('Helvetica-Bold').text('Détails du pack :', cols[0].x + 4, y);
+      y += 14;
+      items.forEach((item, i) => {
+        const rh = 16;
+        if (y + rh > H - 60) { pdfDrawFooter(doc); doc.addPage(); y = 50; y = pdfDrawTableHeader(doc, y, cols); }
+        doc.rect(50, y - 2, W - 100, rh).fill(i % 2 === 0 ? '#F5F0EC' : '#FFFFFF');
+        doc.fillColor(PDF_BROWN).fontSize(8).font('Helvetica')
+          .text(`• ${item.name || '—'}`,                        cols[0].x + 12, y, { width: cols[0].w - 16, ellipsis: true })
+          .text(String(parseFloat(item.qty) || 1),               cols[1].x, y, { width: cols[1].w, align: 'right' })
+          .text(`${parseFloat(item.price || 0).toLocaleString('fr-FR')} F`, cols[2].x, y, { width: cols[2].w, align: 'right' })
+          .text(`${parseFloat(item.price || 0).toLocaleString('fr-FR')} F`, cols[3].x, y, { width: cols[3].w, align: 'right' });
+        y += rh + 2;
+      });
+    }
+  } else {
+    items.forEach((item, i) => {
+      const rh = 18;
+      if (y + rh > H - 60) { pdfDrawFooter(doc); doc.addPage(); y = 50; y = pdfDrawTableHeader(doc, y, cols); }
+      doc.rect(50, y - 2, W - 100, rh).fill(i % 2 === 0 ? PDF_LIGHT : '#FFFFFF');
+      const qty = parseFloat(item.qty || 1), price = parseFloat(item.price || 0);
+      doc.fillColor(PDF_DARK).fontSize(8).font('Helvetica')
+        .text(item.name || '—', cols[0].x + 4, y, { width: cols[0].w - 8, ellipsis: true })
+        .text(String(qty),       cols[1].x, y, { width: cols[1].w, align: 'right' })
+        .text(`${price.toLocaleString('fr-FR')} F`, cols[2].x, y, { width: cols[2].w, align: 'right' })
+        .text(`${(qty * price).toLocaleString('fr-FR')} F`, cols[3].x, y, { width: cols[3].w, align: 'right' });
+      y += rh + 2;
+    });
+  }
+
+  y += 12;
+  doc.rect(W - 210, y, 160, 38).fill(PDF_ORANGE);
+  doc.fillColor(PDF_CREAM).fontSize(8).font('Helvetica').text('TOTAL TTC', W - 205, y + 6, { width: 150, align: 'right' });
+  doc.fontSize(15).font('Helvetica-Bold').text(`${packPrice.toLocaleString('fr-FR')} FCFA`, W - 205, y + 17, { width: 150, align: 'right' });
+
+  pdfDrawFooter(doc);
+}
+
+// ─── Invoice PDFs ─────────────────────────────────────────────────────────────
+
 // Get single invoice as PDF for restaurant
 app.get('/api/restaurant/invoices/:id/pdf', async (req, res) => {
   const token = req.query.token || req.headers.authorization?.split(' ')[1];
@@ -873,38 +1134,22 @@ app.get('/api/restaurant/invoices/:id/pdf', async (req, res) => {
   try {
     const d = jwt.verify(token, JWT_SECRET);
     if (d.role !== 'restaurant') return res.status(403).json({ error: 'Accès refusé' });
-    const inv = await pool.query(`SELECT i.*,r.name AS restaurant_name,r.address AS restaurant_address,c.name AS company_name FROM invoices i JOIN restaurants r ON i.restaurant_id=r.id JOIN companies c ON i.company_id=c.id WHERE i.id=$1 AND i.restaurant_id=$2`, [req.params.id, d.id]);
+    const inv = await pool.query(`
+      SELECT i.*, r.name AS restaurant_name, r.address AS restaurant_address,
+             c.name AS company_name, c.address AS company_address
+      FROM invoices i
+      JOIN restaurants r ON i.restaurant_id = r.id
+      JOIN companies c ON i.company_id = c.id
+      WHERE i.id=$1 AND i.restaurant_id=$2
+    `, [req.params.id, d.id]);
     if (!inv.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
     const inv_data = inv.rows[0];
-    const items = Array.isArray(inv_data.items) ? inv_data.items : JSON.parse(inv_data.items||'[]');
-    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    const items = Array.isArray(inv_data.items) ? inv_data.items : JSON.parse(inv_data.items || '[]');
+    const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="facture_${req.params.id}.pdf"`);
     doc.pipe(res);
-    doc.rect(0,0,doc.page.width,110).fill('#E85A2A');
-    doc.fillColor('#FFF8F3').fontSize(26).font('Helvetica-Bold').text('FoodChooseApp', 50, 30);
-    doc.fontSize(13).font('Helvetica').text('FACTURE', 50, 62);
-    doc.fontSize(10).text(`N° FAC-${String(req.params.id).padStart(5,'0')} | ${new Date(inv_data.created_at).toLocaleDateString('fr-FR')}`, 50, 80);
-    let y = 135;
-    doc.fillColor('#2C1810').fontSize(12).font('Helvetica-Bold').text('DE :', 50, y);
-    doc.fontSize(11).font('Helvetica').fillColor('#4A3728').text(inv_data.restaurant_name, 50, y+16).text(inv_data.restaurant_address||'', 50, y+30);
-    doc.fillColor('#2C1810').fontSize(12).font('Helvetica-Bold').text('POUR :', 300, y);
-    doc.fontSize(11).font('Helvetica').fillColor('#4A3728').text(inv_data.company_name, 300, y+16);
-    y += 80;
-    doc.rect(50,y,doc.page.width-100,22).fill('#2C1810');
-    doc.fillColor('#FFF8F3').fontSize(9).font('Helvetica-Bold').text('DESCRIPTION',58,y+6).text('QTÉ',300,y+6).text('P.U.',380,y+6).text('TOTAL',450,y+6);
-    y += 30;
-    items.forEach((item, i) => {
-      if (i%2===0) doc.rect(50,y-3,doc.page.width-100,18).fill('#FFF8F3');
-      doc.fillColor('#2C1810').fontSize(9).font('Helvetica');
-      doc.text(item.name||'', 58, y).text(String(item.qty||1), 308, y).text(`${item.price||0}FCFA`, 380, y).text(`${(item.qty||1)*(item.price||0)}FCFA`, 450, y);
-      y += 20;
-    });
-    y += 10;
-    doc.rect(350,y,doc.page.width-400,30).fill('#E85A2A');
-    doc.fillColor('#FFF8F3').fontSize(13).font('Helvetica-Bold').text(`TOTAL : ${inv_data.total_amount}FCFA`, 360, y+8);
-    doc.rect(0,doc.page.height-35,doc.page.width,35).fill('#2C1810');
-    doc.fillColor('#8B6554').fontSize(9).text('FoodChooseApp — Gestion des repas d\'entreprise', 50, doc.page.height-20);
+    renderStandardInvoicePdf(doc, inv_data, items, req.params.id);
     doc.end();
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -1333,50 +1578,23 @@ app.get('/api/restaurant/weekly-invoices/:id/pdf', async (req, res) => {
     if (d.role !== 'restaurant') return res.status(403).json({ error: 'Accès refusé' });
     const inv = await pool.query(`
       SELECT wi.*, c.name AS company_name, c.address AS company_address,
-             r.name AS restaurant_name, r.address AS restaurant_address, wp.name AS pack_name
+             r.name AS restaurant_name, r.address AS restaurant_address,
+             wp.name AS pack_name, wp.description AS pack_description,
+             wp.price AS pack_price, wp.min_order_qty
       FROM weekly_invoices wi
-      LEFT JOIN companies c ON wi.company_id=c.id
-      LEFT JOIN restaurants r ON wi.restaurant_id=r.id
-      LEFT JOIN weekly_packs wp ON wi.weekly_pack_id=wp.id
+      LEFT JOIN companies c ON wi.company_id = c.id
+      LEFT JOIN restaurants r ON wi.restaurant_id = r.id
+      LEFT JOIN weekly_packs wp ON wi.weekly_pack_id = wp.id
       WHERE wi.id=$1 AND wi.restaurant_id=$2
     `, [req.params.id, d.id]);
     if (!inv.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
     const inv_data = inv.rows[0];
     const items = Array.isArray(inv_data.items) ? inv_data.items : JSON.parse(inv_data.items || '[]');
-    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="facture_hebdo_${req.params.id}.pdf"`);
     doc.pipe(res);
-    doc.rect(0,0,doc.page.width,110).fill('#E85A2A');
-    doc.fillColor('#FFF8F3').fontSize(26).font('Helvetica-Bold').text('FoodChooseApp', 50, 30);
-    doc.fontSize(14).font('Helvetica').text('FACTURE HEBDOMADAIRE', 50, 62);
-    doc.fontSize(10).text(`N° ${inv_data.invoice_number} | ${new Date(inv_data.created_at).toLocaleDateString('fr-FR')}`, 50, 80);
-    if (inv_data.from_date && inv_data.to_date) {
-      doc.fontSize(9).text(`Période : ${new Date(inv_data.from_date+'T12:00:00').toLocaleDateString('fr-FR')} → ${new Date(inv_data.to_date+'T12:00:00').toLocaleDateString('fr-FR')}`, 50, 94);
-    }
-    let y = 135;
-    doc.fillColor('#2C1810').fontSize(12).font('Helvetica-Bold').text('DE :', 50, y);
-    doc.fontSize(11).font('Helvetica').fillColor('#4A3728').text(inv_data.restaurant_name, 50, y+16).text(inv_data.restaurant_address||'', 50, y+30);
-    doc.fillColor('#2C1810').fontSize(12).font('Helvetica-Bold').text('POUR :', 300, y);
-    doc.fontSize(11).font('Helvetica').fillColor('#4A3728').text(inv_data.company_name, 300, y+16).text(inv_data.company_address||'', 300, y+30);
-    if (inv_data.pack_name) {
-      doc.fillColor('#8B6554').fontSize(10).font('Helvetica').text(`Pack : ${inv_data.pack_name}`, 300, y+50);
-    }
-    y += 80;
-    doc.rect(50,y,doc.page.width-100,22).fill('#2C1810');
-    doc.fillColor('#FFF8F3').fontSize(9).font('Helvetica-Bold').text('DÉSIGNATION',58,y+6).text('QTÉ',300,y+6).text('P.U.',380,y+6).text('TOTAL',450,y+6);
-    y += 30;
-    items.forEach((item, i) => {
-      if (i%2===0) doc.rect(50,y-3,doc.page.width-100,18).fill('#FFF8F3');
-      doc.fillColor('#2C1810').fontSize(9).font('Helvetica');
-      doc.text(item.name||'', 58, y).text(String(item.qty||1), 308, y).text(`${item.price||0}FCFA`, 380, y).text(`${(item.qty||1)*(item.price||0)}FCFA`, 450, y);
-      y += 20;
-    });
-    y += 10;
-    doc.rect(350,y,doc.page.width-400,30).fill('#E85A2A');
-    doc.fillColor('#FFF8F3').fontSize(13).font('Helvetica-Bold').text(`TOTAL : ${inv_data.total_amount}FCFA`, 360, y+8);
-    doc.rect(0,doc.page.height-35,doc.page.width,35).fill('#2C1810');
-    doc.fillColor('#8B6554').fontSize(9).text('FoodChooseApp — Gestion des repas d\'entreprise', 50, doc.page.height-20);
+    renderWeeklyInvoicePdf(doc, inv_data, items);
     doc.end();
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -1421,6 +1639,59 @@ app.get('/api/super-admin/weekly-invoices', adminAuth, async (req, res) => {
     const r = await pool.query(q, params);
     res.json(r.rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
+//  PUSH NOTIFICATIONS
+// ════════════════════════════════════════════════════════════════
+app.get('/api/push/vapid-public-key', (req, res) => {
+  res.json({ key: process.env.VAPID_PUBLIC_KEY });
+});
+
+app.post('/api/push/subscribe', anyAuth, async (req, res) => {
+  const { subscription } = req.body;
+  if (!subscription?.endpoint) return res.status(400).json({ error: 'Abonnement invalide' });
+  const { role, id } = req.user;
+  const targetType = role === 'restaurant' ? 'restaurant' : role === 'admin' || role === 'company' ? 'company' : 'employee';
+  try {
+    await pool.query(
+      `INSERT INTO push_subscriptions (target_type, target_id, endpoint, subscription)
+       VALUES ($1,$2,$3,$4)
+       ON CONFLICT (endpoint) DO UPDATE SET subscription=$4, target_type=$1, target_id=$2`,
+      [targetType, id, subscription.endpoint, subscription]
+    );
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Endpoint de test — envoie une push notification à l'utilisateur connecté
+app.post('/api/push/test', anyAuth, async (req, res) => {
+  const { role, id } = req.user;
+  const targetType = role === 'restaurant' ? 'restaurant' : role === 'admin' || role === 'company' ? 'company' : 'employee';
+  const subs = await pool.query(
+    'SELECT id, endpoint, subscription FROM push_subscriptions WHERE target_type=$1 AND target_id=$2',
+    [targetType, id]
+  );
+  if (!subs.rows.length) return res.status(404).json({ error: 'Aucun abonnement trouvé pour cet utilisateur' });
+  const results = [];
+  for (const row of subs.rows) {
+    try {
+      await webpush.sendNotification(row.subscription, JSON.stringify({
+        title: '🧪 Test Push',
+        body: 'La notification push fonctionne correctement !',
+        icon: '/assets/images/icon-192.png',
+        url: PUSH_URL_BY_ROLE[targetType] || '/'
+      }));
+      results.push({ endpoint: row.endpoint.slice(0, 40) + '…', sent: true });
+    } catch (err) {
+      if (err.statusCode === 410 || err.statusCode === 404) {
+        await pool.query('DELETE FROM push_subscriptions WHERE id=$1', [row.id]);
+      }
+      results.push({ endpoint: row.endpoint.slice(0, 40) + '…', sent: false, error: err.message });
+    }
+  }
+  res.json({ ok: true, results });
 });
 
 // ════════════════════════════════════════════════════════════════
@@ -1599,7 +1870,10 @@ app.post('/api/admin/employees', companyAuth, async (req, res) => {
   const { firstName, lastName, email, employeeId } = req.body;
   if (!firstName||!lastName||!email||!employeeId) return res.status(400).json({ error: 'Champs requis' });
   const companyId = req.user.id;
-  const defaultPwd = process.env.DEFAULT_EMPLOYEE_PASSWORD || 'Elimmeka123';
+  // Mot de passe = nom de l'entreprise sans espaces + "123" (ex: "Elimmeka123")
+  const coRow = await pool.query('SELECT name FROM companies WHERE id=$1', [companyId]);
+  const companyName = coRow.rows[0]?.name || 'Company';
+  const defaultPwd = companyName.replace(/\s+/g, '') + '123';
   try {
     const hash = await bcrypt.hash(defaultPwd, 10);
     const r = await pool.query(
@@ -1790,39 +2064,22 @@ app.get('/api/admin/invoices/:id/pdf', async (req, res) => {
   try {
     const d = jwt.verify(token, JWT_SECRET);
     if (d.role !== 'company') return res.status(403).json({ error: 'Accès refusé' });
-    const companyId = d.id;
-    const inv = await pool.query(`SELECT i.*,r.name AS restaurant_name,r.address AS restaurant_address,c.name AS company_name FROM invoices i JOIN restaurants r ON i.restaurant_id=r.id JOIN companies c ON i.company_id=c.id WHERE i.id=$1 AND i.company_id=$2`, [req.params.id, companyId]);
+    const inv = await pool.query(`
+      SELECT i.*, r.name AS restaurant_name, r.address AS restaurant_address,
+             c.name AS company_name, c.address AS company_address
+      FROM invoices i
+      JOIN restaurants r ON i.restaurant_id = r.id
+      JOIN companies c ON i.company_id = c.id
+      WHERE i.id=$1 AND i.company_id=$2
+    `, [req.params.id, d.id]);
     if (!inv.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
     const inv_data = inv.rows[0];
-    const items = Array.isArray(inv_data.items) ? inv_data.items : JSON.parse(inv_data.items||'[]');
-    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    const items = Array.isArray(inv_data.items) ? inv_data.items : JSON.parse(inv_data.items || '[]');
+    const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="facture_${req.params.id}.pdf"`);
     doc.pipe(res);
-    doc.rect(0,0,doc.page.width,110).fill('#E85A2A');
-    doc.fillColor('#FFF8F3').fontSize(26).font('Helvetica-Bold').text('FoodChooseApp', 50, 30);
-    doc.fontSize(13).font('Helvetica').text('FACTURE', 50, 62);
-    doc.fontSize(10).text(`N° FAC-${String(req.params.id).padStart(5,'0')} | ${new Date(inv_data.created_at).toLocaleDateString('fr-FR')}`, 50, 80);
-    let y = 135;
-    doc.fillColor('#2C1810').fontSize(12).font('Helvetica-Bold').text('DE :', 50, y);
-    doc.fontSize(11).font('Helvetica').fillColor('#4A3728').text(inv_data.restaurant_name, 50, y+16).text(inv_data.restaurant_address||'', 50, y+30);
-    doc.fillColor('#2C1810').fontSize(12).font('Helvetica-Bold').text('POUR :', 300, y);
-    doc.fontSize(11).font('Helvetica').fillColor('#4A3728').text(inv_data.company_name, 300, y+16);
-    y += 80;
-    doc.rect(50,y,doc.page.width-100,22).fill('#2C1810');
-    doc.fillColor('#FFF8F3').fontSize(9).font('Helvetica-Bold').text('DESCRIPTION',58,y+6).text('QTÉ',300,y+6).text('P.U.',380,y+6).text('TOTAL',450,y+6);
-    y += 30;
-    items.forEach((item, i) => {
-      if (i%2===0) doc.rect(50,y-3,doc.page.width-100,18).fill('#FFF8F3');
-      doc.fillColor('#2C1810').fontSize(9).font('Helvetica');
-      doc.text(item.name||'', 58, y).text(String(item.qty||1), 308, y).text(`${item.price||0}FCFA`, 380, y).text(`${(item.qty||1)*(item.price||0)}FCFA`, 450, y);
-      y += 20;
-    });
-    y += 10;
-    doc.rect(350,y,doc.page.width-400,30).fill('#E85A2A');
-    doc.fillColor('#FFF8F3').fontSize(13).font('Helvetica-Bold').text(`TOTAL : ${inv_data.total_amount}FCFA`, 360, y+8);
-    doc.rect(0,doc.page.height-35,doc.page.width,35).fill('#2C1810');
-    doc.fillColor('#8B6554').fontSize(9).text('FoodChooseApp — Gestion des repas d\'entreprise', 50, doc.page.height-20);
+    renderStandardInvoicePdf(doc, inv_data, items, req.params.id);
     doc.end();
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -2836,9 +3093,9 @@ const employeesWithoutReminderAtHour = async (today, hour) => {
     WHERE u.company_id IS NOT NULL
       AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id AND o.order_date = $1)
       AND NOT EXISTS (
-        SELECT 1 FROM notifications n 
-        WHERE n.target_type = 'user' 
-          AND n.target_id = u.id 
+        SELECT 1 FROM notifications n
+        WHERE n.target_type = 'employee'
+          AND n.target_id = u.id
           AND n.created_at::date = $1
           AND n.title LIKE $2
       )

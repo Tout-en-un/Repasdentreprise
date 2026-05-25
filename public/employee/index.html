@@ -201,6 +201,8 @@
       </div>
       <!-- Actions disponibles sur la commande du jour -->
       <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <!-- Bouton modification : pré-sélectionne le restaurant et permet de changer le menu -->
+        <button class="btn btn-outline btn-sm" style="background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.4);color:white" onclick="modifyTodayOrder()">✏️ Modifier</button>
         <!-- Bouton annulation : appelle cancelTodayOrder() -->
         <button class="btn btn-outline btn-sm" style="background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.4);color:white" onclick="cancelTodayOrder()">🗑 Annuler</button>
         <!-- Bouton notation : ouvre le modal de notation via rateCurrentOrder() -->
@@ -270,8 +272,8 @@
             <!-- Prix du menu en FCFA -->
             <div style="font-size:13px;color:var(--orange)" id="previewMenuPrice">—</div>
           </div>
-          <!-- Bouton de validation finale — appelle confirmOrder() -->
-          <button class="btn btn-primary" style="padding:12px 24px" onclick="confirmOrder()">✅ Valider ma commande</button>
+          <!-- Bouton de validation finale — appelle confirmOrder() (texte mis à jour en mode modification) -->
+          <button class="btn btn-primary" id="confirmOrderBtn" style="padding:12px 24px" onclick="confirmOrder()">✅ Valider ma commande</button>
         </div>
       </div>
     </div>
@@ -651,9 +653,10 @@ async function initMealPage() {
 
       // Stocke les données de la commande dans des variables globales de fenêtre
       // pour permettre l'annulation et la notation
-      window._todayOrderId = o.id;       // ID de la commande (pour DELETE)
-      window._todayMenuId = o.menu_id;   // ID du menu (pour la notation)
-      window._todayRestId = o.restaurant_id; // ID du restaurant (pour la notation)
+      window._todayOrderId = o.id;
+      window._todayMenuId = o.menu_id;
+      window._todayRestId = o.restaurant_id;
+      window._todayRestName = o.restaurant_name;
     } else {
       // Aucune commande aujourd'hui : masque la bannière
       banner.style.display = 'none';
@@ -769,6 +772,9 @@ async function selectRestaurant(id, name) {
  */
 function backToRestaurants() {
   selectedMenuId = null; selectedRestId = null;
+  window._isModifying = false;
+  const btn = document.getElementById('confirmOrderBtn');
+  if (btn) btn.textContent = '✅ Valider ma commande';
   document.getElementById('restaurantSelectionView').style.display = 'block';
   document.getElementById('menuSelectionView').style.display = 'none';
 }
@@ -807,18 +813,18 @@ function selectMenu(id, name, price) {
  * En cas de succès : revient à la liste des restaurants et rafraîchit la bannière.
  */
 async function confirmOrder() {
-  // Validation : menu et restaurant obligatoires
   if (!selectedMenuId || !selectedRestId) { toast('Sélectionnez un menu', 'error'); return; }
-
-  // Récupération de la préférence boisson (peut être null si aucune sélection)
   const drink = document.querySelector('input[name="drink"]:checked')?.value || null;
-
   try {
-    // Envoi de la commande à l'API avec menu, restaurant et boisson
-    await apiFetch('/api/employee/order', { method: 'POST', body: JSON.stringify({ menuId: selectedMenuId, restaurantId: selectedRestId, drinkPreference: drink }) }, empToken);
-    toast('Commande enregistrée !', 'success');
-
-    // Retour à la vue initiale et rafraîchissement de la bannière
+    if (window._isModifying && window._todayOrderId) {
+      // Mode modification : PUT sur la commande existante
+      await apiFetch(`/api/employee/order/${window._todayOrderId}`, { method: 'PUT', body: JSON.stringify({ menuId: selectedMenuId, drinkPreference: drink }) }, empToken);
+      toast('Commande modifiée !', 'success');
+    } else {
+      // Mode création : POST nouvelle commande
+      await apiFetch('/api/employee/order', { method: 'POST', body: JSON.stringify({ menuId: selectedMenuId, restaurantId: selectedRestId, drinkPreference: drink }) }, empToken);
+      toast('Commande enregistrée !', 'success');
+    }
     backToRestaurants();
     initMealPage();
   } catch(e) {
@@ -845,6 +851,24 @@ async function cancelTodayOrder() {
     initMealPage(); // Rafraîchit la page (masque la bannière)
   } catch(e) {
     toast(e.message, 'error');
+  }
+}
+
+/**
+ * modifyTodayOrder — Passe en mode modification et charge directement les menus
+ * du restaurant déjà sélectionné pour que l'employé choisisse un autre plat.
+ */
+async function modifyTodayOrder() {
+  if (!window._todayOrderId) return;
+  window._isModifying = true;
+  const btn = document.getElementById('confirmOrderBtn');
+  if (btn) btn.textContent = '✏️ Modifier ma commande';
+  // Aller directement aux menus du restaurant existant
+  if (window._todayRestId && window._todayRestName) {
+    await selectRestaurant(window._todayRestId, window._todayRestName);
+  } else {
+    document.getElementById('restaurantSelectionView').style.display = 'block';
+    document.getElementById('menuSelectionView').style.display = 'none';
   }
 }
 
@@ -1221,22 +1245,41 @@ function renderEmpWeeklySelections(selections) {
     grid.innerHTML = '<div class="empty-state"><span class="icon">📅</span>Aucune commande hebdomadaire passée par votre entreprise</div>';
     return;
   }
-  // Group by week_start
+
+  // Calculer le lundi de la semaine courante
+  const now = new Date();
+  const dow = now.getDay();
+  const diff = now.getDate() - dow + (dow === 0 ? -6 : 1);
+  const currentWeekStart = new Date(now.setDate(diff)).toISOString().split('T')[0];
+
   const byWeek = {};
   selections.forEach(s => {
     if (!byWeek[s.week_start]) byWeek[s.week_start] = [];
     byWeek[s.week_start].push(s);
   });
+
   const statusLabel = { pending: 'En attente', confirmed: 'Confirmé', cancelled: 'Annulé' };
-  const statusColor = { pending: 'var(--muted)', confirmed: 'var(--success,#2e7d32)', cancelled: '#c0392b' };
-  grid.innerHTML = Object.entries(byWeek).map(([weekStart, rows]) => {
-    const weekDate = new Date(weekStart);
+  const statusColor = { pending: '#b7791f', confirmed: '#276749', cancelled: '#c0392b' };
+  const statusBg    = { pending: '#fefcbf', confirmed: '#c6f6d5', cancelled: '#fed7d7' };
+
+  // Trier les semaines : semaine courante en premier, puis desc
+  const sortedWeeks = Object.keys(byWeek).sort((a, b) => {
+    if (a === currentWeekStart) return -1;
+    if (b === currentWeekStart) return 1;
+    return b.localeCompare(a);
+  });
+
+  grid.innerHTML = sortedWeeks.map(weekStart => {
+    const rows = byWeek[weekStart];
+    const isCurrent = weekStart === currentWeekStart;
+    const weekDate = new Date(weekStart + 'T12:00:00');
     const weekLabel = weekDate.toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
+
     const rowsHtml = rows.map(s => {
       const extrasHtml = (s.extras || []).length ? `
         <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
           <div style="font-size:11px;font-weight:700;color:var(--brown);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px">Extras</div>
-          ${(s.extras).map(e => `
+          ${s.extras.map(e => `
             <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:4px">
               <span style="color:var(--text)">${e.item_name} <span style="color:var(--muted);font-size:11px">(${e.item_type})</span></span>
               <span style="font-weight:600;color:var(--orange)">${e.quantity} × ${parseFloat(e.unit_price||0).toLocaleString()} FCFA</span>
@@ -1245,28 +1288,32 @@ function renderEmpWeeklySelections(selections) {
         </div>
       ` : '';
       return `
-        <div style="background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
+        <div style="background:var(--card-bg,#fff);border:1px solid ${isCurrent ? 'var(--orange)' : 'var(--border)'};border-radius:10px;padding:14px;margin-bottom:10px">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
             <div style="flex:1">
               <div style="font-weight:700;font-size:14px;color:var(--brown)">${s.pack_name || '—'}</div>
               <div style="font-size:12px;color:var(--muted);margin-top:2px">🍽 ${s.restaurant_name}</div>
             </div>
-            <span style="font-size:11px;font-weight:600;color:${statusColor[s.status]||'var(--muted)'};background:var(--border);border-radius:20px;padding:3px 10px;white-space:nowrap">${statusLabel[s.status]||s.status}</span>
+            <span style="font-size:11px;font-weight:600;color:${statusColor[s.status]||'var(--muted)'};background:${statusBg[s.status]||'var(--border)'};border-radius:20px;padding:3px 10px;white-space:nowrap">${statusLabel[s.status]||s.status}</span>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
             <span style="font-size:11px;background:var(--orange-light,#fff3e0);color:var(--orange);border-radius:6px;padding:2px 8px;font-weight:600">${parseFloat(s.pack_price||0).toLocaleString()} FCFA</span>
-            <span style="font-size:11px;background:var(--border);color:var(--muted);border-radius:6px;padding:2px 8px">${s.dish_qty} plats commandés</span>
-            <span style="font-size:11px;background:var(--border);color:var(--muted);border-radius:6px;padding:2px 8px">Min. ${s.min_order_qty||1} plats</span>
+            <span style="font-size:11px;background:var(--border);color:var(--muted);border-radius:6px;padding:2px 8px">${s.dish_qty} plat(s) commandé(s)</span>
           </div>
           ${s.notes ? `<div style="margin-top:8px;font-size:12px;color:var(--muted);font-style:italic">${s.notes}</div>` : ''}
           ${extrasHtml}
         </div>
       `;
     }).join('');
+
     return `
       <div style="margin-bottom:18px">
-        <div style="font-size:12px;font-weight:700;color:var(--brown);margin-bottom:8px;display:flex;align-items:center;gap:8px">
-          <span style="background:var(--orange);color:#fff;border-radius:8px;padding:2px 10px;font-size:11px">Semaine du ${weekLabel}</span>
+        <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          ${isCurrent
+            ? `<span style="background:var(--orange);color:#fff;border-radius:8px;padding:3px 12px;font-size:11px;font-weight:700">📅 Cette semaine</span>`
+            : `<span style="background:var(--border);color:var(--muted);border-radius:8px;padding:2px 10px;font-size:11px">Semaine du ${weekLabel}</span>`
+          }
+          ${isCurrent ? `<span style="font-size:11px;color:var(--muted)">du ${weekLabel}</span>` : ''}
         </div>
         ${rowsHtml}
       </div>
@@ -1295,6 +1342,7 @@ window.backToRestaurants = backToRestaurants;
 window.selectMenu = selectMenu;
 window.confirmOrder = confirmOrder;
 window.cancelTodayOrder = cancelTodayOrder;
+window.modifyTodayOrder = modifyTodayOrder;
 window.rateCurrentOrder = rateCurrentOrder;
 window.setRating = setRating;
 window.submitRating = submitRating;

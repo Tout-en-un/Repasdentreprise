@@ -329,9 +329,9 @@
           <div class="form-group">
             <label>Période <span style="font-size:11px;color:var(--muted);font-weight:400">(format JJ/MM/AAAA)</span></label>
             <div style="display:flex;gap:8px;align-items:center">
-              <input type="text" class="form-control date-mask" id="invoiceFrom" placeholder="JJ/MM/AAAA" maxlength="10" style="width:150px">
+              <input type="text" class="form-control date-mask" id="invoiceFrom" placeholder="JJ/MM/AAAA" maxlength="10" style="width:150px" oninput="loadConfirmedOrders()">
               <span style="color:var(--muted)">au</span>
-              <input type="text" class="form-control date-mask" id="invoiceTo" placeholder="JJ/MM/AAAA" maxlength="10" style="width:150px">
+              <input type="text" class="form-control date-mask" id="invoiceTo" placeholder="JJ/MM/AAAA" maxlength="10" style="width:150px" oninput="loadConfirmedOrders()">
             </div>
           </div>
           <div id="ordersPreview" style="margin-bottom:12px"></div>
@@ -341,12 +341,13 @@
       </div>
       <div class="card reveal" style="grid-column:1/-1">
         <div class="card-header">
-          <span class="card-title">🧾 Factures envoyées</span>
+          <span class="card-title">🧾 Factures</span>
           <button class="btn btn-outline btn-sm" onclick="loadInvoices()">🔄</button>
         </div>
         <div class="card-body scroll-box">
+          <div id="invoicesSummary"></div>
           <table class="table" id="invoicesTable">
-            <thead><tr><th>N° Facture</th><th>Entreprise</th><th>Date emission</th><th>Montant</th><th>Statut</th><th>Actions</th></tr></thead>
+            <thead><tr><th>N°</th><th>Entreprise</th><th>Date</th><th>Montant</th><th>Statut</th><th>Actions</th></tr></thead>
             <tbody id="invoicesBody"></tbody>
           </table>
         </div>
@@ -1396,17 +1397,40 @@ async function loadInvoices() {
     const invoices = await apiFetch('/api/restaurant/invoices', {}, token);
     const tbody = document.getElementById('invoicesBody');
     if (!invoices.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted)">Aucune facture</td></tr>'; return; }
-    tbody.innerHTML = invoices.map(inv => `<tr>
-      <td>FAC-${String(inv.id).padStart(5, '0')}</td>
-      <td>${inv.company_name || '—'}</td>
-      <td>${inv.created_at ? new Date(inv.created_at).toLocaleDateString('fr-FR') : '—'}</td>
-      <td>${parseFloat(inv.total_amount || 0).toLocaleString()} CFA</td>
-      <td><span style="padding:4px 8px;border-radius:6px;background:${inv.sent ? '#D1FAE5' : '#FEF3C7'};color:${inv.sent ? '#065F46' : '#92400E'}">${inv.sent ? ' Envoyée' : ' Non envoyée'}</span></td>
-      <td>
-        <button class="btn btn-outline btn-sm" onclick="downloadRestInvoice(${inv.id})">📥 PDF</button>
-        ${!inv.sent ? `<button class="btn btn-primary btn-sm" onclick="openInvoiceModal(${inv.id}, ${inv.company_id})">📤 Envoyer</button>` : ''}
-      </td>
-    </tr>`).join('');
+    const fmtD = d => d ? new Date(String(d).replace(' ','T')).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—';
+    const totalAmount = invoices.reduce((s,i) => s + parseFloat(i.total_amount||0), 0);
+    const sentCount = invoices.filter(i => i.sent).length;
+    document.getElementById('invoicesSummary').innerHTML = `
+      <div style="display:flex;gap:16px;flex-wrap:wrap;padding:10px 0;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
+          <span style="font-size:20px">🧾</span>
+          <div><div style="font-weight:700;font-size:15px;color:var(--brown)">${invoices.length}</div><div>Factures</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
+          <span style="font-size:20px">💰</span>
+          <div><div style="font-weight:700;font-size:15px;color:var(--orange)">${totalAmount.toLocaleString('fr-FR')} FCFA</div><div>Total facturé</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
+          <span style="font-size:20px">✅</span>
+          <div><div style="font-weight:700;font-size:15px;color:#059669">${sentCount}</div><div>Envoyées</div></div>
+        </div>
+      </div>`;
+    tbody.innerHTML = invoices.map(inv => {
+      const statusBg    = inv.status === 'confirmed' ? '#D1FAE5' : inv.sent ? '#DBEAFE' : '#FEF3C7';
+      const statusColor = inv.status === 'confirmed' ? '#065F46' : inv.sent ? '#1E40AF' : '#92400E';
+      const statusLabel = inv.status === 'confirmed' ? '✓ Confirmée' : inv.sent ? '📤 Envoyée' : '⏳ Non envoyée';
+      return `<tr>
+        <td style="font-size:11px;color:var(--muted);white-space:nowrap">FAC-${String(inv.id).padStart(5,'0')}</td>
+        <td><strong style="font-size:13px">${inv.company_name||'—'}</strong></td>
+        <td style="font-size:12px;white-space:nowrap">${fmtD(inv.created_at)}</td>
+        <td style="font-weight:700;color:var(--orange);white-space:nowrap">${parseFloat(inv.total_amount||0).toLocaleString('fr-FR')} FCFA</td>
+        <td><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${statusBg};color:${statusColor}">${statusLabel}</span></td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-outline btn-sm" onclick="downloadRestInvoice(${inv.id})" title="Télécharger PDF">⬇️ PDF</button>
+          ${!inv.sent ? `<button class="btn btn-primary btn-sm" onclick="openInvoiceModal(${inv.id}, ${inv.company_id})">📤 Envoyer</button>` : ''}
+        </td>
+      </tr>`;
+    }).join('');
   } catch(e) { console.error('loadInvoices:', e); }
 }
 
@@ -1424,10 +1448,17 @@ async function generateInvoice() {
     
     const orders = await apiFetch(url, {}, token);
     if (!orders.length) return toast('Aucune commande pour cette période', 'error');
-    
-    const items = orders.map(o => ({ name: o.menu_name, qty: 1, price: parseFloat(o.price) }));
-    const totalAmount = items.reduce((s, i) => s + (i.qty * i.price), 0);
-    
+
+    const items = orders.map(o => ({
+      name: o.menu_name,
+      qty: 1,
+      price: parseFloat(o.price),
+      order_date: o.order_date,
+      employee_name: `${o.first_name||''} ${o.last_name||''}`.trim(),
+      restaurant_name: o.restaurant_name || ''
+    }));
+    const totalAmount = items.reduce((s, i) => s + i.price, 0);
+
     const result = await apiFetch('/api/restaurant/invoices', { method: 'POST', body: { company_id: companyId, items: items, total_amount: totalAmount } }, token);
     
     toast('Facture générée avec succès!', 'success');
@@ -1444,15 +1475,33 @@ async function generateInvoice() {
 
 async function loadConfirmedOrders() {
   const companyId = document.getElementById('invoiceCompanySelect').value;
+  const from = parseFrDate(document.getElementById('invoiceFrom').value) || document.getElementById('invoiceFrom').value;
+  const to   = parseFrDate(document.getElementById('invoiceTo').value)   || document.getElementById('invoiceTo').value;
   if (!companyId) return;
   try {
-    const orders = await apiFetch(`/api/restaurant/orders?companyId=${companyId}`, {}, token);
+    let url = `/api/restaurant/orders?companyId=${companyId}`;
+    if (from) url += '&from=' + from;
+    if (to)   url += '&to='   + to;
+    const orders = await apiFetch(url, {}, token);
     const preview = document.getElementById('ordersPreview');
-    if (!orders.length) { preview.innerHTML = '<div style="color:var(--muted);font-size:13px">Aucune commande</div>'; return; }
+    if (!orders.length) { preview.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0">Aucune commande sur cette période</div>'; return; }
     const total = orders.reduce((s, o) => s + parseFloat(o.price || 0), 0);
-    preview.innerHTML = `<div style="padding:10px;background:#FFF8F3;border-radius:8px;font-size:13px">
-      <strong>${orders.length} commande(s)</strong> - Total: ${total.toLocaleString()} CFA
-    </div>`;
+    const fmtD = d => d ? new Date(String(d).replace(' ','T')).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}) : '—';
+    preview.innerHTML = `
+      <div style="background:#FFF8F3;border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <strong style="color:var(--brown)">${orders.length} commande${orders.length>1?'s':''}</strong>
+          <strong style="color:var(--orange)">${total.toLocaleString('fr-FR')} FCFA</strong>
+        </div>
+        <div style="max-height:120px;overflow-y:auto">
+          ${orders.slice(0,8).map(o=>`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:2px 0;border-bottom:1px solid #F0E8E0">
+            <span>${fmtD(o.order_date)} — ${o.first_name||''} ${o.last_name||''}</span>
+            <span>${o.menu_name}</span>
+            <span style="color:var(--orange);font-weight:600">${parseFloat(o.price||0).toLocaleString('fr-FR')} F</span>
+          </div>`).join('')}
+          ${orders.length > 8 ? `<div style="font-size:11px;color:var(--muted);padding-top:4px;text-align:center">+ ${orders.length-8} autres commandes</div>` : ''}
+        </div>
+      </div>`;
   } catch(e) { console.error('loadConfirmedOrders:', e); }
 }
 

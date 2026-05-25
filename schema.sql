@@ -467,6 +467,22 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 
 -- ============================================
+-- TABLE : push_subscriptions
+-- Stocke les abonnements Web Push par utilisateur pour envoyer
+-- des notifications mobiles même quand l'app est fermée.
+-- ============================================
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id SERIAL PRIMARY KEY,
+  target_type VARCHAR(20) NOT NULL,
+  target_id INTEGER NOT NULL,
+  endpoint TEXT NOT NULL UNIQUE,
+  subscription JSONB NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_push_subs_target ON push_subscriptions(target_type, target_id);
+
+
+-- ============================================
 -- TABLE : ratings
 -- Permet aux employés d'évaluer les plats qu'ils ont commandés.
 -- La contrainte UNIQUE(user_id, menu_id, order_date) empêche

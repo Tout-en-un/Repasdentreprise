@@ -86,7 +86,11 @@
       "Bash(python3 -c ' *)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f'log {d[\\\\\"id\\\\\"]}: {d[\\\\\"status\\\\\"]}'\\)\")",
       "PowerShell(netstat *)",
-      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); print\\(f'{len\\(data\\)} factures trouvees'\\)\")"
+      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); print\\(f'{len\\(data\\)} factures trouvees'\\)\")",
+      "Bash(findstr /n \"created_at\\\\|createdAt\\\\|timestamp\" \"api\\\\index.js\"22)",
+      "Bash(pkill -f \"node.*index.js\")",
+      "Bash(node api/index.js)",
+      "Read(//tmp/**)"
     ]
   }
 }

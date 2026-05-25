@@ -212,20 +212,24 @@ function todayStr() { return new Date().toISOString().split('T')[0]; }
 // faire glisser une date d'un jour quand on parse une date sans heure (ex: "2024-01-15" → UTC minuit → la veille en local).
 function formatDate(d) {
   if (!d) return '—'; // Le tiret long signale visuellement une valeur absente, plus élégant que "null" ou vide
-  return new Date(d + (d.includes('T') ? '' : 'T12:00:00')).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' });
+  // Normalize PostgreSQL "YYYY-MM-DD HH:MM:SS" (space separator) to ISO "YYYY-MM-DDTHH:MM:SS"
+  const s = typeof d === 'string' ? d.trim().replace(' ', 'T') : d;
+  return new Date(s.includes('T') ? s : s + 'T12:00:00').toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' });
 }
 
 // Version avec l'heure en plus, pour les événements où la précision à la minute compte (commandes, messages).
 function formatDateTime(d) {
   if (!d) return '—';
-  return new Date(d).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+  const s = typeof d === 'string' ? d.trim().replace(' ', 'T') : d;
+  return new Date(s).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
 }
 
 // Affiche une durée relative humaine ("il y a 5 min") plutôt qu'une date brute.
 // C'est bien plus lisible pour les notifications ou les messages récents.
 // Au-delà d'un jour, on bascule sur la date exacte car "il y a 47h" devient difficile à situer.
 function timeAgo(d) {
-  const diff = Date.now() - new Date(d).getTime();
+  const s = d && typeof d === 'string' ? d.trim().replace(' ', 'T') : d;
+  const diff = Date.now() - new Date(s).getTime();
   const m = Math.floor(diff/60000);
   if (m < 1) return 'À l\'instant';
   if (m < 60) return `il y a ${m} min`;
@@ -804,7 +808,40 @@ function initServiceWorker() {
         }
       });
     });
+    // Attendre que le SW soit actif avant de s'abonner aux push
+    const sw = reg.active || reg.installing || reg.waiting;
+    if (sw && sw.state === 'activated') {
+      subscribeToPush(reg);
+    } else {
+      navigator.serviceWorker.ready.then(r => subscribeToPush(r));
+    }
   }).catch(() => {});
+}
+
+// Convertit une clé VAPID base64url en Uint8Array requis par l'API PushManager
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+// Abonne l'utilisateur connecté aux notifications push Web et envoie l'abonnement au serveur.
+// Ne fait rien si l'utilisateur n'est pas connecté, si le navigateur ne supporte pas PushManager,
+// ou si la permission est refusée — aucune erreur visible pour l'utilisateur dans ces cas.
+async function subscribeToPush(reg) {
+  if (!('PushManager' in window)) return;
+  if (!getToken()) return;
+  try {
+    const { key } = await apiFetch('/api/push/vapid-public-key');
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+    const subscription = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(key)
+    });
+    await apiFetch('/api/push/subscribe', { method: 'POST', body: { subscription } });
+  } catch (e) {}
 }
 
 function showUpdateBanner(reg) {

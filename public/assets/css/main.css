@@ -92,6 +92,7 @@ body { font-family: 'DM Sans', sans-serif; background: #F5EDE6; color: var(--tex
 /* ─── Pages ──────────────────────────────────────────── */
 .page { display: none; }
 .page.active { display: block; animation: pageIn .2s ease-out both; }
+#page-dashboard.active { animation: none; }
 @keyframes pageIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ─── Cards ──────────────────────────────────────────── */

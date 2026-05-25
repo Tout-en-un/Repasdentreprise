@@ -91,8 +91,8 @@ body { font-family: 'DM Sans', sans-serif; background: #F5EDE6; color: var(--tex
 
 /* ─── Pages ──────────────────────────────────────────── */
 .page { display: none; }
-.page.active { display: block; animation: pageIn .4s cubic-bezier(.34,1.56,.64,1) both; }
-@keyframes pageIn { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.page.active { display: block; animation: pageIn .2s ease-out both; }
+@keyframes pageIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ─── Cards ──────────────────────────────────────────── */
 .card { background: var(--cream); border-radius: 14px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; }

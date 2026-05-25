@@ -785,9 +785,11 @@ app.get('/api/restaurant/orders/export-pdf', restaurantAuth, async (req, res) =>
     res.setHeader('Content-Disposition', `attachment; filename="commandes_${from}_${to}.pdf"`);
     doc.pipe(res);
     doc.rect(0, 0, doc.page.width, 110).fill('#E85A2A');
-    doc.fillColor('#FFF8F3').fontSize(26).font('Helvetica-Bold').text('🍽 FoodChooseApp', 50, 30);
-    doc.fontSize(14).font('Helvetica').text(`Rapport des commandes du ${from} au ${to}`, 50, 60);
-    doc.fontSize(10).text(`Restaurant : ${req.user.name} | Généré le ${new Date().toLocaleDateString('fr-FR')}`, 50, 82);
+    let _hx = 50;
+    if (fs.existsSync(LOGO_PATH)) { try { doc.image(LOGO_PATH, 50, 18, { width: 55, height: 55 }); _hx = 115; } catch(e) {} }
+    doc.fillColor('#FFF8F3').fontSize(22).font('Helvetica-Bold').text('FoodChooseApp', _hx, 30);
+    doc.fontSize(14).font('Helvetica').text(`Rapport des commandes du ${from} au ${to}`, _hx, 56);
+    doc.fontSize(10).text(`Restaurant : ${req.user.name} | Généré le ${new Date().toLocaleDateString('fr-FR')}`, _hx, 78);
     let y = 135;
     const total = orders.rows.reduce((s, o) => s + parseFloat(o.price || 0), 0);
     doc.fillColor('#2C1810').fontSize(12).font('Helvetica-Bold').text(`${orders.rows.length} commandes — Total : ${total.toLocaleString()} FCFA`, 50, y);
@@ -887,6 +889,36 @@ app.post('/api/restaurant/invoices', restaurantAuth, async (req, res) => {
       [companyId, req.user.id, JSON.stringify(items || []), total_amount]
     );
     res.json({ success: true, invoiceId: inv.rows[0].id });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Update invoice (only if not sent yet)
+app.put('/api/restaurant/invoices/:id', restaurantAuth, async (req, res) => {
+  try {
+    const check = await pool.query('SELECT sent, status FROM invoices WHERE id=$1 AND restaurant_id=$2', [req.params.id, req.user.id]);
+    if (!check.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
+    if (check.rows[0].sent) return res.status(403).json({ error: 'Impossible de modifier une facture déjà envoyée' });
+    const { items, total_amount } = req.body;
+    const fields = [];
+    const vals = [];
+    let idx = 1;
+    if (items !== undefined) { fields.push(`items=$${idx++}`); vals.push(JSON.stringify(items)); }
+    if (total_amount !== undefined) { fields.push(`total_amount=$${idx++}`); vals.push(total_amount); }
+    if (!fields.length) return res.status(400).json({ error: 'Rien à modifier' });
+    vals.push(req.params.id, req.user.id);
+    const r = await pool.query(`UPDATE invoices SET ${fields.join(',')} WHERE id=$${idx} AND restaurant_id=$${idx+1} RETURNING *`, vals);
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Delete invoice (only if not confirmed)
+app.delete('/api/restaurant/invoices/:id', restaurantAuth, async (req, res) => {
+  try {
+    const check = await pool.query('SELECT status FROM invoices WHERE id=$1 AND restaurant_id=$2', [req.params.id, req.user.id]);
+    if (!check.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
+    if (check.rows[0].status === 'confirmed') return res.status(403).json({ error: 'Impossible de supprimer une facture confirmée' });
+    await pool.query('DELETE FROM invoices WHERE id=$1 AND restaurant_id=$2', [req.params.id, req.user.id]);
+    res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1072,8 +1104,9 @@ function renderWeeklyInvoicePdf(doc, inv_data, items) {
   ];
   y = pdfDrawTableHeader(doc, y, cols);
 
-  const packPrice = parseFloat(inv_data.total_amount || 0);
-  const packQty   = inv_data.min_order_qty || items.reduce((s, i) => s + (parseFloat(i.qty) || 0), 0) || 1;
+  const packUnitPrice = parseFloat(inv_data.pack_price || inv_data.total_amount || 0);
+  const packQty       = parseInt(inv_data.min_order_qty) || items.reduce((s, i) => s + (parseInt(i.qty) || 1), 0) || 1;
+  const packTotal     = parseFloat(inv_data.total_amount || packUnitPrice * packQty);
 
   if (inv_data.pack_name) {
     // Main pack row
@@ -1085,9 +1118,9 @@ function renderWeeklyInvoicePdf(doc, inv_data, items) {
     }
     const textY = rowH > 20 ? y + 8 : y;
     doc.fillColor(PDF_DARK).fontSize(9).font('Helvetica')
-      .text(String(packQty),                                   cols[1].x, textY, { width: cols[1].w, align: 'right' })
-      .text(`${packPrice.toLocaleString('fr-FR')} F`,          cols[2].x, textY, { width: cols[2].w, align: 'right' })
-      .text(`${packPrice.toLocaleString('fr-FR')} F`,          cols[3].x, textY, { width: cols[3].w, align: 'right' });
+      .text(String(packQty),                                       cols[1].x, textY, { width: cols[1].w, align: 'right' })
+      .text(`${packUnitPrice.toLocaleString('fr-FR')} F`,          cols[2].x, textY, { width: cols[2].w, align: 'right' })
+      .text(`${packTotal.toLocaleString('fr-FR')} F`,              cols[3].x, textY, { width: cols[3].w, align: 'right' });
     y += rowH + 4;
 
     // Detail rows
@@ -1125,7 +1158,7 @@ function renderWeeklyInvoicePdf(doc, inv_data, items) {
   y += 12;
   doc.rect(W - 210, y, 160, 38).fill(PDF_ORANGE);
   doc.fillColor(PDF_CREAM).fontSize(8).font('Helvetica').text('TOTAL TTC', W - 205, y + 6, { width: 150, align: 'right' });
-  doc.fontSize(15).font('Helvetica-Bold').text(`${packPrice.toLocaleString('fr-FR')} FCFA`, W - 205, y + 17, { width: 150, align: 'right' });
+  doc.fontSize(15).font('Helvetica-Bold').text(`${packTotal.toLocaleString('fr-FR')} FCFA`, W - 205, y + 17, { width: 150, align: 'right' });
 
   pdfDrawFooter(doc);
 }
@@ -1975,9 +2008,11 @@ app.get('/api/admin/orders/export-pdf', companyAuth, async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="commandes_${from}_${to}.pdf"`);
     doc.pipe(res);
     doc.rect(0, 0, doc.page.width, 110).fill('#E85A2A');
-    doc.fillColor('#FFF8F3').fontSize(26).font('Helvetica-Bold').text('🍽 FoodChooseApp', 50, 30);
-    doc.fontSize(14).font('Helvetica').text(`Commandes du ${from} au ${to}`, 50, 60);
-    doc.fontSize(10).text(`Entreprise : ${coName}`, 50, 82);
+    let _hx = 50;
+    if (fs.existsSync(LOGO_PATH)) { try { doc.image(LOGO_PATH, 50, 18, { width: 55, height: 55 }); _hx = 115; } catch(e) {} }
+    doc.fillColor('#FFF8F3').fontSize(22).font('Helvetica-Bold').text('FoodChooseApp', _hx, 30);
+    doc.fontSize(14).font('Helvetica').text(`Commandes du ${from} au ${to}`, _hx, 56);
+    doc.fontSize(10).text(`Entreprise : ${coName}`, _hx, 78);
     let y = 135;
     const total = orders.rows.reduce((s, o) => s + parseFloat(o.price || 0), 0);
     doc.fillColor('#2C1810').fontSize(12).font('Helvetica-Bold').text(`${orders.rows.length} commandes — ${total.toLocaleString()} FCFA`, 50, y);

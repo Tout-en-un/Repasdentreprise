@@ -800,6 +800,22 @@
   </div>
 </div>
 
+<!-- EDIT INVOICE MODAL -->
+<div class="modal-overlay" id="editInvoiceModal">
+  <div class="modal">
+    <div class="modal-title">✏️ Modifier la facture</div>
+    <div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Modifiez le montant total de la facture. Cette action n'est possible que tant que la facture n'a pas été envoyée.</div>
+    <div class="form-group">
+      <label class="form-label">Montant total (FCFA)</label>
+      <input type="number" id="editInvoiceAmount" class="form-control" min="0" step="1" placeholder="0">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('editInvoiceModal').classList.remove('open')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveEditInvoice()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- INVOICE MODAL -->
 <div class="modal-overlay" id="invoiceModal">
   <div class="modal">
@@ -1428,6 +1444,8 @@ async function loadInvoices() {
         <td style="white-space:nowrap">
           <button class="btn btn-outline btn-sm" onclick="downloadRestInvoice(${inv.id})" title="Télécharger PDF">⬇️ PDF</button>
           ${!inv.sent ? `<button class="btn btn-primary btn-sm" onclick="openInvoiceModal(${inv.id}, ${inv.company_id})">📤 Envoyer</button>` : ''}
+          ${!inv.sent ? `<button class="btn btn-outline btn-sm" onclick="openEditInvoiceModal(${inv.id}, ${inv.total_amount})" title="Modifier" style="padding:3px 8px">✏️</button>` : ''}
+          ${inv.status !== 'confirmed' ? `<button class="btn btn-outline btn-sm" onclick="cancelInvoice(${inv.id})" title="Annuler" style="padding:3px 8px;color:#DC2626;border-color:#DC2626">🗑️</button>` : ''}
         </td>
       </tr>`;
     }).join('');
@@ -1520,6 +1538,35 @@ async function sendInvoice() {
     await apiFetch(`/api/restaurant/invoices/${currentInvoiceId}/send`, { method: 'POST' }, token);
     toast('Facture envoyée!', 'success');
     document.getElementById('invoiceModal').classList.remove('open');
+    loadInvoices();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+let _editInvoiceId = null;
+function openEditInvoiceModal(id, currentAmount) {
+  _editInvoiceId = id;
+  document.getElementById('editInvoiceAmount').value = currentAmount || '';
+  document.getElementById('editInvoiceModal').classList.add('open');
+}
+
+async function saveEditInvoice() {
+  if (!_editInvoiceId) return;
+  const amount = parseFloat(document.getElementById('editInvoiceAmount').value);
+  if (!amount || amount <= 0) return toast('Montant invalide', 'error');
+  try {
+    await apiFetch(`/api/restaurant/invoices/${_editInvoiceId}`, { method: 'PUT', body: { total_amount: amount } }, token);
+    toast('Facture modifiée', 'success');
+    document.getElementById('editInvoiceModal').classList.remove('open');
+    _editInvoiceId = null;
+    loadInvoices();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function cancelInvoice(id) {
+  if (!confirm('Supprimer définitivement cette facture ?')) return;
+  try {
+    await apiFetch(`/api/restaurant/invoices/${id}`, { method: 'DELETE' }, token);
+    toast('Facture supprimée', 'success');
     loadInvoices();
   } catch(e) { toast(e.message, 'error'); }
 }
@@ -2376,6 +2423,9 @@ window.toggleMenu = toggleMenu;
 window.saveProfile = saveProfile;
 window.changeRestPassword = changeRestPassword;
 window.sendInvoice = sendInvoice;
+window.openEditInvoiceModal = openEditInvoiceModal;
+window.saveEditInvoice = saveEditInvoice;
+window.cancelInvoice = cancelInvoice;
 window.loadInvoices = loadInvoices;
 window.loadDashboard = loadDashboard;
 window.loadRatings = loadRatings;

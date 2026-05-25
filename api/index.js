@@ -34,11 +34,16 @@ cloudinary.config({
   secure: true
 });
 
-webpush.setVapidDetails(
-  `mailto:${process.env.ADMIN_EMAIL}`,
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
-);
+const VAPID_ENABLED = !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
+if (VAPID_ENABLED) {
+  webpush.setVapidDetails(
+    `mailto:${process.env.ADMIN_EMAIL || 'admin@foodchooseapp.com'}`,
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+} else {
+  console.warn('⚠️  VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY non définis — push notifications désactivées');
+}
 
 const app = express();
 const PORT = process.env.PORT || 3050;
@@ -419,6 +424,7 @@ function welcomeEmailHtml(name, extra = '') {
 const PUSH_URL_BY_ROLE = { restaurant: '/restaurant/dashboard', company: '/company/admin', admin: '/admin', employee: '/employee' };
 
 async function sendPushToUser(targetType, targetId, payload) {
+  if (!VAPID_ENABLED) return;
   try {
     const subs = await pool.query(
       'SELECT id, endpoint, subscription FROM push_subscriptions WHERE target_type=$1 AND target_id=$2',
@@ -426,7 +432,6 @@ async function sendPushToUser(targetType, targetId, payload) {
     );
     for (const row of subs.rows) {
       webpush.sendNotification(row.subscription, JSON.stringify(payload)).catch(async err => {
-        // 410 Gone ou 404 = abonnement expiré, on le supprime
         if (err.statusCode === 410 || err.statusCode === 404) {
           await pool.query('DELETE FROM push_subscriptions WHERE id=$1', [row.id]);
         }
@@ -1646,6 +1651,7 @@ app.get('/api/super-admin/weekly-invoices', adminAuth, async (req, res) => {
 //  PUSH NOTIFICATIONS
 // ════════════════════════════════════════════════════════════════
 app.get('/api/push/vapid-public-key', (req, res) => {
+  if (!VAPID_ENABLED) return res.status(503).json({ error: 'Push notifications non configurées' });
   res.json({ key: process.env.VAPID_PUBLIC_KEY });
 });
 

@@ -108,7 +108,8 @@
       "PowerShell($lines = Get-Content \"F:\\\\All projects\\\\repasapp\\\\foodchooseapp\\\\public\\\\restaurant\\\\dashboard.html\" -Encoding UTF8; $i = 0; $results = @\\(\\); foreach \\($line in $lines\\) { $i++; if \\($line -match 'apiFetch'\\) { $results += \"${i}: $\\($line.Trim\\(\\).Substring\\(0,[Math]::Min\\(110,$line.Trim\\(\\).Length\\)\\)\\)\" } }; $results | Out-String)",
       "PowerShell(Get-Content \"F:\\\\All projects\\\\repasapp\\\\foodchooseapp\\\\.env\" -Encoding UTF8 | Where-Object { $_ -match \"JWT|SECRET|TOKEN\" })",
       "Bash(ls *)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(git checkout *)"
     ]
   }
 }

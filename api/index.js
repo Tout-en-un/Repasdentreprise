@@ -631,6 +631,55 @@ app.post('/api/auth/company/register', async (req, res) => {
   }
 });
 
+// Login entreprise (endpoint dédié pour company/login.html)
+app.post('/api/auth/company/login', async (req, res) => {
+  const email    = (req.body.identifier || req.body.email || '').trim();
+  const password = req.body.password;
+  if (!email || !password) return res.status(400).json({ error: 'Email et mot de passe requis' });
+  try {
+    const co = await pool.query('SELECT * FROM companies WHERE email=$1', [email]);
+    if (!co.rows.length || !(await bcrypt.compare(password, co.rows[0].password_hash)))
+      return res.status(401).json({ error: 'Identifiants incorrects' });
+    const c = co.rows[0];
+    const token = jwt.sign({ id: c.id, role: 'company', name: c.name }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, role: 'company', id: c.id, name: c.name });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Login restaurant (endpoint dédié pour cohérence)
+app.post('/api/auth/restaurant/login', async (req, res) => {
+  const email    = (req.body.identifier || req.body.email || '').trim();
+  const password = req.body.password;
+  if (!email || !password) return res.status(400).json({ error: 'Email et mot de passe requis' });
+  try {
+    const rest = await pool.query('SELECT * FROM restaurants WHERE email=$1', [email]);
+    if (!rest.rows.length || !(await bcrypt.compare(password, rest.rows[0].password_hash)))
+      return res.status(401).json({ error: 'Identifiants incorrects' });
+    const r = rest.rows[0];
+    const token = jwt.sign({ id: r.id, role: 'restaurant', name: r.name }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, role: 'restaurant', id: r.id, name: r.name });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Login employé (endpoint dédié)
+app.post('/api/auth/employee/login', async (req, res) => {
+  const identifier = (req.body.identifier || req.body.email || '').trim();
+  const password   = req.body.password;
+  if (!identifier || !password) return res.status(400).json({ error: 'Identifiant et mot de passe requis' });
+  try {
+    const byEmail = await pool.query('SELECT * FROM users WHERE email=$1', [identifier]);
+    let u = byEmail.rows[0];
+    if (!u) {
+      const byId = await pool.query('SELECT * FROM users WHERE LOWER(employee_id)=LOWER($1)', [identifier]);
+      u = byId.rows[0];
+    }
+    if (!u || !(await bcrypt.compare(password, u.password_hash)))
+      return res.status(401).json({ error: 'Identifiants incorrects' });
+    const token = jwt.sign({ id: u.id, role: 'employee', employeeId: u.employee_id, name: `${u.first_name} ${u.last_name}`, companyId: u.company_id }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, role: 'employee', name: `${u.first_name} ${u.last_name}`, employeeId: u.employee_id, companyId: u.company_id });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Unified login — auto-détecte le rôle, accepte email ou identifiant employé
 app.post('/api/auth/login', async (req, res) => {
   const identifier = (req.body.identifier || req.body.email || '').trim();
@@ -680,8 +729,10 @@ app.post('/api/auth/login', async (req, res) => {
 //  RESTAURANT ROUTES
 // ════════════════════════════════════════════════════════════════
 app.get('/api/restaurant/profile', restaurantAuth, async (req, res) => {
-  const r = await pool.query('SELECT id,name,address,location,email,phone,payment_types,specialties,photo_url,created_at FROM restaurants WHERE id=$1', [req.user.id]);
-  res.json(r.rows[0]);
+  try {
+    const r = await pool.query('SELECT id,name,address,location,email,phone,payment_types,specialties,photo_url,created_at FROM restaurants WHERE id=$1', [req.user.id]);
+    res.json(r.rows[0] || {});
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.put('/api/restaurant/profile', restaurantAuth, async (req, res) => {
@@ -780,8 +831,10 @@ app.get('/api/employee/subsidy-balance', employeeAuth, async (req, res) => {
 
 // Menus
 app.get('/api/restaurant/menus', restaurantAuth, async (req, res) => {
-  const r = await pool.query('SELECT * FROM menus WHERE restaurant_id=$1 AND deleted_at IS NULL ORDER BY category,name', [req.user.id]);
-  res.json(r.rows);
+  try {
+    const r = await pool.query('SELECT * FROM menus WHERE restaurant_id=$1 AND deleted_at IS NULL ORDER BY category,name', [req.user.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/restaurant/menus', restaurantAuth, async (req, res) => {
@@ -834,9 +887,13 @@ app.put('/api/restaurant/menus/:id/toggle', restaurantAuth, async (req, res) => 
 });
 
 app.delete('/api/restaurant/menus/:id', restaurantAuth, async (req, res) => {
-  const r = await pool.query('UPDATE menus SET deleted_at=NOW() WHERE id=$1 AND restaurant_id=$2 AND deleted_at IS NULL RETURNING id', [req.params.id, req.user.id]);
-  if (!r.rows.length) return res.status(404).json({ error: 'Menu introuvable' });
-  res.json({ message: 'Menu déplacé dans la corbeille' });
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
+    const r = await pool.query('UPDATE menus SET deleted_at=NOW() WHERE id=$1 AND restaurant_id=$2 AND deleted_at IS NULL RETURNING id', [id, req.user.id]);
+    if (!r.rows.length) return res.status(404).json({ error: 'Menu introuvable' });
+    res.json({ message: 'Menu déplacé dans la corbeille' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // Restaurant orders
@@ -913,14 +970,16 @@ app.get('/api/restaurant/orders', restaurantAuth, async (req, res) => {
 
 // Get list of companies for restaurant to filter by
 app.get('/api/restaurant/companies', restaurantAuth, async (req, res) => {
-  const r = await pool.query(`
-    SELECT DISTINCT c.id, c.name
-    FROM companies c
-    JOIN affiliations a ON a.company_id = c.id
-    WHERE a.restaurant_id = $1
-    ORDER BY c.name
-  `, [req.user.id]);
-  res.json(r.rows);
+  try {
+    const r = await pool.query(`
+      SELECT DISTINCT c.id, c.name
+      FROM companies c
+      JOIN affiliations a ON a.company_id = c.id
+      WHERE a.restaurant_id = $1
+      ORDER BY c.name
+    `, [req.user.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // Export orders PDF for restaurant (with date range and optional company filter)
@@ -1420,12 +1479,14 @@ app.get('/api/restaurant/stats', restaurantAuth, async (req, res) => {
 });
 
 app.get('/api/restaurant/ratings', restaurantAuth, async (req, res) => {
-  const r = await pool.query(`
-    SELECT r.*,u.first_name,u.last_name,m.name AS menu_name
-    FROM ratings r JOIN users u ON r.user_id=u.id JOIN menus m ON r.menu_id=m.id
-    WHERE r.restaurant_id=$1 ORDER BY r.created_at DESC LIMIT 50
-  `, [req.user.id]);
-  res.json(r.rows);
+  try {
+    const r = await pool.query(`
+      SELECT r.*,u.first_name,u.last_name,m.name AS menu_name
+      FROM ratings r JOIN users u ON r.user_id=u.id JOIN menus m ON r.menu_id=m.id
+      WHERE r.restaurant_id=$1 ORDER BY r.created_at DESC LIMIT 50
+    `, [req.user.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/restaurant/export-pdf', restaurantAuth, async (req, res) => {
@@ -2170,9 +2231,13 @@ app.get('/api/notifications', async (req, res) => {
   } catch { res.json([]); }
 });
 
-app.put('/api/notifications/:id/read', async (req, res) => {
-  await pool.query('UPDATE notifications SET read=TRUE WHERE id=$1', [req.params.id]);
-  res.json({ ok: true });
+app.put('/api/notifications/:id/read', anyAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
+    await pool.query('UPDATE notifications SET read=TRUE WHERE id=$1', [id]);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.put('/api/notifications/read-all', async (req, res) => {
@@ -2275,21 +2340,29 @@ app.get('/api/messages/unread-count', async (req, res) => {
 //  ADMIN ROUTES
 // ════════════════════════════════════════════════════════════════
 app.get('/api/admin/all-restaurants', companyAuth, async (req, res) => {
-  const companyId = req.user.id;
-  const r = await pool.query(`
-    SELECT r.id, r.name, r.address, r.location, r.phone, r.specialties, r.photo_url,
-    EXISTS(SELECT 1 FROM affiliations a WHERE a.company_id=$1 AND a.restaurant_id=r.id) AS affiliated,
-    (SELECT COUNT(*) FROM menus m WHERE m.restaurant_id=r.id AND m.available=TRUE) AS menu_count
-    FROM restaurants r ORDER BY r.name
-  `, [companyId]);
-  res.json(r.rows);
+  try {
+    const companyId = req.user.id;
+    const r = await pool.query(`
+      SELECT r.id, r.name, r.address, r.location, r.phone, r.specialties, r.photo_url,
+      EXISTS(SELECT 1 FROM affiliations a WHERE a.company_id=$1 AND a.restaurant_id=r.id) AS affiliated,
+      (SELECT COUNT(*) FROM menus m WHERE m.restaurant_id=r.id AND m.available=TRUE) AS menu_count
+      FROM restaurants r ORDER BY r.name
+    `, [companyId]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/admin/restaurants/:id/menus', companyAuth, async (req, res) => {
-  const r = await pool.query('SELECT * FROM menus WHERE restaurant_id=$1 AND available=TRUE AND deleted_at IS NULL ORDER BY category,name', [req.params.id]);
-  const rest = await pool.query('SELECT name,address,specialties,photo_url FROM restaurants WHERE id=$1', [req.params.id]);
-  if (!rest.rows.length) return res.status(404).json({ error: 'Restaurant introuvable' });
-  res.json({ restaurant: rest.rows[0], menus: r.rows });
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
+    const [r, rest] = await Promise.all([
+      pool.query('SELECT * FROM menus WHERE restaurant_id=$1 AND available=TRUE AND deleted_at IS NULL ORDER BY category,name', [id]),
+      pool.query('SELECT name,address,specialties,photo_url FROM restaurants WHERE id=$1', [id])
+    ]);
+    if (!rest.rows.length) return res.status(404).json({ error: 'Restaurant introuvable' });
+    res.json({ restaurant: rest.rows[0], menus: r.rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/admin/affiliations', companyAuth, async (req, res) => {
@@ -2307,26 +2380,32 @@ app.post('/api/admin/affiliations', companyAuth, async (req, res) => {
 });
 
 app.delete('/api/admin/affiliations/:restaurantId', companyAuth, async (req, res) => {
-  const companyId = req.user.id;
-  await pool.query('DELETE FROM affiliations WHERE company_id=$1 AND restaurant_id=$2', [companyId, req.params.restaurantId]);
-  res.json({ message: 'Affiliation supprimée' });
+  try {
+    const restaurantId = parseInt(req.params.restaurantId, 10);
+    if (isNaN(restaurantId)) return res.status(400).json({ error: 'ID invalide' });
+    await pool.query('DELETE FROM affiliations WHERE company_id=$1 AND restaurant_id=$2', [req.user.id, restaurantId]);
+    res.json({ message: 'Affiliation supprimée' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/admin/affiliations', companyAuth, async (req, res) => {
-  const companyId = req.user.id;
-  const r = await pool.query(`
-    SELECT r.id,r.name,r.address,r.specialties,r.photo_url,a.created_at AS affiliated_at,
-    (SELECT COUNT(*) FROM menus m WHERE m.restaurant_id=r.id AND m.available=TRUE) AS menu_count
-    FROM affiliations a JOIN restaurants r ON a.restaurant_id=r.id
-    WHERE a.company_id=$1 ORDER BY r.name
-  `, [companyId]);
-  res.json(r.rows);
+  try {
+    const companyId = req.user.id;
+    const r = await pool.query(`
+      SELECT r.id,r.name,r.address,r.specialties,r.photo_url,a.created_at AS affiliated_at,
+      (SELECT COUNT(*) FROM menus m WHERE m.restaurant_id=r.id AND m.available=TRUE) AS menu_count
+      FROM affiliations a JOIN restaurants r ON a.restaurant_id=r.id
+      WHERE a.company_id=$1 ORDER BY r.name
+    `, [companyId]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/admin/employees', companyAuth, async (req, res) => {
-  const companyId = req.user.id;
-  const r = await pool.query('SELECT id,employee_id,first_name,last_name,email,drink_preference,photo_url,created_at FROM users WHERE company_id=$1 ORDER BY last_name', [companyId]);
-  res.json(r.rows);
+  try {
+    const r = await pool.query('SELECT id,employee_id,first_name,last_name,email,drink_preference,photo_url,created_at FROM users WHERE company_id=$1 ORDER BY last_name', [req.user.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/admin/employees', companyAuth, async (req, res) => {

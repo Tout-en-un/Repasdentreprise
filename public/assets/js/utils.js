@@ -38,7 +38,7 @@ async function apiFetch(url, opts = {}, tok = null) {
     // Session expirée ou token invalide → nettoyer et rediriger vers login
     const role = localStorage.getItem('fc_role');
     localStorage.clear();
-    const loginMap = { restaurant: '/restaurant/login', company: '/company/login', employee: '/employee/login', admin: '/admin/login' };
+    const loginMap = { restaurant: '/restaurant/login', company: '/company/login', employee: '/login', admin: '/admin' };
     toast('Session expirée. Reconnectez-vous.', 'error');
     setTimeout(() => { window.location.href = loginMap[role] || '/'; }, 1500);
     throw new Error('Session expirée');

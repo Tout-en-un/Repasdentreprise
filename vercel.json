@@ -3,20 +3,9 @@
   "functions": {
     "api/index.js": { "maxDuration": 30 }
   },
-  "outputDirectory": "public",
-  "cleanUrls": true,
-  "trailingSlash": false,
   "rewrites": [
-    { "source": "/api/:path*",           "destination": "/api/index.js" },
-    { "source": "/employee",             "destination": "/employee/index.html" },
-    { "source": "/admin",                "destination": "/admin/index.html" },
-    { "source": "/restaurant/dashboard", "destination": "/restaurant/dashboard.html" },
-    { "source": "/restaurant/login",     "destination": "/restaurant/login.html" },
-    { "source": "/restaurant/register",  "destination": "/restaurant/register.html" },
-    { "source": "/company/admin",        "destination": "/company/admin.html" },
-    { "source": "/company/login",        "destination": "/company/login.html" },
-    { "source": "/company/register",     "destination": "/company/register.html" },
-    { "source": "/employee/login",       "destination": "/employee/login.html" }
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
+    { "source": "/(.*)",     "destination": "/api/index.js" }
   ],
   "headers": [
     {

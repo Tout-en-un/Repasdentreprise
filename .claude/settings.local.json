@@ -109,7 +109,9 @@
       "PowerShell(Get-Content \"F:\\\\All projects\\\\repasapp\\\\foodchooseapp\\\\.env\" -Encoding UTF8 | Where-Object { $_ -match \"JWT|SECRET|TOKEN\" })",
       "Bash(ls *)",
       "Bash(grep *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(npx vercel *)",
+      "Bash(npm run *)"
     ]
   }
 }

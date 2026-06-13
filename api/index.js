@@ -1101,12 +1101,12 @@ const PDF_CREAM  = '#FFF8F3';
 const PDF_LIGHT  = '#FFF0E8';
 const PDF_MUTED  = '#8B6554';
 const PDF_BROWN  = '#4A3728';
-// PDFKit ne gère pas le U+00A0 (espace insécable) produit par toLocaleString('fr-FR')
-// → remplacé par un espace normal pour éviter l'affichage "1 /500"
+// Node.js moderne utilise U+202F (code 8239) comme séparateur de milliers fr-FR
+// → on formate manuellement avec un espace normal (U+0020) pour PDFKit
 function fmtP(value) {
-  return Math.round(parseFloat(value) || 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 }).replace(/ /g, ' ');
+  const n = Math.round(parseFloat(value) || 0);
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
-function pdfDrawHeader(doc, title, invNumber, invDate, fromDate, toDate) {
   const W = doc.page.width;
   doc.rect(0, 0, W, 130).fill(PDF_ORANGE);
   let textX = 50;

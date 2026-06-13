@@ -4,12 +4,12 @@
 
 // ─── Formatage monétaire ──────────────────────────────────────────
 // Le FCFA est une monnaie entière : pas de centimes.
-// fmtCFA() arrondit toujours à l'entier le plus proche avant d'afficher.
+// formate manuellement avec un espace normal (U+0020) — toLocaleString(fr-FR) produit U+202F.
 function fmtCFA(v) {
-  return Math.round(parseFloat(v) || 0)
-    .toLocaleString('fr-FR', { maximumFractionDigits: 0 })
-    .replace(/ /g, ' ');
+  const n = Math.round(parseFloat(v) || 0);
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
+
 
 // L'API est sur le même domaine, donc une chaîne vide suffit comme base URL.
 // Si un jour on déplace l'API ailleurs, on n'a qu'un seul endroit à modifier.

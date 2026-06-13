@@ -113,6 +113,21 @@ app.get('/api/migrate', async (req, res) => {
 });
 
 const PUBLIC_DIR = path.join(__dirname, '../public');
+
+// Fichiers PWA servis sans auth avant tout middleware
+app.get('/manifest.json', (_req, res) => {
+  res.setHeader('Content-Type', 'application/manifest+json');
+  res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.sendFile(path.join(PUBLIC_DIR, 'manifest.json'));
+});
+app.get('/sw.js', (_req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.sendFile(path.join(PUBLIC_DIR, 'sw.js'));
+});
+
 app.use(express.static(PUBLIC_DIR));
 
 // ─── DB ──────────────────────────────────────────────────────────
@@ -1107,6 +1122,8 @@ function fmtP(value) {
   const n = Math.round(parseFloat(value) || 0);
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
+
+function pdfDrawHeader(doc, title, invNumber, invDate, fromDate, toDate) {
   const W = doc.page.width;
   doc.rect(0, 0, W, 130).fill(PDF_ORANGE);
   let textX = 50;
@@ -2011,6 +2028,27 @@ app.post('/api/restaurant/weekly-invoices/compile', restaurantAuth, async (req, 
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/company/weekly-invoices/:id — détail d'une facture hebdo pour l'entreprise
+app.get('/api/company/weekly-invoices/:id', companyAuth, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
+  try {
+    const r = await pool.query(
+      `SELECT wi.*, r.name AS restaurant_name, r.address AS restaurant_address, r.phone AS restaurant_phone,
+              c.name AS company_name, c.address AS company_address,
+              wp.name AS pack_name
+       FROM weekly_invoices wi
+       LEFT JOIN restaurants r ON wi.restaurant_id = r.id
+       LEFT JOIN companies c   ON wi.company_id    = c.id
+       LEFT JOIN weekly_packs wp ON wi.weekly_pack_id = wp.id
+       WHERE wi.id=$1 AND wi.company_id=$2 AND wi.deleted_at IS NULL`,
+      [id, req.user.id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
+    res.json(r.rows[0]);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // PUT /api/company/weekly-invoices/:id/confirm — entreprise confirme une facture hebdo
 app.put('/api/company/weekly-invoices/:id/confirm', companyAuth, async (req, res) => {
   try {
@@ -2668,7 +2706,8 @@ app.get('/api/admin/invoices-history', companyAuth, async (req, res) => {
       WHERE wi.company_id=$1`;
     if (from) { classicQ += ` AND i.created_at>=$${params.length+1}`; hebdoQ += ` AND wi.created_at>=$${params.length+1}`; params.push(from); }
     if (to)   { classicQ += ` AND i.created_at<=$${params.length+1}::date+interval '1 day'`; hebdoQ += ` AND wi.created_at<=$${params.length+1}::date+interval '1 day'`; params.push(to); }
-    if (restaurant_id) { classicQ += ` AND i.restaurant_id=$${params.length+1}`; hebdoQ += ` AND wi.restaurant_id=$${params.length+1}`; params.push(restaurant_id); }
+    const rid = restaurant_id && restaurant_id !== 'undefined' ? parseInt(restaurant_id, 10) : NaN;
+    if (!isNaN(rid)) { classicQ += ` AND i.restaurant_id=$${params.length+1}`; hebdoQ += ` AND wi.restaurant_id=$${params.length+1}`; params.push(rid); }
     const [classic, hebdo] = await Promise.all([
       pool.query(classicQ + ' ORDER BY i.created_at DESC', params),
       pool.query(hebdoQ + ' ORDER BY wi.created_at DESC', params)

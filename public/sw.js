@@ -1,5 +1,5 @@
 /* ═══ FoodChooseApp Service Worker ═══ */
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const STATIC_CACHE  = 'fca-static-'  + CACHE_VERSION;
 const PAGES_CACHE   = 'fca-pages-'   + CACHE_VERSION;
 const API_CACHE     = 'fca-api-'     + CACHE_VERSION;
@@ -65,9 +65,10 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(request)
         .then(r => {
-          // Mettre en cache les réponses GET de lecture
           if (r.ok && isReadableAPI(url.pathname)) {
-            caches.open(API_CACHE).then(c => c.put(request, r.clone()));
+            // Cloner IMMÉDIATEMENT avant tout .then() asynchrone
+            const clone = r.clone();
+            caches.open(API_CACHE).then(c => c.put(request, clone));
           }
           return r;
         })
@@ -88,14 +89,18 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       caches.match(request).then(cached => {
         if (cached) {
-          // Revalidation en arrière-plan (stale-while-revalidate)
+          // Revalidation en arrière-plan — fresh n'est pas retourné, pas besoin de clone
           fetch(request).then(fresh => {
             if (fresh.ok) caches.open(STATIC_CACHE).then(c => c.put(request, fresh));
           }).catch(() => {});
           return cached;
         }
         return fetch(request).then(fresh => {
-          if (fresh.ok) caches.open(STATIC_CACHE).then(c => c.put(request, fresh.clone()));
+          if (fresh.ok) {
+            // Cloner IMMÉDIATEMENT avant return fresh
+            const clone = fresh.clone();
+            caches.open(STATIC_CACHE).then(c => c.put(request, clone));
+          }
           return fresh;
         });
       })
@@ -107,7 +112,11 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     fetch(request)
       .then(r => {
-        if (r.ok) caches.open(PAGES_CACHE).then(c => c.put(request, r.clone()));
+        if (r.ok) {
+          // Cloner IMMÉDIATEMENT avant return r
+          const clone = r.clone();
+          caches.open(PAGES_CACHE).then(c => c.put(request, clone));
+        }
         return r;
       })
       .catch(() =>

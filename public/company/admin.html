@@ -17,7 +17,7 @@
   <style>
     html{scroll-behavior:smooth}
     .scroll-progress{position:fixed;top:0;left:0;width:0%;height:3px;background:linear-gradient(90deg,#E85A2A,#F9C74F);z-index:9999;transition:width .08s linear;border-radius:0 2px 2px 0;pointer-events:none}
-    .back-top-btn{position:fixed;bottom:24px;right:20px;width:40px;height:40px;background:rgba(232,90,42,.85);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:150;opacity:0;transform:translateY(12px);transition:all .3s;backdrop-filter:blur(4px)}
+    .back-top-btn{position:fixed;bottom:24px;right:20px;width:40px;height:40px;background:rgba(232,90,42,.85);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:150;opacity:0;backdrop-filter:blur(4px)}
     .back-top-btn.show{opacity:1;transform:translateY(0)}
     .back-top-btn:hover{background:#E85A2A;transform:translateY(-3px) scale(1.08)}
     .back-top-btn svg{width:17px;height:17px;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
@@ -48,12 +48,14 @@
     <div class="nav-item" data-page="orders"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><span>Commandes du jour</span></div>
     <div class="nav-item" data-page="validate"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span>Valider &amp; Exporter</span></div>
     <div class="nav-item" data-page="invoices"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><span>Factures</span></div>
+    <div class="nav-item" data-page="invoices-history"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>Historique factures</span></div>
     <div class="nav-section">Gestion</div>
     <div class="nav-item" data-page="employees"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span>Employés</span></div>
     <div class="nav-item" data-page="expenses"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span>Dépenses</span></div>
     <div class="nav-item" data-page="history"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><polyline points="12 7 12 12 15 15"/></svg></span><span>Historique</span></div>
     <div class="nav-section">Compte</div>
     <div class="nav-item" data-page="settings"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg></span><span>Paramètres</span></div>
+    <div class="nav-item" data-page="trash"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></span><span>Corbeille</span><span class="nav-badge" id="coTrashBadge" style="display:none">0</span></div>
     <div class="nav-item" data-page="help"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>Documentation</span></div>
     <button class="nav-item-logout" onclick="logout()"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span><span>Déconnexion</span></button>
   </nav>
@@ -130,15 +132,6 @@
         <div class="rest-grid" id="myAffGrid"></div>
       </div>
     </div>
-    <div class="card reveal" style="margin-top:16px">
-      <div class="card-header">
-        <span class="card-title">📝 Contrats d'affiliation</span>
-        <button class="btn btn-outline btn-sm" onclick="loadCoAffiliationContracts()">🔄</button>
-      </div>
-      <div class="card-body" id="coAffiliationContractsBody">
-        <div style="text-align:center;padding:24px;color:var(--muted)">Chargement…</div>
-      </div>
-    </div>
   </div>
 
   <!-- ═══ WEEKLY MENUS ═══ -->
@@ -149,12 +142,30 @@
         <div class="tab-bar">
           <button class="tab-btn active" id="tabPacks" onclick="switchWeeklyTab('packs')">Packs disponibles</button>
           <button class="tab-btn" id="tabOrders" onclick="switchWeeklyTab('orders')">Mes abonnements</button>
+          <button class="tab-btn" id="tabAvis" onclick="switchWeeklyTab('avis')">⭐ Avis Prog Hebdo</button>
         </div>
         <div id="weeklyPacksPanel">
           <div id="packsGrid"></div>
         </div>
         <div id="weeklyOrdersPanel" style="display:none">
           <div id="ordersGrid"></div>
+        </div>
+        <!-- ── Avis Programme Hebdomadaire ── -->
+        <div id="weeklyAvisPanel" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:flex-end;margin-bottom:14px;flex-wrap:wrap">
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Semaine (lundi)</label>
+              <input type="date" class="form-control" id="avisWeekStart" style="font-size:13px" oninput="loadAvisHebdo()">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Restaurant</label>
+              <select class="form-control" id="avisRestaurantFilter" style="font-size:13px" onchange="loadAvisHebdo()">
+                <option value="">Tous les restaurants</option>
+              </select>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="loadAvisHebdo()" style="margin-bottom:1px">🔄</button>
+          </div>
+          <div id="avisHebdoGrid"></div>
         </div>
       </div>
     </div>
@@ -246,29 +257,63 @@
   <!-- ═══ INVOICES ═══ -->
   <div class="page" id="page-invoices">
     <div class="card">
-      <div class="card-header">
-        <span class="card-title">🧾 Factures reçues</span>
-        <button class="btn btn-outline btn-sm" onclick="loadInvoices()">🔄</button>
-      </div>
-      <div class="card-body">
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
-          <div>
-            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Du (jj/mm/aa)</label>
-            <input type="date" class="form-control" id="invFilterFrom" style="padding:6px 10px;font-size:13px" oninput="loadInvoices()">
-          </div>
-          <div>
-            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Au (jj/mm/aa)</label>
-            <input type="date" class="form-control" id="invFilterTo" style="padding:6px 10px;font-size:13px" oninput="loadInvoices()">
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="document.getElementById('invFilterFrom').value='';document.getElementById('invFilterTo').value='';loadInvoices()" style="margin-bottom:1px">✕ Réinitialiser</button>
+      <div class="card-body" style="padding-top:8px">
+        <div class="tab-bar" style="margin-bottom:14px">
+          <button class="tab-btn active" id="invTab1" onclick="switchInvTab('classic')">🧾 Factures classiques</button>
+          <button class="tab-btn" id="invTab2" onclick="switchInvTab('weekly')">📅 Factures hebdomadaires</button>
         </div>
-        <div id="invoicesSummary"></div>
-        <div class="table-wrap scroll-box">
-          <table>
-            <thead><tr><th>N°</th><th>Restaurant</th><th>Date</th><th>Montant</th><th>Statut</th><th>Actions</th></tr></thead>
-            <tbody id="invoicesBody"></tbody>
-          </table>
+
+        <!-- Factures classiques -->
+        <div id="invPanelClassic">
+          <div class="card-header" style="padding:0 0 10px 0;border-bottom:none">
+            <span class="card-title">🧾 Factures reçues</span>
+            <button class="btn btn-outline btn-sm" onclick="loadInvoices()">🔄</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Du</label>
+              <input type="date" class="form-control" id="invFilterFrom" style="padding:6px 10px;font-size:13px" oninput="loadInvoices()">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Au</label>
+              <input type="date" class="form-control" id="invFilterTo" style="padding:6px 10px;font-size:13px" oninput="loadInvoices()">
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('invFilterFrom').value='';document.getElementById('invFilterTo').value='';loadInvoices()" style="margin-bottom:1px">✕ Réinitialiser</button>
+          </div>
+          <div id="invoicesSummary"></div>
+          <div class="table-wrap scroll-box">
+            <table>
+              <thead><tr><th>N°</th><th>Restaurant</th><th>Date</th><th>Montant</th><th>Statut</th><th>Actions</th></tr></thead>
+              <tbody id="invoicesBody"></tbody>
+            </table>
+          </div>
         </div>
+
+        <!-- Factures hebdomadaires -->
+        <div id="invPanelWeekly" style="display:none">
+          <div class="card-header" style="padding:0 0 10px 0;border-bottom:none">
+            <span class="card-title">📅 Factures hebdomadaires</span>
+            <button class="btn btn-outline btn-sm" onclick="loadWeeklyInvoicesCo()">🔄</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Du</label>
+              <input type="date" class="form-control" id="wiCoFilterFrom" style="padding:6px 10px;font-size:13px" oninput="loadWeeklyInvoicesCo()">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Au</label>
+              <input type="date" class="form-control" id="wiCoFilterTo" style="padding:6px 10px;font-size:13px" oninput="loadWeeklyInvoicesCo()">
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('wiCoFilterFrom').value='';document.getElementById('wiCoFilterTo').value='';loadWeeklyInvoicesCo()" style="margin-bottom:1px">✕ Réinitialiser</button>
+          </div>
+          <div class="table-wrap scroll-box">
+            <table>
+              <thead><tr><th>N°</th><th>Restaurant</th><th>Période</th><th>Type</th><th>Montant</th><th>Statut</th><th>Mobile Money</th><th>Actions</th></tr></thead>
+              <tbody id="wiCoTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -349,6 +394,7 @@
           </div>
           <input class="form-control" id="histEmpId" placeholder="ID employé" style="width:130px;font-size:13px;align-self:flex-end">
           <button class="btn btn-primary btn-sm" style="align-self:flex-end" onclick="loadHistory()">🔍 Rechercher</button>
+          <button class="btn btn-outline btn-sm" style="align-self:flex-end;color:#92400E;border-color:#FCD34D" onclick="clearCompanyHistory()" title="Vider tout l'historique">🗑 Vider</button>
         </div>
       </div>
       <div class="card-body" style="padding:0">
@@ -434,6 +480,138 @@
           <button class="btn btn-primary" style="width:100%" onclick="changeCompanyPassword()">🔐 Mettre à jour</button>
         </div>
       </div>
+
+      <!-- SUBVENTIONS -->
+      <div class="card reveal" style="grid-column:1/-1">
+        <div class="card-header">
+          <span class="card-title">🎁 Subventions alimentaires</span>
+          <div id="subsidyActiveBadge" style="display:none;padding:3px 12px;background:#D1FAE5;color:#065F46;border-radius:20px;font-size:12px;font-weight:700">✓ Active</div>
+        </div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+            Offrez à vos employés une allocation quotidienne ou mensuelle pour leurs repas. Si le montant commandé dépasse l'allocation, l'employé prend en charge le surplus.
+          </p>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding:12px;background:#F9F1EB;border-radius:10px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:600;color:var(--brown)">
+              <div id="subsidyToggleWrap" style="position:relative;width:44px;height:24px;cursor:pointer" onclick="toggleSubsidy()">
+                <div id="subsidyToggleBg" style="position:absolute;inset:0;border-radius:12px;background:#D1D5DB;transition:background .2s"></div>
+                <div id="subsidyToggleDot" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:white;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .2s"></div>
+              </div>
+              Activer les subventions
+            </label>
+          </div>
+          <div id="subsidyFields" style="display:none">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+              <div class="form-group" style="margin-bottom:0">
+                <label style="font-size:12px">Allocation nourriture (FCFA)</label>
+                <input type="number" class="form-control" id="subsidyFood" min="0" step="100" placeholder="Ex: 2000">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label style="font-size:12px">Allocation boissons (FCFA)</label>
+                <input type="number" class="form-control" id="subsidyDrink" min="0" step="100" placeholder="Ex: 500">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label style="font-size:12px">Période</label>
+                <select class="form-control" id="subsidyPeriod">
+                  <option value="daily">Par jour</option>
+                  <option value="monthly">Par mois</option>
+                </select>
+              </div>
+            </div>
+            <div id="subsidyInfoBox" style="padding:10px 14px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;font-size:12.5px;color:#1D4ED8;margin-bottom:14px;line-height:1.6;display:none"></div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="saveSubsidy()">💾 Enregistrer</button>
+            <button class="btn btn-outline" onclick="loadSubsidyStats()" id="subsidyStatsBtn" style="display:none">📊 Voir l'utilisation</button>
+          </div>
+          <div id="subsidyStatsPanel" style="margin-top:16px;display:none">
+            <div style="font-weight:600;font-size:13px;color:var(--brown);margin-bottom:8px">Utilisation de la période en cours</div>
+            <div id="subsidyStatsBody"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ HISTORIQUE FACTURES ═══ -->
+  <div class="page" id="page-invoices-history">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🗂 Historique des factures reçues</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-outline btn-sm" onclick="loadCoInvoicesHistory()">🔄</button>
+          <button class="btn btn-outline btn-sm" style="color:#92400E;border-color:#FCD34D" onclick="clearAllCoInvoicesHistory()">🗑 Vider tout</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- Filtres -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;padding:14px;background:#FFF8F3;border-radius:10px">
+          <div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Du</label>
+            <input type="date" class="form-control" id="coIhFrom" style="font-size:13px;padding:6px 10px" oninput="loadCoInvoicesHistory()">
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Au</label>
+            <input type="date" class="form-control" id="coIhTo" style="font-size:13px;padding:6px 10px" oninput="loadCoInvoicesHistory()">
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Restaurant</label>
+            <select class="form-control" id="coIhRestaurant" style="font-size:13px;padding:6px 10px;min-width:160px" onchange="loadCoInvoicesHistory()">
+              <option value="">Tous</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Type</label>
+            <select class="form-control" id="coIhType" style="font-size:13px;padding:6px 10px" onchange="loadCoInvoicesHistory()">
+              <option value="">Tous</option>
+              <option value="classic">Classique</option>
+              <option value="hebdo">Hebdomadaire</option>
+            </select>
+          </div>
+          <button class="btn btn-outline btn-sm" style="margin-bottom:1px" onclick="document.getElementById('coIhFrom').value='';document.getElementById('coIhTo').value='';document.getElementById('coIhRestaurant').value='';document.getElementById('coIhType').value='';loadCoInvoicesHistory()">✕ Réinitialiser</button>
+        </div>
+        <!-- Stats -->
+        <div id="coIhStats" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px"></div>
+        <!-- Tableau -->
+        <div class="table-wrap scroll-box">
+          <table>
+            <thead>
+              <tr>
+                <th>N° / Réf.</th>
+                <th>Type</th>
+                <th>Restaurant</th>
+                <th>Période</th>
+                <th>Montant</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="coIhBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CORBEILLE ═══ -->
+  <div class="page" id="page-trash">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🗑 Corbeille</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:12px;color:var(--muted)">Restaurez ou supprimez définitivement les éléments effacés.</span>
+          <button class="btn btn-outline btn-sm" onclick="loadCoTrash()">🔄</button>
+          <button class="btn btn-danger btn-sm" onclick="emptyCoTrash()" style="white-space:nowrap">🗑 Vider la corbeille</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="tab-bar" style="margin-bottom:16px">
+          <button class="tab-btn active" id="coTrashTab1" onclick="switchCoTrashTab('invoices')">🧾 Factures <span id="coTrashCountInvoices" style="font-size:10px;background:var(--border);border-radius:10px;padding:1px 6px;margin-left:3px">0</span></button>
+          <button class="tab-btn" id="coTrashTab2" onclick="switchCoTrashTab('weekly')">📅 Factures hebdo <span id="coTrashCountWeekly" style="font-size:10px;background:var(--border);border-radius:10px;padding:1px 6px;margin-left:3px">0</span></button>
+        </div>
+        <div id="coTrashPanelInvoices"></div>
+        <div id="coTrashPanelWeekly" style="display:none"></div>
+      </div>
     </div>
   </div>
 
@@ -441,7 +619,7 @@
   <div class="page" id="page-help">
     <div class="doc-hero">
       <div class="doc-hero-title">📖 Guide d'utilisation — Entreprise</div>
-      <div class="doc-hero-sub">Tout ce qu'il faut savoir pour gérer les repas de votre entreprise sur FoodChooseApp : affiliations, commandes, employés, messagerie et factures.</div>
+      <div class="doc-hero-sub">Tout ce qu'il faut savoir pour gérer les repas de votre entreprise sur FoodChooseApp : affiliations, commandes, employés, subventions, menus hebdo, factures et corbeille.</div>
     </div>
 
     <div class="doc-search">
@@ -454,10 +632,13 @@
       <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-dashboard')"><span class="doc-toc-icon">📊</span><span class="doc-toc-label">Tableau de bord</span></button>
       <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-affiliation')"><span class="doc-toc-icon">🔗</span><span class="doc-toc-label">Affiliations</span></button>
       <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-employees')"><span class="doc-toc-icon">👥</span><span class="doc-toc-label">Employés</span></button>
+      <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-subsidies')"><span class="doc-toc-icon">🎁</span><span class="doc-toc-label">Subventions</span></button>
       <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-orders')"><span class="doc-toc-icon">🛒</span><span class="doc-toc-label">Commandes</span></button>
       <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-weekly')"><span class="doc-toc-icon">📅</span><span class="doc-toc-label">Menus Hebdo</span></button>
       <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-messages')"><span class="doc-toc-icon">💬</span><span class="doc-toc-label">Messagerie</span></button>
       <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-invoices')"><span class="doc-toc-icon">🧾</span><span class="doc-toc-label">Factures</span></button>
+      <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-history')"><span class="doc-toc-icon">🗂</span><span class="doc-toc-label">Historique factures</span></button>
+      <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-trash')"><span class="doc-toc-icon">🗑</span><span class="doc-toc-label">Corbeille</span></button>
       <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-contracts')"><span class="doc-toc-icon">📝</span><span class="doc-toc-label">Contrats</span></button>
       <button class="doc-toc-btn" onclick="openCoDocSection('co-doc-employee-guide')"><span class="doc-toc-icon">🙋</span><span class="doc-toc-label">Guide employé</span></button>
     </div>
@@ -473,10 +654,11 @@
         </div>
         <div class="doc-section-body">
           <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Créez votre compte entreprise</div><div class="doc-step-desc">Rendez-vous sur la page d'inscription entreprise. Renseignez le nom de votre société, le secteur d'activité, l'email, le téléphone, l'adresse et un mot de passe sécurisé.</div></div></div>
-          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Affiliez-vous à des restaurants</div><div class="doc-step-desc">Dans <strong>Tous les restaurants</strong>, parcourez les établissements disponibles. Cliquez sur un restaurant, consultez ses menus et packs, puis cliquez sur <strong>🤝 S'affilier</strong>. Dans <strong>Mes affiliations → Contrats d'affiliation</strong>, définissez votre souscription (pack, période, quantité), lisez le contrat et signez-le.</div></div></div>
-          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Créez les comptes de vos employés</div><div class="doc-step-desc">Dans <strong>Employés</strong>, ajoutez chaque membre de votre équipe : prénom, nom, identifiant, email et mot de passe temporaire. Ils recevront un email de bienvenue avec leurs identifiants.</div></div></div>
-          <div class="doc-step"><div class="doc-step-num">4</div><div class="doc-step-content"><div class="doc-step-title">Les employés commandent, vous gérez</div><div class="doc-step-desc">Chaque jour, vos employés passent leur commande depuis leur espace. Vous suivez toutes les commandes en temps réel dans <strong>Commandes du jour</strong> et les validez avant de recevoir les factures des restaurants.</div></div></div>
-          <div class="doc-tip"><strong>Astuce :</strong> Ajoutez plusieurs restaurants affiliés pour offrir plus de choix à vos employés. Chaque employé peut choisir parmi tous les restaurants de votre entreprise.</div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Affiliez-vous à des restaurants</div><div class="doc-step-desc">Dans <strong>Tous les restaurants</strong>, parcourez les établissements. Consultez leurs menus et packs disponibles (détail jour par jour avec photos et prix), puis cliquez sur <strong>S'abonner</strong> ou <strong>🤝 S'affilier</strong>. </div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Créez les comptes de vos employés</div><div class="doc-step-desc">Dans <strong>Employés</strong>, ajoutez chaque membre de votre équipe : prénom, nom, identifiant unique, email et mot de passe. Ils reçoivent un email de bienvenue avec leurs identifiants.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">4</div><div class="doc-step-content"><div class="doc-step-title">Activez les subventions (optionnel)</div><div class="doc-step-desc">Dans <strong>Paramètres → Subventions alimentaires</strong>, définissez une allocation quotidienne ou mensuelle par employé (nourriture et/ou boissons). Le surplus est à la charge de l'employé.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">5</div><div class="doc-step-content"><div class="doc-step-title">Suivez, validez, payez</div><div class="doc-step-desc">Consultez les commandes du jour en temps réel. Validez-les via <strong>Valider &amp; Exporter</strong>. Recevez les factures des restaurants dans <strong>Factures</strong>, confirmez-les et payez via Mobile Money.</div></div></div>
+          <div class="doc-tip"><strong>Astuce :</strong> Les éléments supprimés (factures) passent en <strong>Corbeille</strong> — vous avez toujours la possibilité de les restaurer avant de les purger définitivement.</div>
         </div>
       </div>
 
@@ -503,7 +685,7 @@
         </div>
         <div class="doc-section-body">
           <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Trouver un restaurant</div><div class="doc-step-desc">Allez dans <strong>Tous les restaurants</strong>. Parcourez la liste complète ou utilisez la barre de recherche pour trouver un restaurant par nom ou spécialité. Cliquez sur une carte pour voir le détail : adresse, spécialités, menus et prix.</div></div></div>
-          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">S'affilier</div><div class="doc-step-desc">Depuis la fiche d'un restaurant, cliquez sur <strong>🤝 S'affilier</strong>. L'affiliation est immédiate — vos employés peuvent déjà voir les menus. Un contrat d'affiliation sera généré et devra être signé par les deux parties.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">S'affilier</div><div class="doc-step-desc">Depuis la fiche d'un restaurant, cliquez sur <strong>🤝 S'affilier</strong>. L'affiliation est immédiate — vos employés peuvent déjà voir les menus. </div></div></div>
           <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Gérer vos affiliations</div><div class="doc-step-desc">Dans <strong>Mes affiliations</strong>, retrouvez tous vos restaurants partenaires. Vous pouvez vous désaffilier d'un restaurant avec le bouton ❌ (attention : vos employés ne pourront plus commander chez ce restaurant).</div></div></div>
           <div class="doc-step"><div class="doc-step-num">4</div><div class="doc-step-content"><div class="doc-step-title">Signer le contrat d'affiliation</div><div class="doc-step-desc">Dans la section <strong>Contrats d'affiliation</strong> de la page Mes affiliations, un contrat est créé pour chaque restaurant affilié. Lisez et signez votre côté — le restaurant doit faire de même. Un badge orange vous prévient quand un contrat attend votre signature.</div></div></div>
           <div class="doc-tip"><strong>Recommandation :</strong> Affiliez-vous à 2 ou 3 restaurants minimum pour offrir de la variété à vos employés et éviter les ruptures de service.</div>
@@ -540,18 +722,34 @@
         </div>
       </div>
 
+      <!-- SUBVENTIONS -->
+      <div class="doc-section" id="co-doc-subsidies" data-keywords="subvention allocation nourriture boisson employé surplus mensuel quotidien budget repas">
+        <div class="doc-section-header" onclick="toggleCoDocSection('co-doc-subsidies')">
+          <div class="doc-section-icon">🎁</div>
+          <div class="doc-section-title">Subventions alimentaires</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Qu'est-ce qu'une subvention ?</div><div class="doc-step-desc">Votre entreprise peut offrir à chaque employé une allocation alimentaire quotidienne ou mensuelle (nourriture et/ou boissons). Si le montant de la commande dépasse l'allocation, <strong>l'employé prend en charge le surplus</strong>. C'est totalement optionnel.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Activer les subventions</div><div class="doc-step-desc">Dans <strong>Paramètres → Subventions alimentaires</strong>, activez le toggle. Définissez le montant (en FCFA) pour la nourriture et/ou les boissons, et choisissez la période (par jour ou par mois). Cliquez sur <strong>💾 Enregistrer</strong>.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Suivre l'utilisation</div><div class="doc-step-desc">Cliquez sur <strong>📊 Voir l'utilisation</strong> pour consulter, pour chaque employé, le montant consommé et le restant sur la période en cours. Les badges colorés indiquent l'état : vert (OK), orange (presque épuisé), rouge (dépassé).</div></div></div>
+          <div class="doc-tip"><strong>Exemple :</strong> Allocation quotidienne de 2 000 FCFA nourriture + 500 FCFA boissons. Un employé commande un plat à 2 500 FCFA + une boisson à 700 FCFA = il paye 500 FCFA (nourriture) + 200 FCFA (boissons) de surplus.</div>
+        </div>
+      </div>
+
       <!-- MENUS HEBDO -->
-      <div class="doc-section" id="co-doc-weekly" data-keywords="menus hebdomadaires programme image flyer semaine pack restaurant afficher voir">
+      <div class="doc-section" id="co-doc-weekly" data-keywords="menus hebdomadaires programme image flyer semaine pack restaurant afficher abonnement s'abonner extras livraison">
         <div class="doc-section-header" onclick="toggleCoDocSection('co-doc-weekly')">
           <div class="doc-section-icon">📅</div>
           <div class="doc-section-title">Menus hebdomadaires</div>
           <div class="doc-section-chevron">▼</div>
         </div>
         <div class="doc-section-body">
-          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Programmes hebdomadaires</div><div class="doc-step-desc">Dans <strong>Menus Hebdo</strong>, l'onglet <strong>Programmes</strong> affiche les images de menus uploadées par vos restaurants affiliés. Vous voyez le flyer ou l'affiche de chaque semaine pour chaque restaurant.</div></div></div>
-          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Packs de menus</div><div class="doc-step-desc">L'onglet <strong>Packs de menus</strong> liste les abonnements hebdomadaires structurés proposés par vos restaurants. Chaque pack détaille les plats prévus par jour et par type de menu (entrée, plat, dessert).</div></div></div>
-          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Agrandissement des programmes</div><div class="doc-step-desc">Cliquez sur l'image d'un programme pour l'afficher en plein écran. Fermez en cliquant n'importe où sur le fond sombre.</div></div></div>
-          <div class="doc-tip"><strong>Pour les employés :</strong> Les menus hebdomadaires sont également visibles dans l'espace employé. Encouragez vos équipes à les consulter pour planifier leurs commandes à l'avance.</div>
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Packs disponibles</div><div class="doc-step-desc">Dans <strong>Menus Hebdo → Packs disponibles</strong>, consultez les packs proposés par vos restaurants (groupés par restaurant, avec photo, prix et détail jour par jour). Les packs auxquels vous êtes déjà abonné affichent un badge ✅ Abonné. La date du prochain lundi est affichée pour faciliter la planification.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">S'abonner à un pack</div><div class="doc-step-desc">Cliquez sur <strong>S'abonner</strong> sur un pack. Un formulaire s'ouvre : choisissez la semaine (lundi de départ), le nombre de plats/jour, ajoutez des notes et des extras (boissons, desserts, etc. avec les jours souhaités). Confirmez l'abonnement.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Mes abonnements</div><div class="doc-step-desc">L'onglet <strong>Mes abonnements</strong> liste vos souscriptions classées par semaine (plus récentes en premier). Statut : ⏳ En attente, ✅ Confirmé, ❌ Annulé. Vous pouvez modifier (✏️) ou supprimer (🗑) un abonnement.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">4</div><div class="doc-step-content"><div class="doc-step-title">Suivi des livraisons</div><div class="doc-step-desc">Pour les abonnements confirmés, un suivi jour par jour des livraisons s'affiche : ⏳ En attente, 📤 Envoyé, ✅ Réceptionné. Cliquez sur <strong>✅ Accuser réception</strong> dès que vous avez reçu la livraison.</div></div></div>
+          <div class="doc-tip"><strong>Pour les employés :</strong> Les menus hebdomadaires sont visibles dans l'espace employé pour planifier les commandes à l'avance.</div>
         </div>
       </div>
 
@@ -571,35 +769,52 @@
       </div>
 
       <!-- FACTURES -->
-      <div class="doc-section" id="co-doc-invoices" data-keywords="facture recevoir confirmer télécharger pdf payer montant total période restaurant">
+      <div class="doc-section" id="co-doc-invoices" data-keywords="facture recevoir confirmer télécharger pdf payer montant total période restaurant corbeille supprimer">
         <div class="doc-section-header" onclick="toggleCoDocSection('co-doc-invoices')">
           <div class="doc-section-icon">🧾</div>
           <div class="doc-section-title">Factures reçues</div>
           <div class="doc-section-chevron">▼</div>
         </div>
         <div class="doc-section-body">
-          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Recevoir une facture</div><div class="doc-step-desc">Les restaurants génèrent et vous envoient leurs factures depuis leur tableau de bord. Vous les retrouvez dans la section <strong>Factures</strong> de votre espace, avec le détail des commandes, le montant total et la période.</div></div></div>
-          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Confirmer une facture</div><div class="doc-step-desc">Après vérification, vous pouvez confirmer la réception d'une facture pour indiquer au restaurant qu'elle a bien été traitée. Cette confirmation sert de preuve pour la comptabilité des deux parties.</div></div></div>
-          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Télécharger en PDF</div><div class="doc-step-desc">Chaque facture peut être téléchargée en PDF pour archivage ou transmission à votre service comptable.</div></div></div>
-          <div class="doc-tip"><strong>Contestation :</strong> Si une facture est incorrecte, utilisez la messagerie pour contacter le restaurant directement. Expliquez le problème et demandez une facture rectificative.</div>
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Recevoir une facture</div><div class="doc-step-desc">Les restaurants génèrent et vous envoient leurs factures. Vous les retrouvez dans <strong>Factures</strong> (onglets Classiques et Hebdomadaires), avec le détail, le montant et la période. Les montants sont formatés en FCFA (ex : 20 000 FCFA).</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Confirmer et payer</div><div class="doc-step-desc">Après vérification, confirmez la facture pour signaler au restaurant que le paiement est validé. Effectuez le paiement via Mobile Money au numéro affiché sur le PDF.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Télécharger en PDF</div><div class="doc-step-desc">Chaque facture peut être téléchargée en PDF pour archivage ou transmission à la comptabilité.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">4</div><div class="doc-step-content"><div class="doc-step-title">Supprimer une facture → Corbeille</div><div class="doc-step-desc">Le bouton 🗑 envoie la facture en <strong>Corbeille</strong> (récupérable). La facture disparaît de votre liste mais peut être restaurée depuis la Corbeille.</div></div></div>
+          <div class="doc-tip"><strong>Contestation :</strong> Si une facture est incorrecte, utilisez la messagerie pour contacter le restaurant et demander une facture rectificative. Notez le problème avant de confirmer.</div>
+        </div>
+      </div>
+
+      <!-- HISTORIQUE FACTURES -->
+      <div class="doc-section" id="co-doc-history" data-keywords="historique factures classiques hebdo reçues filtre restaurant période montant pdf supprimer vider">
+        <div class="doc-section-header" onclick="toggleCoDocSection('co-doc-history')">
+          <div class="doc-section-icon">🗂</div>
+          <div class="doc-section-title">Historique des factures</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Vue unifiée</div><div class="doc-step-desc">La page <strong>Historique factures</strong> regroupe toutes vos factures reçues (classiques + hebdomadaires) en un seul endroit, avec des statistiques : total, montant total, confirmées, en attente.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Filtres</div><div class="doc-step-desc">Filtrez par période (du/au), restaurant et type (Classique ou Hebdo). Réinitialisez avec ✕.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Vider l'historique</div><div class="doc-step-desc">Le bouton <strong>🗑 Vider tout</strong> envoie toutes vos factures en Corbeille. Restaurez-les depuis la Corbeille si nécessaire.</div></div></div>
+        </div>
+      </div>
+
+      <!-- CORBEILLE -->
+      <div class="doc-section" id="co-doc-trash" data-keywords="corbeille supprimer restaurer récupérer factures vider purger définitif">
+        <div class="doc-section-header" onclick="toggleCoDocSection('co-doc-trash')">
+          <div class="doc-section-icon">🗑</div>
+          <div class="doc-section-title">Corbeille</div>
+          <div class="doc-section-chevron">▼</div>
+        </div>
+        <div class="doc-section-body">
+          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Qu'est-ce qui passe en corbeille ?</div><div class="doc-step-desc">Toute facture supprimée (classique ou hebdomadaire) est placée en Corbeille. Elle n'est plus visible dans votre liste de factures mais reste récupérable.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Restaurer une facture</div><div class="doc-step-desc">Dans <strong>Corbeille</strong>, choisissez l'onglet correspondant (Factures ou Factures hebdo). Cliquez sur <strong>Restaurer</strong> — la facture réapparaît dans votre espace immédiatement.</div></div></div>
+          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Supprimer définitivement</div><div class="doc-step-desc">Le bouton 🗑 rouge sur chaque élément supprime la facture de façon irréversible. <strong>Vider la corbeille</strong> purge tout en une fois.</div></div></div>
+          <div class="doc-tip"><strong>Badge :</strong> Un badge orange sur l'icône Corbeille dans la barre latérale indique le nombre d'éléments en attente.</div>
         </div>
       </div>
 
       <!-- CONTRATS -->
-      <div class="doc-section" id="co-doc-contracts" data-keywords="contrat affiliation signer restaurant entreprise menus pack souscription période quantité badge signature">
-        <div class="doc-section-header" onclick="toggleCoDocSection('co-doc-contracts')">
-          <div class="doc-section-icon">📝</div>
-          <div class="doc-section-title">Contrats d'affiliation</div>
-          <div class="doc-section-chevron">▼</div>
-        </div>
-        <div class="doc-section-body">
-          <div class="doc-step"><div class="doc-step-num">1</div><div class="doc-step-content"><div class="doc-step-title">Qu'est-ce qu'un contrat d'affiliation ?</div><div class="doc-step-desc">Quand votre entreprise s'affilie à un restaurant, un contrat bilatéral est généré. Il intègre l'offre de service du restaurant (jours, zone, politique d'annulation) et vos termes de souscription (pack choisi, période, quantité de repas). Les deux parties doivent lire et signer.</div></div></div>
-          <div class="doc-step"><div class="doc-step-num">2</div><div class="doc-step-content"><div class="doc-step-title">Définir votre souscription</div><div class="doc-step-desc">Dans <strong>Mes affiliations → Contrats d'affiliation</strong>, cliquez sur <strong>✍️ Définir & Signer</strong>. Un formulaire s'ouvre : choisissez le pack hebdomadaire du restaurant, renseignez la date de début, la date de fin, la quantité de repas par jour et d'éventuelles notes. Cliquez sur <strong>💾 Enregistrer les termes</strong> pour mettre à jour le document.</div></div></div>
-          <div class="doc-step"><div class="doc-step-num">3</div><div class="doc-step-content"><div class="doc-step-title">Lire et signer le contrat</div><div class="doc-step-desc">Après avoir enregistré vos termes, lisez le document complet qui s'affiche en dessous. Cochez <strong>"J'ai lu et j'accepte"</strong>, puis cliquez sur <strong>✍️ Signer le contrat</strong>. Le restaurant recevra une notification et devra signer à son tour.</div></div></div>
-          <div class="doc-step"><div class="doc-step-num">4</div><div class="doc-step-content"><div class="doc-step-title">Suivi des signatures</div><div class="doc-step-desc">Chaque contrat affiche le statut des deux côtés. Un badge orange sur <strong>Mes affiliations</strong> indique combien de contrats attendent votre signature. Le contrat est pleinement actif quand les deux parties ont signé.</div></div></div>
-          <div class="doc-warn"><strong>Important :</strong> Un contrat signé d'un seul côté n'est pas encore pleinement actif. Si le restaurant tarde à signer, relancez-le via la messagerie.</div>
-        </div>
-      </div>
+      
 
       <!-- GUIDE EMPLOYÉ -->
       <div class="doc-section" id="co-doc-employee-guide" data-keywords="employé connexion commander plat restaurant annuler modifier avis note historique">
@@ -639,15 +854,23 @@
       </div>
       <div class="doc-faq-item" onclick="toggleCoFaq(this)">
         <div class="doc-faq-q">Comment contester une facture d'un restaurant ? <span>▼</span></div>
-        <div class="doc-faq-a">Utilisez la messagerie pour contacter le restaurant directement. Expliquez l'erreur constatée (montant incorrect, plat non livré, etc.) et joignez une capture si nécessaire. Le restaurant devra vous envoyer une facture rectificative.</div>
+        <div class="doc-faq-a">Utilisez la messagerie pour contacter le restaurant directement. Expliquez l'erreur (montant incorrect, plat non livré, etc.) et joignez une capture si nécessaire. Le restaurant peut ajouter un commentaire sur la facture pour expliquer la situation (jour férié, non-livraison...).</div>
       </div>
       <div class="doc-faq-item" onclick="toggleCoFaq(this)">
-        <div class="doc-faq-q">Puis-je avoir plusieurs entreprises sur le même compte ? <span>▼</span></div>
-        <div class="doc-faq-a">Non — chaque compte entreprise représente une entité unique. Si vous gérez plusieurs sociétés, créez un compte distinct pour chacune avec un email différent.</div>
+        <div class="doc-faq-q">Puis-je récupérer une facture supprimée par erreur ? <span>▼</span></div>
+        <div class="doc-faq-a">Oui. Toute suppression de facture passe par la Corbeille. Allez dans <strong>Corbeille</strong>, trouvez la facture dans l'onglet correspondant et cliquez sur <strong>Restaurer</strong>. Elle réapparaît immédiatement dans votre espace Factures.</div>
+      </div>
+      <div class="doc-faq-item" onclick="toggleCoFaq(this)">
+        <div class="doc-faq-q">Comment fonctionnent les subventions alimentaires ? <span>▼</span></div>
+        <div class="doc-faq-a">Activez-les dans <strong>Paramètres → Subventions alimentaires</strong>. Définissez un montant par jour ou par mois pour la nourriture et les boissons. À chaque commande, le système calcule si l'employé a épuisé son allocation. Si oui, il paye le surplus. Vous suivez l'utilisation en temps réel depuis les Paramètres.</div>
       </div>
       <div class="doc-faq-item" onclick="toggleCoFaq(this)">
         <div class="doc-faq-q">Les employés peuvent-ils voir les factures ? <span>▼</span></div>
-        <div class="doc-faq-a">Non. Les factures sont uniquement visibles par les gestionnaires de l'entreprise (votre compte). Les employés ont accès à leurs commandes personnelles et aux menus, mais pas aux informations financières de l'entreprise.</div>
+        <div class="doc-faq-a">Non. Les factures sont uniquement visibles par le gestionnaire (votre compte). Les employés voient leurs commandes personnelles, les menus disponibles et éventuellement leur solde de subvention.</div>
+      </div>
+      <div class="doc-faq-item" onclick="toggleCoFaq(this)">
+        <div class="doc-faq-q">Puis-je avoir plusieurs entreprises sur le même compte ? <span>▼</span></div>
+        <div class="doc-faq-a">Non — chaque compte représente une entité unique. Si vous gérez plusieurs sociétés, créez un compte distinct pour chacune avec un email différent.</div>
       </div>
     </div>
   </div>
@@ -681,6 +904,7 @@
   </div>
 </div>
 
+<script src="/assets/js/food-list.js"></script>
 <script src="/assets/js/utils.js"></script>
 <script>
 const token = localStorage.getItem('fc_token');
@@ -688,6 +912,339 @@ const role = localStorage.getItem('fc_role');
 if (!token || role !== 'company') window.location.href = '/company/login';
 
 function logout() { localStorage.clear(); window.location.href = '/'; }
+
+// ── HISTORIQUE : vider ───────────────────────────────────────────────
+async function clearCompanyHistory() {
+  if (!confirm('Vider l\'intégralité de l\'historique des consommations de votre entreprise ?\n\nCette action est irréversible.')) return;
+  try {
+    await apiFetch('/api/admin/history', { method: 'DELETE' }, token);
+    toast('Historique vidé', 'success');
+    document.getElementById('historyBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Historique vide</td></tr>';
+  } catch(e) { toast(e.message || 'Erreur', 'error'); }
+}
+window.clearCompanyHistory = clearCompanyHistory;
+
+function togglePackDetail(id, header) {
+  const body = document.getElementById(id);
+  if (!body) return;
+  const chevId = 'chev-' + id.replace('pd-', '');
+  const chev = document.getElementById(chevId);
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : '';
+  if (chev) chev.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+window.togglePackDetail = togglePackDetail;
+
+// ─── Historique factures reçues ──────────────────────
+async function loadRestaurantsForIhFilter() {
+  try {
+    const affiliations = await apiFetch('/api/admin/affiliations', {}, token);
+    const sel = document.getElementById('coIhRestaurant');
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Tous</option>' + affiliations.map(a => `<option value="${a.restaurant_id}"${a.restaurant_id==cur?' selected':''}>${a.restaurant_name}</option>`).join('');
+  } catch(_) {}
+}
+
+async function loadCoInvoicesHistory() {
+  const from = document.getElementById('coIhFrom')?.value || '';
+  const to   = document.getElementById('coIhTo')?.value || '';
+  const restId = document.getElementById('coIhRestaurant')?.value || '';
+  const type = document.getElementById('coIhType')?.value || '';
+  let qs = [from&&`from=${from}`, to&&`to=${to}`, restId&&`restaurant_id=${restId}`].filter(Boolean).join('&');
+  const tbody = document.getElementById('coIhBody');
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Chargement...</td></tr>';
+  try {
+    let rows = await apiFetch('/api/admin/invoices-history' + (qs ? '?' + qs : ''), {}, token);
+    if (type) rows = rows.filter(r => r.type === type);
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">Aucune facture reçue</td></tr>'; _renderCoIhStats([]); return; }
+    _renderCoIhStats(rows);
+    const fmtD = d => d ? new Date(String(d).includes('T') ? d : d + 'T12:00:00').toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',year:'2-digit'}) : '—';
+    tbody.innerHTML = rows.map(inv => {
+      const ref = inv.type === 'classic' ? `FAC-${String(inv.id).padStart(5,'0')}` : (inv.invoice_number || `HEB-${String(inv.id).padStart(4,'0')}`);
+      const typeBadge = inv.type === 'classic'
+        ? '<span style="font-size:10px;background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:10px;font-weight:700">Classique</span>'
+        : '<span style="font-size:10px;background:#DBEAFE;color:#1E3A8A;padding:2px 8px;border-radius:10px;font-weight:700">Hebdo</span>';
+      let periode = '—';
+      if (inv.type === 'hebdo' && inv.day_date) periode = fmtD(inv.day_date);
+      else if (inv.from_date && inv.to_date) periode = `${fmtD(inv.from_date)} → ${fmtD(inv.to_date)}`;
+      else periode = fmtD(inv.date || inv.created_at);
+      const stBg    = inv.status==='confirmed'?'#D1FAE5':inv.status==='pending'?'#FEF3C7':'#FEE2E2';
+      const stColor = inv.status==='confirmed'?'#065F46':inv.status==='pending'?'#92400E':'#991B1B';
+      const stLabel = inv.status==='confirmed'?'Confirmée':inv.status==='pending'?'En attente':'Annulée';
+      const pdfUrl = inv.type === 'classic' ? `/api/admin/invoices/${inv.id}/pdf?token=${token}` : `/api/restaurant/weekly-invoices/${inv.id}/pdf?token=${token}`;
+      const noteIndicator = inv.notes ? `<span title="${inv.notes.replace(/"/g,'&quot;')}" style="font-size:11px;color:var(--muted);font-style:italic">💬</span>` : '';
+      return `<tr>
+        <td style="font-size:11px;color:var(--muted);white-space:nowrap"><strong>${ref}</strong> ${noteIndicator}</td>
+        <td>${typeBadge}</td>
+        <td style="font-size:13px">${inv.restaurant_name||'—'}</td>
+        <td style="font-size:12px;white-space:nowrap">${periode}</td>
+        <td style="font-weight:700;color:var(--orange);white-space:nowrap">${fmtCFA(inv.total_amount||0)} FCFA</td>
+        <td><span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:${stBg};color:${stColor}">${stLabel}</span></td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-outline btn-sm" onclick="window.open('${pdfUrl}','_blank')" title="PDF">📄</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCoIhInvoice('${inv.type}',${inv.id})" title="Supprimer" style="padding:3px 7px">🗑</button>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) { toast(e.message||'Erreur', 'error'); tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Erreur de chargement</td></tr>'; }
+}
+
+function _renderCoIhStats(rows) {
+  const el = document.getElementById('coIhStats');
+  if (!el) return;
+  const total = rows.reduce((s,r) => s + parseFloat(r.total_amount||0), 0);
+  const confirmed = rows.filter(r => r.status === 'confirmed').length;
+  const pending = rows.filter(r => r.status === 'pending').length;
+  el.innerHTML = `
+    <div style="background:#FFF0EA;border-radius:10px;padding:12px 18px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:22px">🧾</span>
+      <div><div style="font-size:18px;font-weight:700;color:var(--brown)">${rows.length}</div><div style="font-size:11px;color:var(--muted)">Factures</div></div>
+    </div>
+    <div style="background:#FFF0EA;border-radius:10px;padding:12px 18px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:22px">💰</span>
+      <div><div style="font-size:18px;font-weight:700;color:var(--orange)">${fmtCFA(total)} FCFA</div><div style="font-size:11px;color:var(--muted)">Total reçu</div></div>
+    </div>
+    <div style="background:#F0FDF4;border-radius:10px;padding:12px 18px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:22px">✅</span>
+      <div><div style="font-size:18px;font-weight:700;color:#16a34a">${confirmed}</div><div style="font-size:11px;color:var(--muted)">Confirmées</div></div>
+    </div>
+    <div style="background:#FEF3C7;border-radius:10px;padding:12px 18px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:22px">⏳</span>
+      <div><div style="font-size:18px;font-weight:700;color:#92400E">${pending}</div><div style="font-size:11px;color:var(--muted)">En attente</div></div>
+    </div>`;
+}
+
+async function deleteCoIhInvoice(type, id) {
+  if (!confirm('Supprimer cette facture de votre historique ?\n\nCette action est irréversible.')) return;
+  try {
+    const url = type === 'classic' ? `/api/admin/invoices/${id}` : `/api/company/weekly-invoices/${id}`;
+    await apiFetch(url, { method: 'DELETE' }, token);
+    toast('Facture supprimée', 'success');
+    loadCoInvoicesHistory();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function clearAllCoInvoicesHistory() {
+  if (!confirm('Vider tout votre historique de factures reçues ?\n\nCette action est irréversible.')) return;
+  try {
+    await Promise.all([
+      apiFetch('/api/admin/invoices-history', { method: 'DELETE' }, token),
+      apiFetch('/api/company/weekly-invoices-history', { method: 'DELETE' }, token)
+    ]);
+    toast('Historique vidé', 'success');
+    loadCoInvoicesHistory();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+window.loadCoInvoicesHistory = loadCoInvoicesHistory;
+window.clearAllCoInvoicesHistory = clearAllCoInvoicesHistory;
+window.deleteCoIhInvoice = deleteCoIhInvoice;
+window.loadRestaurantsForIhFilter = loadRestaurantsForIhFilter;
+
+// ─── Corbeille entreprise ──────────────────────────────────────────────────
+let _coTrashData = { invoices: [], weekly_invoices: [] };
+
+async function loadCoTrash() {
+  try {
+    _coTrashData = await apiFetch('/api/admin/trash', {}, token);
+    const inv  = _coTrashData.invoices || [];
+    const wi   = _coTrashData.weekly_invoices || [];
+    const total = inv.length + wi.length;
+
+    const badge = document.getElementById('coTrashBadge');
+    if (badge) { badge.textContent = total; badge.style.display = total ? '' : 'none'; }
+    document.getElementById('coTrashCountInvoices').textContent = inv.length;
+    document.getElementById('coTrashCountWeekly').textContent   = wi.length;
+
+    _renderCoTrashPanel('coTrashPanelInvoices', inv,  _renderCoTrashInvoice);
+    _renderCoTrashPanel('coTrashPanelWeekly',   wi,   _renderCoTrashWeekly);
+  } catch(e) { toast(e.message || 'Erreur corbeille', 'error'); }
+}
+
+function _renderCoTrashPanel(panelId, items, renderFn) {
+  const el = document.getElementById(panelId);
+  if (!el) return;
+  if (!items.length) { el.innerHTML = '<div class="empty-state"><span class="icon">✅</span><div>Cette section de la corbeille est vide.</div></div>'; return; }
+  el.innerHTML = `<div style="font-size:12px;color:var(--muted);margin-bottom:10px">${items.length} élément${items.length>1?'s':''}</div><div style="display:flex;flex-direction:column;gap:8px">${items.map(i=>renderFn(i)).join('')}</div>`;
+}
+
+function _coTrashActions(type, id) {
+  return `<div style="display:flex;gap:6px;flex-shrink:0">
+    <button class="btn btn-outline btn-sm" onclick="restoreCoTrashItem('${type}',${id})" style="padding:4px 10px;color:#16a34a;border-color:#16a34a;white-space:nowrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg> Restaurer
+    </button>
+    <button class="btn btn-danger btn-sm" onclick="purgeCoTrashItem('${type}',${id})" style="padding:4px 8px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+    </button>
+  </div>`;
+}
+
+function _coTrashMeta(deletedAt) {
+  const d = new Date(deletedAt);
+  return `<span style="font-size:10px;color:var(--muted)">Supprimé le ${d.toLocaleDateString('fr-FR')} à ${d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span>`;
+}
+
+function _renderCoTrashInvoice(item) {
+  const fmtD = d => d ? new Date(String(d).replace(' ','T')).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—';
+  return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:white;border:1px solid var(--border);border-radius:10px">
+    <div style="width:40px;height:40px;border-radius:8px;background:#FFF0EA;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🧾</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:600;font-size:13px;color:var(--brown)">FAC-${String(item.id).padStart(5,'0')} · ${item.restaurant_name||'—'}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">${fmtCFA(item.total_amount||0)} FCFA · ${fmtD(item.date)} · ${_coTrashMeta(item.deleted_at)}</div>
+    </div>
+    ${_coTrashActions('invoice', item.id)}
+  </div>`;
+}
+
+function _renderCoTrashWeekly(item) {
+  const fmtD = d => d ? new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—';
+  return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:white;border:1px solid var(--border);border-radius:10px">
+    <div style="width:40px;height:40px;border-radius:8px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📅</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:600;font-size:13px;color:var(--brown)">${item.invoice_number||'—'} · ${item.restaurant_name||'—'}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">${fmtCFA(item.total_amount||0)} FCFA${item.from_date?' · du '+fmtD(item.from_date)+' au '+fmtD(item.to_date):''} · ${_coTrashMeta(item.deleted_at)}</div>
+    </div>
+    ${_coTrashActions('weekly_invoice', item.id)}
+  </div>`;
+}
+
+function switchCoTrashTab(tab) {
+  document.getElementById('coTrashTab1')?.classList.toggle('active', tab==='invoices');
+  document.getElementById('coTrashTab2')?.classList.toggle('active', tab==='weekly');
+  document.getElementById('coTrashPanelInvoices').style.display = tab==='invoices' ? '' : 'none';
+  document.getElementById('coTrashPanelWeekly').style.display   = tab==='weekly'   ? '' : 'none';
+}
+
+async function restoreCoTrashItem(type, id) {
+  try {
+    await apiFetch(`/api/admin/trash/restore/${type}/${id}`, { method: 'PUT' }, token);
+    toast('Élément restauré', 'success');
+    loadCoTrash();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function purgeCoTrashItem(type, id) {
+  if (!confirm('Supprimer définitivement cet élément ?\n\nIl sera irrécupérable.')) return;
+  try {
+    await apiFetch(`/api/admin/trash/purge/${type}/${id}`, { method: 'DELETE' }, token);
+    toast('Supprimé définitivement', 'success');
+    loadCoTrash();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function emptyCoTrash() {
+  const total = (_coTrashData.invoices||[]).length + (_coTrashData.weekly_invoices||[]).length;
+  if (!total) return toast('La corbeille est déjà vide', 'info');
+  if (!confirm(`Vider définitivement la corbeille ?\n\n${total} élément${total>1?'s':''} sera${total>1?'ont':''} supprimé${total>1?'s':''} de façon irréversible.`)) return;
+  try {
+    await apiFetch('/api/admin/trash', { method: 'DELETE' }, token);
+    toast('Corbeille vidée', 'success');
+    loadCoTrash();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+window.loadCoTrash = loadCoTrash;
+window.switchCoTrashTab = switchCoTrashTab;
+window.restoreCoTrashItem = restoreCoTrashItem;
+window.purgeCoTrashItem = purgeCoTrashItem;
+window.emptyCoTrash = emptyCoTrash;
+
+// ── SUBVENTIONS ───────────────────────────────────────────────────────
+let _subsidyActive = false;
+
+function toggleSubsidy() {
+  _subsidyActive = !_subsidyActive;
+  updateSubsidyUI(_subsidyActive);
+}
+
+function updateSubsidyUI(active) {
+  _subsidyActive = active;
+  const bg  = document.getElementById('subsidyToggleBg');
+  const dot = document.getElementById('subsidyToggleDot');
+  const fields = document.getElementById('subsidyFields');
+  const badge  = document.getElementById('subsidyActiveBadge');
+  const statsBtn = document.getElementById('subsidyStatsBtn');
+  if (bg)  bg.style.background  = active ? 'var(--orange)' : '#D1D5DB';
+  if (dot) dot.style.transform  = active ? 'translateX(20px)' : 'none';
+  if (fields) fields.style.display = active ? '' : 'none';
+  if (badge)  badge.style.display  = active ? '' : 'none';
+  if (statsBtn) statsBtn.style.display = active ? '' : 'none';
+  updateSubsidyInfo();
+}
+
+function updateSubsidyInfo() {
+  const box = document.getElementById('subsidyInfoBox');
+  if (!box) return;
+  const food   = parseFloat(document.getElementById('subsidyFood')?.value) || 0;
+  const drink  = parseFloat(document.getElementById('subsidyDrink')?.value) || 0;
+  const period = document.getElementById('subsidyPeriod')?.value;
+  if (!_subsidyActive || (!food && !drink)) { box.style.display = 'none'; return; }
+  const periodLabel = period === 'monthly' ? 'par mois' : 'par jour';
+  const parts = [];
+  if (food)  parts.push(`${fmtCFA(food)} FCFA nourriture`);
+  if (drink) parts.push(`${fmtCFA(drink)} FCFA boissons`);
+  box.innerHTML = `Chaque employé bénéficie de <strong>${parts.join(' + ')}</strong> ${periodLabel}. Au-delà de cette allocation, l'excédent reste à sa charge.`;
+  box.style.display = '';
+}
+
+async function loadSubsidySettings() {
+  try {
+    const data = await apiFetch('/api/admin/subsidies', {}, token);
+    document.getElementById('subsidyFood').value = data.food_amount || 0;
+    document.getElementById('subsidyDrink').value = data.drink_amount || 0;
+    document.getElementById('subsidyPeriod').value = data.period_type || 'daily';
+    updateSubsidyUI(data.active);
+  } catch(e) {}
+}
+
+async function saveSubsidy() {
+  const food   = parseFloat(document.getElementById('subsidyFood').value) || 0;
+  const drink  = parseFloat(document.getElementById('subsidyDrink').value) || 0;
+  const period = document.getElementById('subsidyPeriod').value;
+  try {
+    await apiFetch('/api/admin/subsidies', { method: 'PUT', body: { food_amount: food, drink_amount: drink, period_type: period, active: _subsidyActive } }, token);
+    toast('Subventions enregistrées', 'success');
+    updateSubsidyInfo();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function loadSubsidyStats() {
+  const panel = document.getElementById('subsidyStatsPanel');
+  const body  = document.getElementById('subsidyStatsBody');
+  if (!panel || !body) return;
+  try {
+    const data = await apiFetch('/api/admin/subsidy-stats', {}, token);
+    if (!data.active) { body.innerHTML = '<p style="color:var(--muted);font-size:13px">Subventions inactives.</p>'; panel.style.display = ''; return; }
+    const cfg = data.config;
+    const fmtF = n => fmtCFA(n||0);
+    if (!data.usage.length) {
+      body.innerHTML = `<p style="color:var(--muted);font-size:13px">Aucune utilisation enregistrée pour la période <strong>${data.period_key}</strong>.</p>`;
+    } else {
+      body.innerHTML = `
+        <div class="table-wrap" style="margin-top:8px">
+          <table>
+            <thead><tr><th>Employé</th><th>Nourriture utilisée</th><th>Boissons utilisées</th><th>Restant nourr.</th><th>Restant bois.</th></tr></thead>
+            <tbody>${data.usage.map(u => `
+              <tr>
+                <td>${u.last_name} ${u.first_name}</td>
+                <td>${fmtF(u.used_food)} FCFA</td>
+                <td>${fmtF(u.used_drink)} FCFA</td>
+                <td><span class="subsidy-badge${parseFloat(u.used_food)>=parseFloat(cfg.food_amount)?' over':parseFloat(cfg.food_amount)-parseFloat(u.used_food)<cfg.food_amount*0.2?' warning':''}">${fmtF(Math.max(0,parseFloat(cfg.food_amount)-parseFloat(u.used_food)))} FCFA</span></td>
+                <td><span class="subsidy-badge${parseFloat(u.used_drink)>=parseFloat(cfg.drink_amount)?' over':parseFloat(cfg.drink_amount)-parseFloat(u.used_drink)<cfg.drink_amount*0.2?' warning':''}">${fmtF(Math.max(0,parseFloat(cfg.drink_amount)-parseFloat(u.used_drink)))} FCFA</span></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    }
+    panel.style.display = '';
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+window.toggleSubsidy = toggleSubsidy;
+window.saveSubsidy = saveSubsidy;
+window.loadSubsidyStats = loadSubsidyStats;
+window.updateSubsidyInfo = updateSubsidyInfo;
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -758,7 +1315,7 @@ function switchToPage(page) {
   document.getElementById('pageTitle').textContent = titles[page] || page;
   if (page === 'dashboard') loadDashboard();
   else if (page === 'allrestaurants') loadAllRestaurants();
-  else if (page === 'affiliations') { loadAffiliations(); loadCoAffiliationContracts(); }
+  else if (page === 'affiliations') { loadAffiliations(); }
   else if (page === 'orders') { const td = todayFrStr(); document.getElementById('ordersFrom').value = td; document.getElementById('ordersTo').value = td; initDateMask(); loadOrders(); }
   else if (page === 'validate') { const td = todayFrStr(); document.getElementById('validateFrom').value = td; document.getElementById('validateTo').value = td; initDateMask(); previewValidate(); }
   else if (page === 'invoices') loadInvoices();
@@ -773,6 +1330,8 @@ function switchToPage(page) {
   }
   else if (page === 'weeklymenu') loadWeeklyMenus();
   else if (page === 'settings') loadSettings();
+  else if (page === 'invoices-history') { loadCoInvoicesHistory(); loadRestaurantsForIhFilter(); }
+  else if (page === 'trash') { loadCoTrash(); }
   else if (page === 'help') { initCoDocSearch(); }
 }
 
@@ -788,12 +1347,6 @@ document.querySelectorAll('.nav-item[data-page]').forEach(item => {
 
 try { initNotifications(); } catch(e) { console.error('initNotifications:', e); }
 loadDashboard();
-// Vérifier les contrats d'affiliation non signés au chargement
-apiFetch('/api/company/affiliation-contracts', {}, token).then(contracts => {
-  const unsigned = (contracts || []).filter(c => !c.company_signed_at).length;
-  const badge = document.getElementById('affContractBadge');
-  if (badge && unsigned > 0) { badge.style.display = ''; badge.textContent = unsigned; }
-}).catch(() => {});
 
 // ── Dashboard ─────────────────────────────────────────
 async function loadDashboard() {
@@ -824,7 +1377,7 @@ async function loadDashboard() {
     dashInv.innerHTML = invs.length ? invs.slice(0,5).map(inv => `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px">
         <div><div style="font-weight:600;color:var(--brown)">${inv.restaurant_name}</div><div style="font-size:11px;color:var(--muted)">${formatDate(inv.created_at)}</div></div>
-        <div style="font-weight:700;color:var(--orange)">${parseFloat(inv.total_amount||0).toLocaleString()} FCFA</div>
+        <div style="font-weight:700;color:var(--orange)">${fmtCFA(inv.total_amount||0)} FCFA</div>
       </div>
     `).join('') : '<div class="empty-state"><span class="icon">🧾</span>Aucune facture</div>';
   } catch(e) { console.error(e); }
@@ -843,13 +1396,13 @@ async function searchAdminDishes(q) {
       if (!data.length) { results.innerHTML = '<div class="empty-state" style="padding:12px"><span class="icon">🔍</span>Aucun plat trouvé</div>'; return; }
       results.innerHTML = data.map(m => `
         <div onclick="openRestDetail(${m.restaurant_id})"
-             style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:white;border:1.5px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;transition:border-color .2s"
+             style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:white;border:1.5px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer"
              onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
           <div>
             <div style="font-weight:600;font-size:13.5px;color:var(--brown)">${m.name}</div>
             <div style="font-size:11.5px;color:var(--muted)">${CAT_ICONS[m.category]||'🍽'} ${m.category} &nbsp;·&nbsp; 🍽 ${m.restaurant_name}</div>
           </div>
-          <div style="font-weight:700;color:var(--orange);font-size:13px;white-space:nowrap">${parseFloat(m.price||0).toLocaleString()} FCFA</div>
+          <div style="font-weight:700;color:var(--orange);font-size:13px;white-space:nowrap">${fmtCFA(m.price||0)} FCFA</div>
         </div>
       `).join('');
     } catch(e) {}
@@ -915,7 +1468,7 @@ async function openRestDetail(restId) {
     document.getElementById('rdMenus').innerHTML = Object.entries(byCat).map(([cat,items])=>`
       <div style="margin-bottom:12px">
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px">${CAT_ICONS[cat]||'🍽'} ${cat}</div>
-        ${items.map(m=>`<div style="display:flex;justify-content:space-between;padding:8px 10px;background:white;border-radius:9px;margin-bottom:4px;font-size:13px;border:1px solid var(--border)"><span style="color:var(--brown);font-weight:500">${m.name}</span><span style="color:var(--orange);font-weight:600">${parseFloat(m.price||0).toLocaleString()} FCFA</span></div>`).join('')}
+        ${items.map(m=>`<div style="display:flex;justify-content:space-between;padding:8px 10px;background:white;border-radius:9px;margin-bottom:4px;font-size:13px;border:1px solid var(--border)"><span style="color:var(--brown);font-weight:500">${m.name}</span><span style="color:var(--orange);font-weight:600">${fmtCFA(m.price||0)} FCFA</span></div>`).join('')}
       </div>
     `).join('') || '<div class="empty-state" style="padding:14px">Aucun menu disponible</div>';
     const btn = document.getElementById('rdAffBtn');
@@ -971,157 +1524,6 @@ async function deaffiliateRest(id, name) {
   } catch(e) { toast(e.message, 'error'); }
 }
 
-function buildCoAffContractText(c) {
-  const offerDesc = c.offer_description || 'Le Restaurant s\'engage à fournir des repas de qualité selon les menus publiés sur la plateforme.';
-  const days = c.service_days || 'Lun–Ven';
-  const zone = c.delivery_zone || 'Non précisée';
-  const cancel = c.cancellation_policy || '30 jours de préavis';
-  const extra = c.extra_terms ? `\nConditions particulières : ${c.extra_terms}` : '';
-  const pack = c.pack_name ? `Pack : ${c.pack_name}` : 'Pack : À définir';
-  const period = c.start_date ? `Du ${new Date(c.start_date).toLocaleDateString('fr-FR')} au ${c.end_date ? new Date(c.end_date).toLocaleDateString('fr-FR') : 'Non précisée'}` : 'Période : À définir';
-  const qty = c.quantity ? `${c.quantity} repas/jour` : 'Quantité : À définir';
-  const notes = c.company_notes ? `Notes : ${c.company_notes}` : '';
-  return `CONTRAT D'AFFILIATION ET D'ABONNEMENT
-ENTRE : ${c.restaurant_name} (ci-après "le Restaurant")
-ET : L'Entreprise signataire (ci-après "l'Entreprise")
-────────────────────────────────────────
-
-ARTICLE 1 — OBJET
-Le présent contrat régit le partenariat entre le Restaurant et l'Entreprise sur la plateforme FoodChooseApp pour la fourniture de repas aux employés de l'Entreprise.
-
-ARTICLE 2 — OFFRE DU RESTAURANT
-${offerDesc}
-Jours de service : ${days}
-Zone de service : ${zone}
-Politique d'annulation : ${cancel}${extra}
-
-ARTICLE 3 — SOUSCRIPTION DE L'ENTREPRISE
-${pack}
-${period}
-Quantité : ${qty}
-${notes}
-
-ARTICLE 4 — QUALITÉ ET PRIX
-Le Restaurant s'engage à respecter les prix affichés sur la plateforme et à maintenir la qualité et la fraîcheur des plats. Tout changement de tarif sera notifié à l'avance via la messagerie.
-
-ARTICLE 5 — RÉSILIATION
-La résiliation anticipée doit respecter la politique d'annulation définie à l'Article 2, notifiée via la messagerie de la plateforme.
-
-ARTICLE 6 — ACCEPTATION
-En signant ce contrat, chaque partie reconnaît avoir lu, compris et accepté l'intégralité des présentes conditions.`;
-}
-
-async function saveCoSubscriptionTerms(affiliationId) {
-  const packSel = document.getElementById('coPack_' + affiliationId);
-  const startEl = document.getElementById('coStart_' + affiliationId);
-  const endEl = document.getElementById('coEnd_' + affiliationId);
-  const qtyEl = document.getElementById('coQty_' + affiliationId);
-  const notesEl = document.getElementById('coNotes_' + affiliationId);
-  const body = {
-    subscription_pack_id: packSel ? (parseInt(packSel.value) || null) : null,
-    start_date: startEl ? startEl.value || null : null,
-    end_date: endEl ? endEl.value || null : null,
-    quantity: qtyEl ? (parseInt(qtyEl.value) || null) : null,
-    company_notes: notesEl ? notesEl.value.trim() || null : null
-  };
-  try {
-    await apiFetch(`/api/company/affiliation-contracts/${affiliationId}`, { method: 'PUT', body }, token);
-    toast('Termes enregistrés. Rechargement du contrat…', 'success');
-    await loadCoAffiliationContracts();
-    // Re-open the sign panel
-    const panel = document.getElementById('coContractPanel_' + affiliationId);
-    if (panel) panel.style.display = '';
-  } catch(e) { toast(e.message, 'error'); }
-}
-
-function showCoContractPanel(affiliationId) {
-  const panel = document.getElementById('coContractPanel_' + affiliationId);
-  if (panel) panel.style.display = panel.style.display === 'none' ? '' : 'none';
-}
-
-async function loadCoAffiliationContracts() {
-  const el = document.getElementById('coAffiliationContractsBody');
-  if (!el) return;
-  try {
-    const contracts = await apiFetch('/api/company/affiliation-contracts', {}, token);
-    if (!contracts.length) {
-      el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:16px">Aucune affiliation pour le moment. Affiliez-vous d\'abord à un restaurant dans <strong>Tous les restaurants</strong>.</div>';
-      return;
-    }
-    const html = contracts.map(c => {
-      const coSigned = !!c.company_signed_at;
-      const restSigned = !!c.restaurant_signed_at;
-      const bothSigned = coSigned && restSigned;
-      const stColor = bothSigned ? '#166534' : coSigned ? '#1d4ed8' : '#92400E';
-      const stLabel = bothSigned ? '✅ Actif — les deux parties ont signé' : coSigned ? '⏳ En attente de signature du restaurant' : '⚠️ En attente de votre signature';
-      const packs = c.restaurant_packs || [];
-      const packOptions = packs.map(p => `<option value="${p.id}" ${c.subscription_pack_id == p.id ? 'selected' : ''}>${p.name} — ${parseFloat(p.price||0).toLocaleString()} FCFA · Min. ${p.min_order_qty} plats</option>`).join('');
-      const subSummary = c.pack_name ? `<span style="font-size:11px;color:var(--muted)"> · Pack : ${c.pack_name}${c.quantity ? ' · '+c.quantity+' repas/j' : ''}</span>` : '';
-      return `
-        <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px">
-          <div style="display:flex;align-items:center;gap:14px;padding:14px;background:#F9F1EB">
-            ${c.restaurant_photo ? `<img src="${c.restaurant_photo}" style="width:44px;height:44px;object-fit:cover;border-radius:10px">` : `<div style="width:44px;height:44px;background:var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">🍽</div>`}
-            <div style="flex:1">
-              <div style="font-weight:600;font-size:14px">${c.restaurant_name}${subSummary}</div>
-              <div style="font-size:11px;color:${stColor};font-weight:600;margin-top:3px">${stLabel}</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:2px">
-                Vous : ${coSigned ? '✅ '+new Date(c.company_signed_at).toLocaleDateString('fr-FR') : '⏳ Non signé'}
-                &nbsp;|&nbsp;
-                Restaurant : ${restSigned ? '✅ '+new Date(c.restaurant_signed_at).toLocaleDateString('fr-FR') : '⏳ Non signé'}
-              </div>
-            </div>
-            ${!coSigned ? `<button class="btn btn-primary btn-sm" onclick="showCoContractPanel(${c.affiliation_id})">✍️ Définir & Signer</button>` : `<button class="btn btn-outline btn-sm" onclick="showCoContractPanel(${c.affiliation_id})">📄 Voir</button>`}
-          </div>
-
-          <div id="coContractPanel_${c.affiliation_id}" style="display:none;border-top:1px solid var(--border)">
-            ${!coSigned ? `
-            <div style="padding:14px;background:#FAFAFA">
-              <div style="font-weight:600;font-size:13px;color:var(--brown);margin-bottom:12px">📋 Définissez votre souscription</div>
-              ${packs.length ? `<div class="form-group" style="margin-bottom:10px"><label style="font-size:12px">Pack hebdomadaire</label><select class="form-control" id="coPack_${c.affiliation_id}"><option value="">— Choisir un pack —</option>${packOptions}</select></div>` : '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">Ce restaurant n\'a pas encore publié de packs. Vous pouvez tout de même renseigner les autres champs.</div>'}
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-                <div class="form-group"><label style="font-size:12px">Date de début</label><input type="date" class="form-control" id="coStart_${c.affiliation_id}" value="${c.start_date ? c.start_date.substring(0,10) : ''}"></div>
-                <div class="form-group"><label style="font-size:12px">Date de fin</label><input type="date" class="form-control" id="coEnd_${c.affiliation_id}" value="${c.end_date ? c.end_date.substring(0,10) : ''}"></div>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-                <div class="form-group"><label style="font-size:12px">Quantité (repas/jour)</label><input type="number" min="1" class="form-control" id="coQty_${c.affiliation_id}" value="${c.quantity || ''}" placeholder="Ex: 50"></div>
-                <div class="form-group"><label style="font-size:12px">Notes (optionnel)</label><input class="form-control" id="coNotes_${c.affiliation_id}" value="${c.company_notes || ''}" placeholder="Remarques…"></div>
-              </div>
-              <button class="btn btn-outline btn-sm" onclick="saveCoSubscriptionTerms(${c.affiliation_id})" style="margin-bottom:12px">💾 Enregistrer les termes</button>
-            </div>` : ''}
-            <div style="padding:14px;background:white">
-              <div style="font-size:11px;font-family:monospace;white-space:pre-wrap;max-height:240px;overflow-y:auto;color:var(--text);line-height:1.6;padding:12px;background:#F9F1EB;border-radius:8px;margin-bottom:12px">${buildCoAffContractText(c)}</div>
-              ${!coSigned ? `
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;margin-bottom:10px">
-                <input type="checkbox" id="coAffAccept_${c.affiliation_id}" style="accent-color:var(--orange);width:15px;height:15px" onchange="document.getElementById('coAffSignBtn_${c.affiliation_id}').disabled=!this.checked">
-                J'ai lu et j'accepte les termes de ce contrat
-              </label>
-              <button class="btn btn-primary btn-sm" id="coAffSignBtn_${c.affiliation_id}" disabled onclick="signCoAffiliationContract(${c.affiliation_id})">✍️ Signer le contrat</button>` : ''}
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-    el.innerHTML = html;
-    const unsigned = contracts.filter(c => !c.company_signed_at).length;
-    const badge = document.getElementById('affContractBadge');
-    if (badge) { badge.style.display = unsigned > 0 ? '' : 'none'; badge.textContent = unsigned; }
-  } catch(e) {
-    el.innerHTML = '<div style="color:var(--danger);font-size:13px;padding:16px">Erreur de chargement.</div>';
-  }
-}
-window.loadCoAffiliationContracts = loadCoAffiliationContracts;
-window.showCoContractPanel = showCoContractPanel;
-window.saveCoSubscriptionTerms = saveCoSubscriptionTerms;
-
-async function signCoAffiliationContract(affiliationId) {
-  try {
-    await apiFetch(`/api/company/affiliation-contracts/${affiliationId}/sign`, { method: 'POST' }, token);
-    toast('Contrat d\'affiliation signé !', 'success');
-    loadCoAffiliationContracts();
-  } catch(e) { toast(e.message, 'error'); }
-}
-window.signCoAffiliationContract = signCoAffiliationContract;
-
 // ── Orders ────────────────────────────────────────────
 async function loadOrders() {
   const from = parseFrDate(document.getElementById('ordersFrom').value) || document.getElementById('ordersFrom').value;
@@ -1154,7 +1556,7 @@ async function loadOrders() {
     el.innerHTML = `
       <div style="background:#FFF0EA;border-radius:12px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <div style="font-size:13px;font-weight:600;color:var(--brown)">📊 ${orders.length} commande(s) — ${dateLabel}</div>
-        <div style="font-size:15px;font-weight:700;color:var(--orange)">${total.toLocaleString()} FCFA</div>
+        <div style="font-size:15px;font-weight:700;color:var(--orange)">${fmtCFA(total)} FCFA</div>
       </div>
       ${Object.entries(byRest).map(([rName, ords])=>`
         <div style="margin-bottom:16px;background:#F9F1EB;border-radius:12px;padding:14px">
@@ -1168,11 +1570,11 @@ async function loadOrders() {
                   <td style="font-size:11px;color:var(--muted)">${o.employee_id}</td>
                   <td>${o.first_name} ${o.last_name}</td>
                   <td>${o.menu_name}</td>
-                  <td>${parseFloat(o.price||0).toLocaleString()} FCFA</td>
+                  <td>${fmtCFA(o.price||0)} FCFA</td>
                   <td>${DRINK_LABELS[o.drink_preference]||'—'}</td>
                   <td><span class="badge badge-${o.status.includes('valid')||o.status==='confirmed'?'validated':'pending'}">${o.status}</span></td>
                 </tr>`).join('')}
-                <tr style="background:rgba(232,90,42,.06)"><td colspan="${multiDay?4:3}" style="font-weight:700;padding:9px">Total ${rName}</td><td colspan="3" style="font-weight:700;padding:9px">${ords.reduce((s,o)=>s+parseFloat(o.price||0),0).toLocaleString()} FCFA</td></tr>
+                <tr style="background:rgba(232,90,42,.06)"><td colspan="${multiDay?4:3}" style="font-weight:700;padding:9px">Total ${rName}</td><td colspan="3" style="font-weight:700;padding:9px">${fmtCFA(ords.reduce((s,o)=>s+parseFloat(o.price||0),0))} FCFA</td></tr>
               </tbody>
             </table>
           </div>
@@ -1225,7 +1627,7 @@ async function previewValidate() {
           <div style="font-size:14px;font-weight:700;color:var(--brown)">${orders.length} commandes — ${dateLabel}</div>
           <div style="font-size:12px;color:var(--muted);margin-top:3px">${pending} en attente de validation</div>
         </div>
-        <div style="font-size:16px;font-weight:700;color:var(--orange)">${total.toLocaleString()} FCFA</div>
+        <div style="font-size:16px;font-weight:700;color:var(--orange)">${fmtCFA(total)} FCFA</div>
       </div>
       <div class="table-wrap">
         <table>
@@ -1236,7 +1638,7 @@ async function previewValidate() {
               <td>${o.first_name} ${o.last_name}</td>
               <td>${o.restaurant_name}</td>
               <td>${o.menu_name}</td>
-              <td>${parseFloat(o.price||0).toLocaleString()} FCFA</td>
+              <td>${fmtCFA(o.price||0)} FCFA</td>
               <td><span class="badge badge-${o.status.includes('valid')||o.status==='confirmed'?'validated':'pending'}">${o.status}</span></td>
             </tr>`).join('')}
           </tbody>
@@ -1285,7 +1687,7 @@ async function loadInvoices() {
     document.getElementById('invoicesSummary').innerHTML = `
       <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 0;margin-bottom:12px;border-bottom:1px solid var(--border)">
         <div style="font-size:12px;color:var(--muted)">🧾 <strong style="color:var(--brown)">${invs.length}</strong> facture${invs.length>1?'s':''}</div>
-        <div style="font-size:12px;color:var(--muted)">💰 Total : <strong style="color:var(--orange)">${totalAmt.toLocaleString('fr-FR')} FCFA</strong></div>
+        <div style="font-size:12px;color:var(--muted)">💰 Total : <strong style="color:var(--orange)">${fmtCFA(totalAmt)} FCFA</strong></div>
         <div style="font-size:12px;color:var(--muted)">✅ <strong style="color:#059669">${confirmed}</strong> confirmée${confirmed>1?'s':''}</div>
         ${pending?`<div style="font-size:12px;color:var(--muted)">⏳ <strong style="color:#D97706">${pending}</strong> en attente</div>`:''}
       </div>`;
@@ -1297,7 +1699,7 @@ async function loadInvoices() {
         <td style="font-size:11px;color:var(--muted);white-space:nowrap">FAC-${String(inv.id).padStart(5,'0')}</td>
         <td><strong style="font-size:13px">${inv.restaurant_name}</strong></td>
         <td style="font-size:12px;white-space:nowrap">${fmtD(inv.created_at)}</td>
-        <td style="font-weight:700;color:var(--orange);white-space:nowrap">${parseFloat(inv.total_amount||0).toLocaleString('fr-FR')} FCFA</td>
+        <td style="font-weight:700;color:var(--orange);white-space:nowrap">${fmtCFA(inv.total_amount||0)} FCFA</td>
         <td><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${statusBg};color:${statusColor}">${statusLabel}</span></td>
         <td style="white-space:nowrap">
           <button class="btn btn-outline btn-sm" onclick="downloadInvoice(${inv.id})" title="Télécharger PDF">⬇️ PDF</button>
@@ -1313,6 +1715,70 @@ async function confirmInvoice(id) {
     await apiFetch(`/api/admin/invoices/${id}/confirm`, { method: 'POST' }, token);
     toast('Facture confirmée!', 'success');
     loadInvoices();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function switchInvTab(tab) {
+  document.getElementById('invPanelClassic').style.display = tab === 'classic' ? '' : 'none';
+  document.getElementById('invPanelWeekly').style.display  = tab === 'weekly'  ? '' : 'none';
+  document.getElementById('invTab1').classList.toggle('active', tab === 'classic');
+  document.getElementById('invTab2').classList.toggle('active', tab === 'weekly');
+  if (tab === 'weekly') loadWeeklyInvoicesCo();
+}
+
+async function loadWeeklyInvoicesCo() {
+  try {
+    const from = document.getElementById('wiCoFilterFrom')?.value || '';
+    const to   = document.getElementById('wiCoFilterTo')?.value || '';
+    const qs   = [from?'from='+from:'', to?'to='+to:''].filter(Boolean).join('&');
+    const invs = await apiFetch('/api/company/weekly-invoices' + (qs?'?'+qs:''), {}, token);
+    const tb = document.getElementById('wiCoTableBody');
+    if (!invs.length) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">Aucune facture hebdomadaire</td></tr>'; return; }
+    const DAY_FR = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+    const fmtD = d => d ? new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—';
+    tb.innerHTML = invs.map(inv => {
+      let periodeHtml;
+      if (inv.invoice_type === 'daily' && inv.day_date) {
+        const d = new Date(inv.day_date+'T12:00:00');
+        periodeHtml = `<span style="font-size:11px">${DAY_FR[d.getDay()]} ${fmtD(inv.day_date)}</span>`;
+      } else if (inv.from_date && inv.to_date) {
+        const fromD = new Date(inv.from_date+'T12:00:00');
+        const toD   = new Date(inv.to_date+'T12:00:00');
+        periodeHtml = `<span style="font-size:11px">${DAY_FR[fromD.getDay()]} ${fmtD(inv.from_date)} → ${DAY_FR[toD.getDay()]} ${fmtD(inv.to_date)}</span>`;
+      } else {
+        periodeHtml = `<span style="color:var(--muted);font-size:11px">${fmtD(inv.created_at)}</span>`;
+      }
+      const typeTag = inv.invoice_type === 'daily'
+        ? '<span style="font-size:10px;background:#FEF3C7;color:#92400E;padding:2px 7px;border-radius:10px;font-weight:700">📅 Jour</span>'
+        : '<span style="font-size:10px;background:#DBEAFE;color:#1E3A8A;padding:2px 7px;border-radius:10px;font-weight:700">📄 Globale</span>';
+      const stBg    = inv.status==='confirmed'?'#D1FAE5':'#FEF3C7';
+      const stColor = inv.status==='confirmed'?'#065F46':'#92400E';
+      const stLabel = inv.status==='confirmed'?'✓ Confirmée':'⏳ En attente';
+      const phoneTag = inv.restaurant_phone
+        ? `<span style="font-size:12px;font-weight:600;color:var(--brown)">${inv.restaurant_phone}</span>`
+        : '<span style="color:var(--muted);font-size:11px">—</span>';
+      return `<tr>
+        <td style="font-size:11px;white-space:nowrap">${inv.invoice_number}</td>
+        <td style="font-size:12px;font-weight:600">${inv.restaurant_name||'—'}</td>
+        <td>${periodeHtml}</td>
+        <td>${typeTag}</td>
+        <td style="font-weight:700;color:var(--orange);white-space:nowrap">${fmtCFA(inv.total_amount||0)} FCFA</td>
+        <td><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${stBg};color:${stColor}">${stLabel}</span></td>
+        <td>${phoneTag}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-outline btn-sm" onclick="window.open('/api/restaurant/weekly-invoices/${inv.id}/pdf?token=${token}','_blank')" title="PDF">📄</button>
+          ${inv.status !== 'confirmed' ? `<button class="btn btn-primary btn-sm" onclick="confirmWeeklyInv(${inv.id})" style="margin-left:2px">✓</button>` : ''}
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function confirmWeeklyInv(id) {
+  try {
+    await apiFetch(`/api/company/weekly-invoices/${id}/confirm`, { method: 'PUT', body: {} }, token);
+    toast('Facture hebdomadaire confirmée !', 'success');
+    loadWeeklyInvoicesCo();
   } catch(e) { toast(e.message, 'error'); }
 }
 
@@ -1399,9 +1865,9 @@ async function loadExpenses() {
     const r = await apiFetch(`/api/admin/expenses?period=${period}`, {}, token);
     // Week total quick calc
     if (period === 'week') {
-      document.getElementById('expW').textContent = (r.totalMonth||0).toLocaleString();
+      document.getElementById('expW').textContent = fmtCFA(r.totalMonth||0);
     } else if (period === 'month') {
-      document.getElementById('expM').textContent = (r.totalMonth||0).toLocaleString();
+      document.getElementById('expM').textContent = fmtCFA(r.totalMonth||0);
     }
     // Chart
     const series = r.series || [];
@@ -1410,7 +1876,7 @@ async function loadExpenses() {
     else {
       const max = Math.max(...series.map(s=>parseFloat(s.total))) || 1;
       chart.innerHTML = series.map(s=>`
-        <div class="bar-col" title="${parseFloat(s.total).toLocaleString()} FCFA">
+        <div class="bar-col" title="${fmtCFA(s.total)} FCFA">
           <div class="bar-fill" style="height:${Math.max(4,(parseFloat(s.total)/max)*140)}px"></div>
           <div class="bar-label">${s.period.slice(5)}</div>
         </div>
@@ -1421,12 +1887,12 @@ async function loadExpenses() {
       <tr>
         <td>${s.period}</td>
         <td>${s.orders}</td>
-        <td style="font-weight:600;color:var(--orange)">${parseFloat(s.total).toLocaleString()} FCFA</td>
+        <td style="font-weight:600;color:var(--orange)">${fmtCFA(s.total)} FCFA</td>
       </tr>
     `).join('') || '<tr><td colspan="3" class="empty-state">Aucune donnée</td></tr>';
     // Also load other stats
-    apiFetch('/api/admin/expenses?period=week', {}, token).then(rW=>{ document.getElementById('expW').textContent = (rW.totalMonth||0).toLocaleString(); }).catch(()=>{});
-    apiFetch('/api/admin/expenses?period=month', {}, token).then(rM=>{ document.getElementById('expM').textContent = (rM.totalMonth||0).toLocaleString(); }).catch(()=>{});
+    apiFetch('/api/admin/expenses?period=week', {}, token).then(rW=>{ document.getElementById('expW').textContent = fmtCFA(rW.totalMonth||0); }).catch(()=>{});
+    apiFetch('/api/admin/expenses?period=month', {}, token).then(rM=>{ document.getElementById('expM').textContent = fmtCFA(rM.totalMonth||0); }).catch(()=>{});
   } catch(e) { toast('Erreur dépenses','error'); }
 }
 
@@ -1701,10 +2167,8 @@ loadAllRestaurants();
 // ── Settings ──────────────────────────────────────────
 async function loadSettings() {
   initPasswordToggles();
-  // Libellé du champ mot de passe
   const label = document.getElementById('coPwLabel');
   if (label) label.textContent = 'Mot de passe actuel';
-  // Load company logo if available
   try {
     const r = await apiFetch('/api/admin/company-profile', {}, token);
     if (r.logo_url) {
@@ -1715,6 +2179,13 @@ async function loadSettings() {
     if (r.name) document.getElementById('coName').value = r.name;
     if (r.email) document.getElementById('coEmail').value = r.email;
   } catch(e) {}
+  // Charger les paramètres de subvention
+  try { await loadSubsidySettings(); } catch(e) {}
+  // Lier l'événement de mise à jour du résumé subvention
+  ['subsidyFood','subsidyDrink','subsidyPeriod'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateSubsidyInfo);
+  });
 }
 
 async function saveCompanyProfile() {
@@ -1769,70 +2240,141 @@ async function loadWeeklyMenus() {
     // ── Packs disponibles ──
     const packGrid = document.getElementById('packsGrid');
     if (!packs.length) {
-      packGrid.innerHTML = '<div class="empty-state"><span class="icon">📦</span>Aucun pack hebdomadaire disponible pour vos restaurants affiliés</div>';
+      packGrid.innerHTML = '<div class="empty-state"><span class="icon">📦</span><div>Aucun pack hebdomadaire disponible pour vos restaurants affiliés.</div></div>';
     } else {
-      // Grouper par restaurant
-      const byRest = {};
-      packs.forEach(p => {
-        if (!byRest[p.restaurant_id]) byRest[p.restaurant_id] = { name: p.restaurant_name, photo: p.restaurant_photo, packs: [] };
-        byRest[p.restaurant_id].packs.push(p);
-      });
-      packGrid.innerHTML = Object.values(byRest).map(rest => {
-        const packsHtml = rest.packs.map(pack => {
-          const menusHtml = (pack.menus || []).map(menu => {
-            const daysHtml = (menu.days || []).map(day => {
-              const dishesHtml = (day.dishes || []).map(dish => `
-                <div class="dish-row">
-                  ${dish.image_url ? `<img src="${dish.image_url}" alt="${dish.name}">` : '<div style="width:40px;height:40px;border-radius:7px;background:var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">🍽</div>'}
-                  <div style="flex:1">
-                    <div style="font-weight:600;font-size:13px;color:var(--brown)">${dish.name}</div>
-                    ${dish.description ? `<div style="font-size:11px;color:var(--muted)">${dish.description}</div>` : ''}
-                    <div style="font-size:11px;color:var(--orange);font-weight:600">${parseFloat(dish.price||0).toLocaleString()} FCFA</div>
-                  </div>
-                </div>`).join('');
+      // Index des abonnements actifs par pack_id pour marquer les packs déjà souscrits
+      const subscribedPackIds = new Set(selections.filter(s => s.status !== 'cancelled').map(s => s.weekly_pack_id));
+
+      // Prochain lundi (pour info utilisateur)
+      const todayD = new Date(); const diff = (1 - todayD.getDay() + 7) % 7 || 7;
+      const nextMon = new Date(todayD); nextMon.setDate(todayD.getDate() + diff);
+      const nextMonLabel = nextMon.toLocaleDateString('fr-FR', {weekday:'long', day:'2-digit', month:'long'});
+
+      // Résumé global
+      const totalPacks = packs.length;
+      const totalRests = new Set(packs.map(p => p.restaurant_id)).size;
+      packGrid.innerHTML = `
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;padding:12px 16px;background:linear-gradient(90deg,#FFF0EA,#FFF8F3);border-radius:12px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2c-1.67 0-5 .83-5 4v6c0 1.1.9 2 2 2v5a1 1 0 0 0 2 0v-5c1.1 0 2-.9 2-2z"/></svg>
+            <span style="font-size:13px;color:var(--brown)"><strong>${totalRests}</strong> restaurant${totalRests>1?'s':''} · <strong>${totalPacks}</strong> pack${totalPacks>1?'s':''}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span style="font-size:12px;color:var(--muted)">Prochain lundi : <strong style="color:var(--brown)">${nextMonLabel}</strong></span>
+          </div>
+        </div>` +
+        Object.values(
+          packs.reduce((acc, p) => {
+            if (!acc[p.restaurant_id]) acc[p.restaurant_id] = { name: p.restaurant_name, photo: p.restaurant_photo, packs: [] };
+            acc[p.restaurant_id].packs.push(p);
+            return acc;
+          }, {})
+        ).map(rest => {
+          const packsHtml = rest.packs.map(pack => {
+            const totalDishes = (pack.menus||[]).reduce((s,m)=>(m.days||[]).reduce((ss,d)=>ss+(d.dishes||[]).length,s),0);
+            const totalMenus  = (pack.menus||[]).length;
+            const alreadySub  = subscribedPackIds.has(pack.id);
+
+            const menusHtml = (pack.menus||[]).map((menu, mi) => {
+              const daysHtml = (menu.days||[]).map(day => {
+                const dayName = DAY_NAMES[day.day_of_week] || ('Jour '+day.day_of_week);
+                const isOpt = day.is_optional;
+                const dishesHtml = (day.dishes||[]).map(dish => `
+                  <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
+                    ${dish.image_url
+                      ? `<img src="${dish.image_url}" style="width:42px;height:42px;border-radius:8px;object-fit:cover;flex-shrink:0">`
+                      : `<div style="width:42px;height:42px;border-radius:8px;background:#FFF0EA;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px">🍽</div>`}
+                    <div style="flex:1;min-width:0">
+                      <div style="font-weight:600;font-size:13px;color:var(--brown)">${dish.name}</div>
+                      ${dish.description ? `<div style="font-size:11px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${dish.description}</div>` : ''}
+                    </div>
+                    <span style="font-size:12px;font-weight:700;color:var(--orange);white-space:nowrap;flex-shrink:0">${fmtCFA(dish.price||0)} FCFA</span>
+                  </div>`).join('');
+
+                return `
+                  <div style="border:1px solid ${isOpt?'#FDE68A':'var(--border)'};border-radius:10px;overflow:hidden;margin-bottom:10px">
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:${isOpt?'rgba(249,199,79,.08)':'#F9F6F3'}">
+                      <div style="display:flex;align-items:center;gap:6px">
+                        <span style="padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;background:${isOpt?'#F59E0B':'var(--orange)'};color:white">${dayName}</span>
+                        ${isOpt ? '<span style="font-size:10px;color:#92400E;font-style:italic">optionnel</span>' : ''}
+                      </div>
+                      <span style="font-size:11px;color:var(--muted)">${(day.dishes||[]).length} plat${(day.dishes||[]).length>1?'s':''}</span>
+                    </div>
+                    <div style="padding:2px 12px">
+                      ${dishesHtml || '<div style="padding:10px 0;font-size:12px;color:var(--muted);font-style:italic">Aucun plat défini</div>'}
+                    </div>
+                  </div>`;
+              }).join('');
+
               return `
-                <div style="margin-bottom:12px">
-                  <div style="margin-bottom:6px;display:flex;align-items:center;gap:6px">
-                    <span class="day-pill">${DAY_NAMES[day.day_of_week]||'Jour '+day.day_of_week}</span>
-                    ${day.is_optional ? '<span style="font-size:10px;color:var(--muted)">(opt.)</span>' : ''}
+                <div style="border-top:1px solid var(--border)">
+                  <div style="padding:10px 16px;background:#FAFAFA;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none"
+                       onclick="const b=this.nextElementSibling;const open=b.style.display!=='none';b.style.display=open?'none':'';this.querySelector('.chv').style.transform=open?'':'rotate(180deg)'">
+                    <div style="width:22px;height:22px;border-radius:6px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0">${mi+1}</div>
+                    <span style="font-size:12px;font-weight:700;color:var(--brown);flex:1">${menu.name}</span>
+                    <span style="font-size:11px;color:var(--muted)">${(menu.days||[]).length} jour${(menu.days||[]).length>1?'s':''}</span>
+                    <svg class="chv" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex-shrink:0"><polyline points="6 9 12 15 18 9"/></svg>
                   </div>
-                  <div style="padding:0 4px">${dishesHtml||'<div style="font-size:12px;color:var(--muted)">Aucun plat défini</div>'}</div>
+                  <div style="padding:10px 16px 6px;display:none">
+                    ${daysHtml || '<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px 0">Aucun jour configuré</div>'}
+                  </div>
                 </div>`;
             }).join('');
+
+            const packId   = pack.id;
+            const restId   = pack.restaurant_id;
+            const packName = pack.name.replace(/'/g,"\\'");
+            const restName = rest.name.replace(/'/g,"\\'");
+            const price    = pack.price || 0;
+            const minQty   = pack.min_order_qty || 8;
+
             return `
-              <div style="padding:12px 16px;border-top:1px solid var(--border)">
-                <div style="font-size:12px;font-weight:700;color:var(--brown);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">${menu.name}</div>
-                ${daysHtml}
+              <div style="border:1px solid ${alreadySub?'#86EFAC':'var(--border)'};border-radius:14px;overflow:hidden;margin-bottom:12px;background:var(--cream)">
+                <!-- Pack header -->
+                <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer"
+                     onclick="togglePackDetail('pd-${packId}',this)">
+                  <div style="flex:1;min-width:0">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                      <span style="font-weight:700;font-size:15px;color:var(--brown)">${pack.name}</span>
+                      ${alreadySub ? '<span style="font-size:11px;font-weight:700;background:#dcfce7;color:#16a34a;padding:2px 9px;border-radius:20px;white-space:nowrap">✅ Abonné</span>' : ''}
+                    </div>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;align-items:center">
+                      ${parseFloat(price) > 0
+                        ? `<span style="background:var(--orange);color:#fff;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700">💰 ${fmtCFA(price)} FCFA / sem.</span>`
+                        : ''}
+                      <span style="font-size:12px;color:var(--muted);background:var(--border);border-radius:20px;padding:3px 10px">🍽 Min. ${minQty} plats/jour</span>
+                      ${totalMenus > 0 ? `<span style="font-size:11px;color:var(--muted)">${totalMenus} menu${totalMenus>1?'s':''} · ${totalDishes} plat${totalDishes>1?'s':''}</span>` : ''}
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                    <button class="btn btn-primary" onclick="event.stopPropagation();openWeeklyOrderModal(${packId},${restId},'${packName}',${price},${minQty},'${restName}')" style="font-size:13px;white-space:nowrap">
+                      ${alreadySub ? 'Abonner encore' : "S'abonner"}
+                    </button>
+                    <svg id="chev-${packId}" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                </div>
+                <!-- Pack body -->
+                <div id="pd-${packId}" style="display:none">
+                  ${menusHtml || '<div style="padding:16px;color:var(--muted);font-size:13px;font-style:italic">Aucun menu défini pour ce pack</div>'}
+                </div>
               </div>`;
           }).join('');
+
           return `
-            <div class="pack-card" style="margin-bottom:10px">
-              <div class="pack-card-header" onclick="this.parentElement.querySelector('.pack-card-body').classList.toggle('open')">
-                <div style="flex:1">
-                  <div style="font-weight:700;font-size:15px;color:var(--brown)">${pack.name}</div>
-                  <div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap;align-items:center">
-                    <span style="background:var(--orange);color:#fff;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700">💰 ${parseFloat(pack.price||0).toLocaleString()} FCFA / semaine</span>
-                    <span style="font-size:12px;color:var(--muted);background:var(--border);border-radius:20px;padding:3px 10px">Min. ${pack.min_order_qty||8} plats/jour</span>
-                  </div>
-                  <div style="font-size:11px;color:var(--muted);margin-top:4px">Cliquez pour voir le détail du menu ▾</div>
+            <div style="margin-bottom:28px">
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:linear-gradient(90deg,#FFF0EA,#FFF8F3);border-radius:12px;margin-bottom:12px;border-left:3px solid var(--orange)">
+                ${rest.photo
+                  ? `<img src="${rest.photo}" style="width:46px;height:46px;border-radius:10px;object-fit:cover;flex-shrink:0">`
+                  : `<div style="width:46px;height:46px;border-radius:10px;background:white;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🍽</div>`}
+                <div>
+                  <div style="font-weight:700;font-size:15px;color:var(--brown)">${rest.name}</div>
+                  <div style="font-size:12px;color:var(--muted);margin-top:2px">${rest.packs.length} pack${rest.packs.length>1?'s':''} disponible${rest.packs.length>1?'s':''}</div>
                 </div>
-                <button class="btn btn-primary" style="flex-shrink:0" onclick="event.stopPropagation();openWeeklyOrderModal(${pack.id},${pack.restaurant_id},'${pack.name.replace(/'/g,"\\'")}',${pack.price||0},${pack.min_order_qty||8},'${rest.name.replace(/'/g,"\\'")}')">S'abonner</button>
               </div>
-              <div class="pack-card-body">${menusHtml||'<div style="padding:16px;color:var(--muted);font-size:13px">Aucun menu défini</div>'}</div>
+              ${packsHtml}
             </div>`;
         }).join('');
-        return `
-          <div style="margin-bottom:24px">
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--border)">
-              ${rest.photo ? `<img src="${rest.photo}" style="width:44px;height:44px;border-radius:10px;object-fit:cover;flex-shrink:0">` : '<div style="width:44px;height:44px;border-radius:10px;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🍽</div>'}
-              <div>
-                <div style="font-weight:700;font-size:15px;color:var(--brown)">${rest.name}</div>
-                <div style="font-size:12px;color:var(--muted)">${rest.packs.length} pack${rest.packs.length>1?'s':''} disponible${rest.packs.length>1?'s':''}</div>
-              </div>
-            </div>
-            ${packsHtml}
-          </div>`;
-      }).join('');
     }
 
     // ── Mes abonnements ──
@@ -1843,63 +2385,131 @@ async function loadWeeklyMenus() {
 function renderWeeklyOrders(selections) {
   const el = document.getElementById('ordersGrid');
   if (!selections.length) {
-    el.innerHTML = '<div class="empty-state"><span class="icon">📋</span>Aucune commande hebdomadaire encore</div>';
+    el.innerHTML = '<div class="empty-state"><span class="icon">📋</span><div>Aucun abonnement hebdomadaire pour le moment.</div></div>';
     return;
   }
+
   const today = new Date(); today.setHours(0,0,0,0);
   const DAY_SHORT = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
-  el.innerHTML = selections.map(s => {
-    const logs = Array.isArray(s.delivery_logs) ? s.delivery_logs : [];
-    const extras = Array.isArray(s.extras) ? s.extras : [];
-    const extrasHtml = extras.length
-      ? `<div style="margin-top:6px;font-size:12px;color:var(--muted)">🎁 Extras : ${extras.map(e=>{const d=e.day_list?e.day_list.split(',').filter(Boolean).map(n=>DAY_SHORT[+n-1]||n).join(', '):'';return `${e.item_name} ×${e.quantity}${d?' ('+d+')':''}`;}).join(' · ')}</div>` : '';
+  const WDAY = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 
-    let delivSection = '';
-    if (logs.length) {
-      const logItems = logs.map(log => {
-        const dDate = new Date(log.delivery_date+'T12:00:00');
-        const dateStr = dDate.toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'short'});
-        let badge = '', btn = '';
-        if (log.status === 'received') {
-          badge = '<span style="font-size:10px;color:#16a34a;background:#dcfce7;padding:2px 8px;border-radius:10px;font-weight:700">✅ Réceptionné</span>';
-        } else if (log.status === 'sent') {
-          badge = '<span style="font-size:10px;color:#2563eb;background:#dbeafe;padding:2px 8px;border-radius:10px;font-weight:700">📤 Livré par le restaurant</span>';
-          btn = `<button class="btn btn-outline btn-sm" onclick="acknowledgeDelivery(${log.id})" style="font-size:10px;padding:2px 8px;color:#16a34a;border-color:#16a34a">✅ Accuser réception</button>`;
-        } else {
-          badge = '<span style="font-size:10px;color:#f59e0b;background:#fef3c7;padding:2px 8px;border-radius:10px;font-weight:700">⏳ En attente</span>';
-        }
-        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);flex-wrap:wrap">
-          <span style="font-size:11px;font-weight:600;color:var(--brown);min-width:110px">${dateStr}</span>
-          ${badge} ${btn}
-        </div>`;
-      }).join('');
-      const recvCount = logs.filter(l=>l.status==='received').length;
-      const sentCount = logs.filter(l=>l.status==='sent'||l.status==='received').length;
-      delivSection = `<div style="margin-top:10px;padding:10px;background:#F9F6F3;border-radius:8px;border:1px solid var(--border)">
-        <div style="font-size:12px;font-weight:600;color:var(--brown);margin-bottom:8px">📦 Livraisons (${sentCount} envoyées · ${recvCount} réceptionnées)</div>
-        ${logItems}
-      </div>`;
-    }
+  function weekLabel(ws) {
+    if (!ws) return '?';
+    const mon = new Date(ws+'T12:00:00');
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    return mon.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'})
+      +' → '+sun.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+  }
 
-    return `<div style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:14px;color:var(--brown)">${s.pack_name||'Menu supprimé'}</div>
-          <div style="font-size:12px;color:var(--muted)">🍽 ${s.restaurant_name} · Semaine du ${new Date(s.week_start+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div>
-          <div style="font-size:12px;margin-top:4px;display:flex;gap:10px;flex-wrap:wrap">
-            <span>🍽 <strong>${s.dish_qty}</strong> plats/jour</span>
-            <span style="color:var(--orange)">💰 ${parseFloat(s.pack_price||0).toLocaleString()} FCFA</span>
-            <span class="status-badge ${s.status==='confirmed'?'confirmed':s.status==='cancelled'?'cancelled':''}">${s.status==='confirmed'?'✅ Confirmé':s.status==='cancelled'?'❌ Annulé':'⏳ En attente'}</span>
+  const ST = {
+    confirmed:{ color:'#16a34a', bg:'#dcfce7', label:'Confirmé',   icon:'✅' },
+    cancelled:{ color:'#dc2626', bg:'#fee2e2', label:'Annulé',     icon:'❌' },
+    pending:  { color:'#d97706', bg:'#fef3c7', label:'En attente', icon:'⏳' }
+  };
+
+  // Grouper par semaine, trier du plus récent au plus ancien
+  const byWeek = {};
+  for (const s of selections) {
+    const wk = s.week_start || '?';
+    if (!byWeek[wk]) byWeek[wk] = [];
+    byWeek[wk].push(s);
+  }
+  const sortedWeeks = Object.keys(byWeek).sort((a,b) => b.localeCompare(a));
+
+  el.innerHTML = sortedWeeks.map(wk => {
+    const items = byWeek[wk];
+    const weeksHtml = items.map(s => {
+      const st = ST[s.status] || { color:'#6b7280', bg:'#f3f4f6', label:s.status, icon:'•' };
+      const logs = Array.isArray(s.delivery_logs) ? s.delivery_logs : [];
+      const extras = Array.isArray(s.extras) ? s.extras : [];
+
+      // Extras
+      const extrasHtml = extras.length ? `
+        <div style="padding:8px 14px;background:#FAFAFA;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:5px">
+          ${extras.map(e => {
+            const d = e.day_list ? e.day_list.split(',').filter(Boolean).map(n=>DAY_SHORT[+n-1]||n).join(', ') : '';
+            return `<span style="font-size:11px;background:#F3F4F6;border-radius:6px;padding:2px 8px;color:var(--brown)">🎁 ${e.item_name} ×${e.quantity}${d?` <span style="color:var(--muted)">(${d})</span>`:''}</span>`;
+          }).join('')}
+        </div>` : '';
+
+      // Livraisons
+      let delivHtml = '';
+      if (logs.length) {
+        const rc = logs.filter(l=>l.status==='received').length;
+        const sc = logs.filter(l=>l.status==='sent'||l.status==='received').length;
+        const logRows = logs.map(log => {
+          const dDate = new Date(log.delivery_date+'T12:00:00');
+          const dateStr = dDate.toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'short'});
+          let badge, btn = '';
+          if (log.status==='received') {
+            badge = '<span style="font-size:10px;font-weight:700;color:#16a34a;background:#dcfce7;padding:2px 8px;border-radius:8px">✅ Réceptionné</span>';
+          } else if (log.status==='sent') {
+            badge = '<span style="font-size:10px;font-weight:700;color:#2563eb;background:#dbeafe;padding:2px 8px;border-radius:8px">📤 Livré</span>';
+            btn = `<button class="btn btn-outline btn-sm" onclick="acknowledgeDelivery(${log.id})" style="font-size:10px;padding:2px 8px;color:#16a34a;border-color:#16a34a">✅ Accuser réception</button>`;
+          } else {
+            badge = '<span style="font-size:10px;font-weight:700;color:#d97706;background:#fef3c7;padding:2px 8px;border-radius:8px">⏳ En attente</span>';
+          }
+          return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;font-weight:600;color:var(--brown);width:110px;flex-shrink:0">${dateStr}</span>
+            ${badge} ${btn}
+          </div>`;
+        }).join('');
+        delivHtml = `
+          <div style="padding:10px 14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:#F9F6F3;border-radius:8px 8px 0 0;border:1px solid var(--border);border-bottom:none">
+              <span style="font-size:12px;font-weight:600;color:var(--brown)">📦 Livraisons</span>
+              <span style="font-size:11px;color:var(--muted)">${sc}/${logs.length} envoyées · ${rc} réceptionnées</span>
+            </div>
+            <div style="padding:4px 10px;border:1px solid var(--border);border-radius:0 0 8px 8px">${logRows}</div>
+          </div>`;
+      }
+
+      // Logo restaurant
+      const restAvatar = s.restaurant_photo
+        ? `<img src="${s.restaurant_photo}" style="width:38px;height:38px;border-radius:10px;object-fit:cover;flex-shrink:0">`
+        : `<div style="width:38px;height:38px;background:#FFF0EA;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🍽</div>`;
+
+      return `
+      <div style="background:white;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden">
+        <!-- Header carte -->
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;${extrasHtml||delivHtml?'border-bottom:1px solid var(--border)':''}">
+          ${restAvatar}
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:700;color:var(--brown)">${s.pack_name||'Pack supprimé'}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:3px">
+              <span style="font-size:11px;color:var(--muted)">🍽 ${s.restaurant_name||'—'}</span>
+              <span style="font-size:11px;color:var(--muted)">🍽 ${s.dish_qty} plats/jour</span>
+              ${parseFloat(s.pack_price||0) > 0
+                ? `<span style="font-size:11px;font-weight:600;color:var(--orange)">💰 ${fmtCFA(s.pack_price)} FCFA</span>`
+                : ''}
+              ${s.notes ? `<span style="font-size:11px;color:var(--muted);font-style:italic">📝 ${s.notes}</span>` : ''}
+            </div>
           </div>
-          ${extrasHtml}
-          ${s.notes ? `<div style="margin-top:4px;font-size:12px;color:var(--muted);font-style:italic">"${s.notes}"</div>` : ''}
+          <!-- Statut + actions -->
+          <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+            <span style="font-size:11px;font-weight:700;color:${st.color};background:${st.bg};padding:4px 10px;border-radius:20px;white-space:nowrap">${st.icon} ${st.label}</span>
+            <button class="btn btn-outline btn-sm" onclick="editWeeklyOrder(${s.id})" title="Modifier" style="padding:4px 9px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="deleteWeeklyOrder(${s.id})" title="Supprimer" style="padding:4px 9px;color:#dc2626;border-color:#fca5a5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            </button>
+          </div>
         </div>
-        <div style="display:flex;gap:6px;flex-shrink:0">
-          <button class="btn btn-outline btn-sm" onclick="editWeeklyOrder(${s.id})">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteWeeklyOrder(${s.id})">🗑</button>
-        </div>
+        ${extrasHtml}
+        ${delivHtml}
+      </div>`;
+    }).join('');
+
+    return `
+    <div style="margin-bottom:24px">
+      <!-- En-tête semaine -->
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:linear-gradient(90deg,#FFF0EA,#FFF8F3);border-radius:10px;margin-bottom:10px;border-left:3px solid var(--orange)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span style="font-size:13px;font-weight:700;color:var(--brown)">${weekLabel(wk)}</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--muted)">${items.length} abonnement${items.length>1?'s':''}</span>
       </div>
-      ${delivSection}
+      ${weeksHtml}
     </div>`;
   }).join('');
 }
@@ -1917,8 +2527,64 @@ let _woExtras = [];
 let _woMinQty = 8;
 
 // Helpers exposés globalement pour les handlers inline des extras
-function woSetType(i, v)     { _woExtras[i].item_type = v; }
+function woSetType(i, v) {
+  _woExtras[i].item_type = v;
+  closeAcDropdown(`woExtraNameDrop-${i}`);
+}
 function woSetName(i, v)     { _woExtras[i].item_name = v; }
+
+// ── Autocomplete extras ──────────────────────────────────────────────
+function _woAcCat(itemType) {
+  if (itemType === 'drink')                 return 'boisson';
+  if (itemType === 'cake' || itemType === 'yogurt') return 'dessert';
+  return null;
+}
+function acHighlightWo(text, q) {
+  if (!q) return text;
+  const idx = text.toLowerCase().indexOf(q.toLowerCase());
+  if (idx < 0) return text;
+  return text.slice(0,idx) + '<mark>' + text.slice(idx, idx+q.length) + '</mark>' + text.slice(idx+q.length);
+}
+function acFilterWo(i) {
+  const cat = _woAcCat((_woExtras[i]||{}).item_type);
+  const inputId  = `woExtraName-${i}`;
+  const dropId   = `woExtraNameDrop-${i}`;
+  const input    = document.getElementById(inputId);
+  const dropdown = document.getElementById(dropId);
+  if (!input || !dropdown) return;
+  const q = input.value.trim();
+  let filtered;
+  if (!q) {
+    const base = cat ? ALL_FOOD_SUGGESTIONS.filter(it => it.category === cat) : ALL_FOOD_SUGGESTIONS;
+    filtered = base.slice(0, 50);
+  } else {
+    filtered = ALL_FOOD_SUGGESTIONS.filter(it =>
+      it.name.toLowerCase().includes(q.toLowerCase()) && (!cat || it.category === cat)
+    ).slice(0, 15);
+  }
+  if (!filtered.length) { closeAcDropdown(dropId); return; }
+  dropdown.innerHTML = filtered.map(it =>
+    `<div class="ac-item"
+      onmousedown="event.preventDefault();acSelectWo(${i},${JSON.stringify(it.name)})"
+      ontouchend="event.preventDefault();acSelectWo(${i},${JSON.stringify(it.name)})"
+    >${acHighlightWo(it.name, q)}</div>`
+  ).join('');
+  dropdown.classList.add('open');
+}
+function acSelectWo(i, name) {
+  const input = document.getElementById(`woExtraName-${i}`);
+  if (input) input.value = name;
+  woSetName(i, name);
+  closeAcDropdown(`woExtraNameDrop-${i}`);
+}
+function closeAcDropdown(id) {
+  const d = document.getElementById(id);
+  if (d) d.classList.remove('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ac-wrap'))
+    document.querySelectorAll('.ac-dropdown.open').forEach(d => d.classList.remove('open'));
+});
 function woIncQty(i, d)      { _woExtras[i].quantity  = Math.max(1, (_woExtras[i].quantity||1) + d); renderWoExtras(); }
 function woToggleDay(i, day) {
   // Bloquer les jours passés
@@ -1946,7 +2612,7 @@ function openWeeklyOrderModal(packId, restaurantId, packName, price, minQty, res
     <div style="font-weight:700;font-size:14px;color:var(--brown);margin-bottom:4px">${packName}</div>
     <div style="color:var(--muted);font-size:12px;margin-bottom:6px">🍽 ${restaurantName||''}</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <span style="background:var(--orange);color:#fff;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600">💰 ${parseFloat(price).toLocaleString()} FCFA / semaine</span>
+      <span style="background:var(--orange);color:#fff;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600">💰 ${fmtCFA(price)} FCFA / semaine</span>
       <span style="background:var(--border);color:var(--muted);border-radius:20px;padding:2px 10px;font-size:12px">Min. ${parseInt(minQty)||8} plats/jour</span>
     </div>`;
   document.getElementById('woMinHint').textContent = `(minimum ${_woMinQty})`;
@@ -2011,7 +2677,7 @@ function renderWoExtras() {
       }
       return `<label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;user-select:none">
         <span style="font-size:10px;color:${checked?'var(--orange)':'var(--muted)'};font-weight:${checked?'700':'400'}">${label}</span>
-        <div onclick="woToggleDay(${i},${dayNum})" style="width:28px;height:28px;border-radius:50%;border:2px solid ${checked?'var(--orange)':'var(--border)'};background:${checked?'var(--orange)':'transparent'};display:flex;align-items:center;justify-content:center;transition:all .15s">
+        <div onclick="woToggleDay(${i},${dayNum})" style="width:28px;height:28px;border-radius:50%;border:2px solid ${checked?'var(--orange)':'var(--border)'};background:${checked?'var(--orange)':'transparent'};display:flex;align-items:center;justify-content:center">
           ${checked?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':''}
         </div>
       </label>`;
@@ -2026,7 +2692,12 @@ function renderWoExtras() {
             <option value="fruit"  ${ex.item_type==='fruit' ?'selected':''}>🍎 Fruit</option>
             <option value="other"  ${ex.item_type==='other' ?'selected':''}>📦 Autre</option>
           </select>
-          <input class="form-control" style="flex:1;font-size:12px" placeholder="Nom (ex: Coca-Cola)" value="${ex.item_name}" oninput="woSetName(${i},this.value)">
+          <div class="ac-wrap" style="flex:1;min-width:0">
+            <input class="form-control" id="woExtraName-${i}" style="font-size:12px;width:100%" placeholder="Nom du produit" value="${ex.item_name}" autocomplete="off"
+              oninput="woSetName(${i},this.value);acFilterWo(${i})"
+              onfocus="acFilterWo(${i})">
+            <div class="ac-dropdown" id="woExtraNameDrop-${i}"></div>
+          </div>
           <button class="btn btn-danger btn-sm" style="padding:2px 8px;flex-shrink:0" onclick="removeWoExtra(${i})">✕</button>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
@@ -2112,8 +2783,128 @@ async function deleteWeeklyOrder(id) {
 function switchWeeklyTab(tab) {
   document.getElementById('weeklyPacksPanel').style.display = tab === 'packs' ? 'block' : 'none';
   document.getElementById('weeklyOrdersPanel').style.display = tab === 'orders' ? 'block' : 'none';
+  document.getElementById('weeklyAvisPanel').style.display = tab === 'avis' ? 'block' : 'none';
   document.getElementById('tabPacks').classList.toggle('active', tab === 'packs');
   document.getElementById('tabOrders').classList.toggle('active', tab === 'orders');
+  document.getElementById('tabAvis').classList.toggle('active', tab === 'avis');
+  if (tab === 'avis') initAvisHebdo();
+}
+
+// ── Avis Programme Hebdomadaire ───────────────────────────────────
+const DAY_LABELS_FR = {1:'Lundi',2:'Mardi',3:'Mercredi',4:'Jeudi',5:'Vendredi',6:'Samedi',7:'Dimanche'};
+
+async function initAvisHebdo() {
+  // Pré-sélectionner la semaine courante
+  const inp = document.getElementById('avisWeekStart');
+  if (inp && !inp.value) {
+    const today = new Date();
+    const mon = new Date(today);
+    mon.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    inp.value = mon.toISOString().split('T')[0];
+  }
+  // Charger les restaurants affiliés dans le filtre
+  try {
+    const affiliations = await apiFetch('/api/company/affiliations', {}, token);
+    const sel = document.getElementById('avisRestaurantFilter');
+    if (sel && affiliations?.length) {
+      const existing = Array.from(sel.options).map(o => o.value);
+      affiliations.forEach(a => {
+        if (!existing.includes(String(a.id))) {
+          const opt = document.createElement('option');
+          opt.value = a.id; opt.textContent = a.name;
+          sel.appendChild(opt);
+        }
+      });
+    }
+  } catch(e) {}
+  loadAvisHebdo();
+}
+
+async function loadAvisHebdo() {
+  const weekStart    = document.getElementById('avisWeekStart')?.value;
+  const restaurantId = document.getElementById('avisRestaurantFilter')?.value;
+  const grid = document.getElementById('avisHebdoGrid');
+  if (!grid) return;
+  if (!weekStart) { grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px">Choisissez une semaine.</div>'; return; }
+  grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px">Chargement…</div>';
+  try {
+    const qs = `week_start=${weekStart}${restaurantId ? '&restaurant_id='+restaurantId : ''}`;
+    const entries = await apiFetch(`/api/company/weekly-daily-entries?${qs}`, {}, token);
+    if (!entries.length) {
+      grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px;text-align:center">Aucun repas enregistré pour cette semaine.</div>';
+      return;
+    }
+    // Grouper par restaurant
+    const byRest = {};
+    entries.forEach(e => {
+      const key = e.restaurant_id;
+      if (!byRest[key]) byRest[key] = { name: e.restaurant_name, entries: [] };
+      byRest[key].entries.push(e);
+    });
+    grid.innerHTML = Object.values(byRest).map(r => `
+      <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px">
+        <div style="background:#FFF8F3;padding:10px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:13px;color:var(--brown)">
+          🍽 ${r.name}
+        </div>
+        ${r.entries.map(e => renderAvisEntry(e)).join('')}
+      </div>
+    `).join('');
+  } catch(err) { grid.innerHTML = `<div style="color:#dc2626;padding:12px">${err.message}</div>`; }
+}
+
+function renderAvisEntry(e) {
+  const d = new Date(e.day_date + 'T12:00:00');
+  const dow = d.getDay() === 0 ? 7 : d.getDay();
+  const dayLabel = DAY_LABELS_FR[dow] || '';
+  const fmtDate  = d.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'2-digit' });
+  const items    = Array.isArray(e.items) ? e.items : JSON.parse(e.items || '[]');
+  const delivered = e.delivered !== false && e.delivered !== 'false';
+  const delivTag = delivered
+    ? '<span style="font-size:10px;background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:10px;font-weight:700">✅ Livré</span>'
+    : '<span style="font-size:10px;background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:10px;font-weight:700">❌ Non livré</span>';
+  const restNote = e.restaurant_note
+    ? `<div style="font-size:11px;color:#b45309;background:#fef3c7;border-radius:6px;padding:5px 9px;margin-top:6px">💬 Restaurant : ${e.restaurant_note}</div>`
+    : '';
+  const dishList = items.filter(it => !it.holiday).map(it =>
+    `<span style="font-size:11px;background:var(--border);border-radius:6px;padding:2px 7px">${it.name}${it.qty ? ' ×'+it.qty : ''}</span>`
+  ).join(' ');
+  const hasFeedback = e.company_feedback && e.company_feedback.trim();
+  return `
+    <div style="padding:10px 14px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-weight:600;font-size:12px;color:var(--brown)">${dayLabel} ${fmtDate}</span>
+        ${delivTag}
+      </div>
+      ${dishList ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">${dishList}</div>` : ''}
+      ${restNote}
+      <div style="margin-top:8px">
+        ${hasFeedback
+          ? `<div style="font-size:11px;color:var(--brown);background:#FFF0EA;border-radius:6px;padding:6px 9px;margin-bottom:5px">
+               ⭐ Votre avis : ${e.company_feedback}
+               <span style="color:var(--muted);font-size:10px;margin-left:6px">${new Date(e.company_feedback_at).toLocaleDateString('fr-FR')}</span>
+             </div>`
+          : ''}
+        <div style="display:flex;gap:6px;align-items:flex-end">
+          <textarea id="avisFeedback-${e.id}" class="form-control" rows="2"
+            placeholder="Votre avis sur ce repas (qualité, quantité, retard…)"
+            style="font-size:12px;resize:vertical;flex:1">${hasFeedback ? e.company_feedback : ''}</textarea>
+          <button class="btn btn-primary btn-sm" onclick="submitAvis(${e.id})" style="flex-shrink:0;align-self:flex-end">
+            ${hasFeedback ? '✏️ Modifier' : '⭐ Envoyer'}
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function submitAvis(entryId) {
+  const feedback = document.getElementById(`avisFeedback-${entryId}`)?.value.trim();
+  if (!feedback) return toast('Rédigez un avis avant d\'envoyer', 'error');
+  try {
+    await apiFetch(`/api/company/weekly-invoices/${entryId}/feedback`, { method: 'PUT', body: { feedback } }, token);
+    toast('Avis envoyé !', 'success');
+    loadAvisHebdo();
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 // Expose ALL functions globally for onclick handlers
@@ -2155,6 +2946,9 @@ function switchWeeklyTab(tab) {
 window.downloadInvoice = downloadInvoice;
 window.printInvoice = printInvoice;
 window.confirmInvoice = confirmInvoice;
+window.switchInvTab = switchInvTab;
+window.loadWeeklyInvoicesCo = loadWeeklyInvoicesCo;
+window.confirmWeeklyInv = confirmWeeklyInv;
   window.sendAdminVoiceMsg = sendAdminVoiceMsg;
   window.toggleAdminVoiceRecord = toggleAdminVoiceRecord;
   window.exportCompanyOrdersPDF = exportCompanyOrdersPDF;
@@ -2181,6 +2975,8 @@ window.confirmInvoice = confirmInvoice;
   window.loadWeeklyMenus = loadWeeklyMenus;
   window.acknowledgeDelivery = acknowledgeDelivery;
   window.switchWeeklyTab = switchWeeklyTab;
+  window.loadAvisHebdo = loadAvisHebdo;
+  window.submitAvis = submitAvis;
   window.openWeeklyOrderModal = openWeeklyOrderModal;
   window.submitWeeklyOrder = submitWeeklyOrder;
   window.editWeeklyOrder = editWeeklyOrder;

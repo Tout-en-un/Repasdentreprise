@@ -90,7 +90,25 @@
       "Bash(findstr /n \"created_at\\\\|createdAt\\\\|timestamp\" \"api\\\\index.js\"22)",
       "Bash(pkill -f \"node.*index.js\")",
       "Bash(node api/index.js)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(grep -c 'window\\\\.__TRACKED_VAR__ = __TRACKED_VAR__' '/F/All projects/repasapp/foodchooseapp/public/restaurant/dashboard.html')",
+      "Skill(deep-research)",
+      "WebSearch",
+      "WebFetch(domain:www.timeanddate.com)",
+      "WebFetch(domain:www.holidays-info.com)",
+      "WebFetch(domain:en.wikipedia.org)",
+      "WebFetch(domain:lefaso.net)",
+      "WebFetch(domain:www.aib.media)",
+      "WebFetch(domain:www.scribd.com)",
+      "WebFetch(domain:www.qppstudio.net)",
+      "WebFetch(domain:icalendrier.fr)",
+      "WebFetch(domain:publicholidays.africa)",
+      "WebFetch(domain:www.consulatburkinaparis.org)",
+      "Bash(Select-Object -First 50)",
+      "PowerShell($lines = Get-Content \"F:\\\\All projects\\\\repasapp\\\\foodchooseapp\\\\public\\\\restaurant\\\\dashboard.html\" -Encoding UTF8; $i = 0; $results = @\\(\\); foreach \\($line in $lines\\) { $i++; if \\($line -match 'apiFetch'\\) { $results += \"${i}: $\\($line.Trim\\(\\).Substring\\(0,[Math]::Min\\(110,$line.Trim\\(\\).Length\\)\\)\\)\" } }; $results | Out-String)",
+      "PowerShell(Get-Content \"F:\\\\All projects\\\\repasapp\\\\foodchooseapp\\\\.env\" -Encoding UTF8 | Where-Object { $_ -match \"JWT|SECRET|TOKEN\" })",
+      "Bash(ls *)",
+      "Bash(grep *)"
     ]
   }
 }

@@ -599,7 +599,7 @@ async function searchDishes(q) {
             <div style="font-weight:600;font-size:13.5px;color:var(--brown)">${m.name}</div>
             <div style="font-size:11.5px;color:var(--muted)">🍽 ${m.restaurant_name}</div>
           </div>
-          <div style="font-weight:700;color:var(--orange);font-size:13px;white-space:nowrap">${parseFloat(m.price||0).toLocaleString()} FCFA</div>
+          <div style="font-weight:700;color:var(--orange);font-size:13px;white-space:nowrap">${fmtCFA(m.price||0)} FCFA</div>
         </div>
       `).join('');
     } catch(e) {
@@ -757,7 +757,7 @@ async function selectRestaurant(id, name) {
         <div class="menu-card" id="mc-${m.id}" onclick="selectMenu(${m.id}, '${m.name.replace(/'/g,"\\'")}', ${m.price||0})">
           <div style="font-weight:700;font-size:13.5px;color:var(--brown);margin-bottom:5px">${m.name}</div>
           ${m.description?`<div style="font-size:12px;color:var(--muted);margin-bottom:6px">${m.description}</div>`:''}
-          <div style="font-weight:600;color:var(--orange)">${parseFloat(m.price||0).toLocaleString()} FCFA</div>
+          <div style="font-weight:600;color:var(--orange)">${fmtCFA(m.price||0)} FCFA</div>
         </div>
       `).join('')}
     `).join('');
@@ -800,7 +800,7 @@ function selectMenu(id, name, price) {
 
   // Mise à jour de l'aperçu de commande (nom + prix)
   document.getElementById('previewMenuName').textContent = name;
-  document.getElementById('previewMenuPrice').textContent = `${parseFloat(price).toLocaleString()} FCFA`;
+  document.getElementById('previewMenuPrice').textContent = `${fmtCFA(price)} FCFA`;
 
   // Affiche le bloc d'aperçu avec le bouton de validation
   document.getElementById('selectedMenuPreview').style.display = 'block';
@@ -1209,7 +1209,7 @@ async function loadWeeklyMenus() {
                   <div style="font-weight:600;font-size:13px;color:var(--brown)">${dish.name}</div>
                   ${dish.description ? `<div style="font-size:11px;color:var(--muted)">${dish.description}</div>` : ''}
                 </div>
-                <div style="font-weight:700;color:var(--orange);font-size:13px;white-space:nowrap">${parseFloat(dish.price||0).toLocaleString()} FCFA</div>
+                <div style="font-weight:700;color:var(--orange);font-size:13px;white-space:nowrap">${fmtCFA(dish.price||0)} FCFA</div>
               </div>
             `).join('');
             return `<div style="margin-bottom:14px"><div style="margin-bottom:6px"><span class="day-pill">${EMP_DAY_NAMES[day.day_of_week] || 'Jour '+day.day_of_week}</span>${day.is_optional ? '<span style="font-size:10px;color:var(--muted);margin-left:6px">(optionnel)</span>' : ''}</div><div style="padding:0 4px">${dishesHtml || '<div style="font-size:12px;color:var(--muted)">Aucun plat</div>'}</div></div>`;
@@ -1223,7 +1223,7 @@ async function loadWeeklyMenus() {
                 <div style="font-weight:700;font-size:14px;color:var(--brown)">${pack.name}</div>
                 <div style="font-size:12px;color:var(--muted);margin-top:2px">🍽 ${pack.restaurant_name}</div>
                 <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
-                  <span style="font-size:11px;background:var(--orange-light,#fff3e0);color:var(--orange);border-radius:6px;padding:2px 8px;font-weight:600">${parseFloat(pack.price||0).toLocaleString()} FCFA</span>
+                  <span style="font-size:11px;background:var(--orange-light,#fff3e0);color:var(--orange);border-radius:6px;padding:2px 8px;font-weight:600">${fmtCFA(pack.price||0)} FCFA</span>
                   <span style="font-size:11px;background:var(--border);color:var(--muted);border-radius:6px;padding:2px 8px">Min. ${pack.min_order_qty||1} plats</span>
                 </div>
               </div>
@@ -1282,7 +1282,7 @@ function renderEmpWeeklySelections(selections) {
           ${s.extras.map(e => `
             <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:4px">
               <span style="color:var(--text)">${e.item_name} <span style="color:var(--muted);font-size:11px">(${e.item_type})</span></span>
-              <span style="font-weight:600;color:var(--orange)">${e.quantity} × ${parseFloat(e.unit_price||0).toLocaleString()} FCFA</span>
+              <span style="font-weight:600;color:var(--orange)">${e.quantity} × ${fmtCFA(e.unit_price||0)} FCFA</span>
             </div>
           `).join('')}
         </div>
@@ -1297,7 +1297,7 @@ function renderEmpWeeklySelections(selections) {
             <span style="font-size:11px;font-weight:600;color:${statusColor[s.status]||'var(--muted)'};background:${statusBg[s.status]||'var(--border)'};border-radius:20px;padding:3px 10px;white-space:nowrap">${statusLabel[s.status]||s.status}</span>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
-            <span style="font-size:11px;background:var(--orange-light,#fff3e0);color:var(--orange);border-radius:6px;padding:2px 8px;font-weight:600">${parseFloat(s.pack_price||0).toLocaleString()} FCFA</span>
+            <span style="font-size:11px;background:var(--orange-light,#fff3e0);color:var(--orange);border-radius:6px;padding:2px 8px;font-weight:600">${fmtCFA(s.pack_price||0)} FCFA</span>
             <span style="font-size:11px;background:var(--border);color:var(--muted);border-radius:6px;padding:2px 8px">${s.dish_qty} plat(s) commandé(s)</span>
           </div>
           ${s.notes ? `<div style="margin-top:8px;font-size:12px;color:var(--muted);font-style:italic">${s.notes}</div>` : ''}

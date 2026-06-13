@@ -10,6 +10,8 @@ process.on('unhandledRejection', (reason) => {
 });
 
 const express = require('express');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const pg = require('pg');
 const { Pool } = pg;
 // Retourner les colonnes DATE et TIMESTAMP comme chaînes brutes (évite les décalages de fuseau horaire)
@@ -47,11 +49,38 @@ if (VAPID_ENABLED) {
 
 const app = express();
 const PORT = process.env.PORT || 3050;
-const JWT_SECRET = process.env.JWT_SECRET || 'foodchooseapp_2024_secret';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) { console.error('❌ JWT_SECRET non défini dans .env'); process.exit(1); }
 
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// ── Sécurité HTTP headers ────────────────────────────────────────────
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+
+// ── Rate limiting ────────────────────────────────────────────────────
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, max: 400,
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: 'Trop de requêtes, réessayez dans 15 minutes' }
+});
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, max: 20,
+  message: { error: 'Trop de tentatives, réessayez dans 15 minutes' }
+});
+app.use('/api/', globalLimiter);
+app.use('/api/auth/', authLimiter);
+
+// ── CORS restreint ───────────────────────────────────────────────────
+const _allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : null;
+app.use(cors({
+  origin: _allowedOrigins
+    ? (origin, cb) => (!origin || _allowedOrigins.includes(origin) ? cb(null, true) : cb(new Error('Origine CORS non autorisée')))
+    : true,
+  credentials: true
+}));
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
@@ -320,6 +349,12 @@ async function initDB(retries = 5, delay = 3000) {
     );
     ALTER TABLE weekly_invoices ADD COLUMN IF NOT EXISTS sent BOOLEAN DEFAULT false;
     ALTER TABLE weekly_invoices ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP;
+    ALTER TABLE weekly_invoices ADD COLUMN IF NOT EXISTS invoice_type VARCHAR(10) DEFAULT 'global';
+    ALTER TABLE weekly_invoices ADD COLUMN IF NOT EXISTS day_date DATE;
+    ALTER TABLE weekly_invoices ADD COLUMN IF NOT EXISTS parent_invoice_id INTEGER REFERENCES weekly_invoices(id) ON DELETE SET NULL;
+    ALTER TABLE weekly_invoices DROP CONSTRAINT IF EXISTS weekly_invoices_weekly_pack_id_fkey;
+    ALTER TABLE weekly_invoices ADD CONSTRAINT weekly_invoices_weekly_pack_id_fkey
+      FOREIGN KEY (weekly_pack_id) REFERENCES weekly_packs(id) ON DELETE SET NULL;
     CREATE TABLE IF NOT EXISTS platform_contract_terms (
       id INTEGER PRIMARY KEY DEFAULT 1,
       commission_rate DECIMAL(5,2) DEFAULT 1.00,
@@ -333,6 +368,43 @@ async function initDB(retries = 5, delay = 3000) {
       updated_at TIMESTAMP DEFAULT NOW()
     );
     INSERT INTO platform_contract_terms (id) VALUES (1) ON CONFLICT DO NOTHING;
+    CREATE TABLE IF NOT EXISTS menu_suggestions (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL UNIQUE,
+      category VARCHAR(100) DEFAULT 'plat',
+      added_by_restaurant_id INTEGER REFERENCES restaurants(id) ON DELETE SET NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS company_subsidies (
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE UNIQUE,
+      food_amount DECIMAL(10,2) DEFAULT 0,
+      drink_amount DECIMAL(10,2) DEFAULT 0,
+      period_type VARCHAR(10) DEFAULT 'daily',
+      active BOOLEAN DEFAULT false,
+      updated_at TIMESTAMP DEFAULT NOW(),
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS subsidy_usage (
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      period_key VARCHAR(20) NOT NULL,
+      used_food DECIMAL(10,2) DEFAULT 0,
+      used_drink DECIMAL(10,2) DEFAULT 0,
+      created_at TIMESTAMP DEFAULT NOW(),
+      UNIQUE(company_id, user_id, period_key)
+    );
+    ALTER TABLE invoices ADD COLUMN IF NOT EXISTS notes TEXT;
+    ALTER TABLE weekly_invoices ADD COLUMN IF NOT EXISTS notes TEXT;
+    ALTER TABLE order_history ADD COLUMN IF NOT EXISTS restaurant_id INTEGER REFERENCES restaurants(id) ON DELETE SET NULL;
+    ALTER TABLE menus ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+    ALTER TABLE invoices ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+    ALTER TABLE weekly_invoices ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+    ALTER TABLE weekly_invoices ADD COLUMN IF NOT EXISTS delivered BOOLEAN DEFAULT true;
+    ALTER TABLE weekly_invoices ADD COLUMN IF NOT EXISTS restaurant_note TEXT DEFAULT '';
+    ALTER TABLE weekly_invoices ADD COLUMN IF NOT EXISTS company_feedback TEXT DEFAULT '';
+    ALTER TABLE weekly_invoices ADD COLUMN IF NOT EXISTS company_feedback_at TIMESTAMPTZ;
   `;
   try {
     await pool.query(sql);
@@ -554,35 +626,35 @@ app.post('/api/auth/login', async (req, res) => {
     const adm = await pool.query('SELECT * FROM admins WHERE email=$1', [identifier]);
     if (adm.rows.length && await bcrypt.compare(password, adm.rows[0].password_hash)) {
       const a = adm.rows[0];
-      const token = jwt.sign({ id: a.id, role: 'admin', name: a.name }, JWT_SECRET, { expiresIn: '8h' });
+      const token = jwt.sign({ id: a.id, role: 'admin', name: a.name }, JWT_SECRET, { expiresIn: '7d' });
       return res.json({ token, role: 'admin', id: a.id, name: a.name });
     }
     // Entreprise
     const co = await pool.query('SELECT * FROM companies WHERE email=$1', [identifier]);
     if (co.rows.length && await bcrypt.compare(password, co.rows[0].password_hash)) {
       const c = co.rows[0];
-      const token = jwt.sign({ id: c.id, role: 'company', name: c.name }, JWT_SECRET, { expiresIn: '8h' });
+      const token = jwt.sign({ id: c.id, role: 'company', name: c.name }, JWT_SECRET, { expiresIn: '7d' });
       return res.json({ token, role: 'company', id: c.id, name: c.name });
     }
     // Restaurant
     const rest = await pool.query('SELECT * FROM restaurants WHERE email=$1', [identifier]);
     if (rest.rows.length && await bcrypt.compare(password, rest.rows[0].password_hash)) {
       const r = rest.rows[0];
-      const token = jwt.sign({ id: r.id, role: 'restaurant', name: r.name }, JWT_SECRET, { expiresIn: '8h' });
+      const token = jwt.sign({ id: r.id, role: 'restaurant', name: r.name }, JWT_SECRET, { expiresIn: '7d' });
       return res.json({ token, role: 'restaurant', id: r.id, name: r.name });
     }
     // Employé par email
     const empByEmail = await pool.query('SELECT * FROM users WHERE email=$1', [identifier]);
     if (empByEmail.rows.length && await bcrypt.compare(password, empByEmail.rows[0].password_hash)) {
       const u = empByEmail.rows[0];
-      const token = jwt.sign({ id: u.id, role: 'employee', employeeId: u.employee_id, name: `${u.first_name} ${u.last_name}`, companyId: u.company_id }, JWT_SECRET, { expiresIn: '8h' });
+      const token = jwt.sign({ id: u.id, role: 'employee', employeeId: u.employee_id, name: `${u.first_name} ${u.last_name}`, companyId: u.company_id }, JWT_SECRET, { expiresIn: '7d' });
       return res.json({ token, role: 'employee', name: `${u.first_name} ${u.last_name}`, employeeId: u.employee_id, companyId: u.company_id });
     }
     // Employé par identifiant (ex: EMP-001)
     const empById = await pool.query('SELECT * FROM users WHERE LOWER(employee_id)=LOWER($1)', [identifier]);
     if (empById.rows.length && await bcrypt.compare(password, empById.rows[0].password_hash)) {
       const u = empById.rows[0];
-      const token = jwt.sign({ id: u.id, role: 'employee', employeeId: u.employee_id, name: `${u.first_name} ${u.last_name}`, companyId: u.company_id }, JWT_SECRET, { expiresIn: '8h' });
+      const token = jwt.sign({ id: u.id, role: 'employee', employeeId: u.employee_id, name: `${u.first_name} ${u.last_name}`, companyId: u.company_id }, JWT_SECRET, { expiresIn: '7d' });
       return res.json({ token, role: 'employee', name: `${u.first_name} ${u.last_name}`, employeeId: u.employee_id, companyId: u.company_id });
     }
     res.status(401).json({ error: 'Identifiants incorrects' });
@@ -619,9 +691,81 @@ app.delete('/api/restaurant/account', restaurantAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Suggestions de noms de plats/boissons (autocomplete partagé)
+app.get('/api/menu-suggestions', restaurantAuth, async (req, res) => {
+  try {
+    const { q, category } = req.query;
+    let sql = 'SELECT name, category FROM menu_suggestions';
+    const params = [];
+    const conds = [];
+    if (q) { conds.push(`name ILIKE $${params.length+1}`); params.push(`${q}%`); }
+    if (category) { conds.push(`category=$${params.length+1}`); params.push(category); }
+    if (conds.length) sql += ' WHERE ' + conds.join(' AND ');
+    sql += ' ORDER BY name LIMIT 80';
+    const r = await pool.query(sql, params);
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/menu-suggestions', restaurantAuth, async (req, res) => {
+  const { name, category } = req.body;
+  if (!name?.trim()) return res.status(400).json({ error: 'Nom requis' });
+  try {
+    await pool.query(
+      'INSERT INTO menu_suggestions (name, category, added_by_restaurant_id) VALUES ($1,$2,$3) ON CONFLICT (name) DO NOTHING',
+      [name.trim(), category || 'plat', req.user.id]
+    );
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Suppression historique restaurant
+app.delete('/api/restaurant/history', restaurantAuth, async (req, res) => {
+  try {
+    const { before } = req.query;
+    if (before) {
+      await pool.query('DELETE FROM order_history WHERE restaurant_id=$1 AND order_date<=$2', [req.user.id, before]);
+    } else {
+      await pool.query('DELETE FROM order_history WHERE restaurant_id=$1', [req.user.id]);
+    }
+    res.json({ message: 'Historique supprimé' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Endpoint balance subvention pour l'employé
+app.get('/api/employee/subsidy-balance', employeeAuth, async (req, res) => {
+  try {
+    const user = await pool.query('SELECT company_id FROM users WHERE id=$1', [req.user.id]);
+    if (!user.rows.length) return res.json({ active: false });
+    const companyId = user.rows[0].company_id;
+    const sub = await pool.query('SELECT * FROM company_subsidies WHERE company_id=$1 AND active=true', [companyId]);
+    if (!sub.rows.length) return res.json({ active: false });
+    const cfg = sub.rows[0];
+    const now = new Date();
+    const periodKey = cfg.period_type === 'monthly'
+      ? `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
+      : now.toISOString().slice(0,10);
+    const usage = await pool.query(
+      'SELECT used_food, used_drink FROM subsidy_usage WHERE company_id=$1 AND user_id=$2 AND period_key=$3',
+      [companyId, req.user.id, periodKey]
+    );
+    const used = usage.rows[0] || { used_food: 0, used_drink: 0 };
+    res.json({
+      active: true,
+      period_type: cfg.period_type,
+      food_amount: parseFloat(cfg.food_amount),
+      drink_amount: parseFloat(cfg.drink_amount),
+      used_food: parseFloat(used.used_food),
+      used_drink: parseFloat(used.used_drink),
+      remaining_food: Math.max(0, parseFloat(cfg.food_amount) - parseFloat(used.used_food)),
+      remaining_drink: Math.max(0, parseFloat(cfg.drink_amount) - parseFloat(used.used_drink)),
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Menus
 app.get('/api/restaurant/menus', restaurantAuth, async (req, res) => {
-  const r = await pool.query('SELECT * FROM menus WHERE restaurant_id=$1 ORDER BY category,name', [req.user.id]);
+  const r = await pool.query('SELECT * FROM menus WHERE restaurant_id=$1 AND deleted_at IS NULL ORDER BY category,name', [req.user.id]);
   res.json(r.rows);
 });
 
@@ -675,8 +819,9 @@ app.put('/api/restaurant/menus/:id/toggle', restaurantAuth, async (req, res) => 
 });
 
 app.delete('/api/restaurant/menus/:id', restaurantAuth, async (req, res) => {
-  await pool.query('DELETE FROM menus WHERE id=$1 AND restaurant_id=$2', [req.params.id, req.user.id]);
-  res.json({ message: 'Menu supprimé' });
+  const r = await pool.query('UPDATE menus SET deleted_at=NOW() WHERE id=$1 AND restaurant_id=$2 AND deleted_at IS NULL RETURNING id', [req.params.id, req.user.id]);
+  if (!r.rows.length) return res.status(404).json({ error: 'Menu introuvable' });
+  res.json({ message: 'Menu déplacé dans la corbeille' });
 });
 
 // Restaurant orders
@@ -792,7 +937,7 @@ app.get('/api/restaurant/orders/export-pdf', restaurantAuth, async (req, res) =>
     doc.fontSize(10).text(`Restaurant : ${req.user.name} | Généré le ${new Date().toLocaleDateString('fr-FR')}`, _hx, 78);
     let y = 135;
     const total = orders.rows.reduce((s, o) => s + parseFloat(o.price || 0), 0);
-    doc.fillColor('#2C1810').fontSize(12).font('Helvetica-Bold').text(`${orders.rows.length} commandes — Total : ${total.toLocaleString()} FCFA`, 50, y);
+    doc.fillColor('#2C1810').fontSize(12).font('Helvetica-Bold').text(`${orders.rows.length} commandes — Total : ${fmtP(total)} FCFA`, 50, y);
     y += 28;
     doc.rect(50, y, doc.page.width - 100, 22).fill('#2C1810');
     doc.fillColor('#FFF8F3').fontSize(9).font('Helvetica-Bold');
@@ -808,7 +953,7 @@ app.get('/api/restaurant/orders/export-pdf', restaurantAuth, async (req, res) =>
       doc.text((o.company_name || '').substring(0, 12), 120, y);
       doc.text(`${o.last_name} ${o.first_name}`.substring(0, 14), 210, y);
       doc.text((o.menu_name || '').substring(0, 18), 280, y);
-      doc.text(`${parseFloat(o.price || 0).toLocaleString()}`, 400, y);
+      doc.text(`${fmtP(o.price)} FCFA`, 400, y);
       y += 20;
     });
     doc.rect(0, doc.page.height - 35, doc.page.width, 35).fill('#2C1810');
@@ -865,14 +1010,14 @@ app.post('/api/restaurant/batches/:id/invoice', restaurantAuth, async (req, res)
 await pool.query("UPDATE orders SET status='invoiced' WHERE company_id=$1 AND restaurant_id=$2 AND order_date=$3", [batch.rows[0].company_id, req.user.id, batch.rows[0].batch_date]);
     const co = await pool.query('SELECT email,name FROM companies WHERE id=$1', [batch.rows[0].company_id]);
     res.json({ invoiceId: inv.rows[0].id, success: true });
-    if (co.rows.length) sendMail(co.rows[0].email, `🧾 Facture reçue — ${req.user.name}`, welcomeEmailHtml(co.rows[0].name, `<p style="color:#4A3728">Vous avez reçu une facture de <strong>${req.user.name}</strong> d'un montant de <strong>${totalAmount} FCFA</strong> pour le ${batch.rows[0].batch_date}.</p>`)).catch(err => console.error('Email facture:', err));
+    if (co.rows.length) sendMail(co.rows[0].email, `🧾 Facture reçue — ${req.user.name}`, welcomeEmailHtml(co.rows[0].name, `<p style="color:#4A3728">Vous avez reçu une facture de <strong>${req.user.name}</strong> d'un montant de <strong>${fmtP(totalAmount)} FCFA</strong> pour le ${batch.rows[0].batch_date}.</p>`)).catch(err => console.error('Email facture:', err));
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // Get restaurant invoices
 app.get('/api/restaurant/invoices', restaurantAuth, async (req, res) => {
   try {
-    const r = await pool.query('SELECT i.*,c.name AS company_name FROM invoices i JOIN companies c ON i.company_id=c.id WHERE i.restaurant_id=$1 ORDER BY i.created_at DESC', [req.user.id]);
+    const r = await pool.query('SELECT i.*,c.name AS company_name FROM invoices i JOIN companies c ON i.company_id=c.id WHERE i.restaurant_id=$1 AND i.deleted_at IS NULL ORDER BY i.created_at DESC', [req.user.id]);
     res.json(r.rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -892,32 +1037,35 @@ app.post('/api/restaurant/invoices', restaurantAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Update invoice (only if not sent yet)
+// Update invoice — notes éditables même après envoi; items/total bloqués si envoyée
 app.put('/api/restaurant/invoices/:id', restaurantAuth, async (req, res) => {
   try {
     const check = await pool.query('SELECT sent, status FROM invoices WHERE id=$1 AND restaurant_id=$2', [req.params.id, req.user.id]);
     if (!check.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
-    if (check.rows[0].sent) return res.status(403).json({ error: 'Impossible de modifier une facture déjà envoyée' });
-    const { items, total_amount } = req.body;
+    const isSent = check.rows[0].sent;
+    const { items, total_amount, notes } = req.body;
     const fields = [];
     const vals = [];
     let idx = 1;
-    if (items !== undefined) { fields.push(`items=$${idx++}`); vals.push(JSON.stringify(items)); }
-    if (total_amount !== undefined) { fields.push(`total_amount=$${idx++}`); vals.push(total_amount); }
-    if (!fields.length) return res.status(400).json({ error: 'Rien à modifier' });
+    if (!isSent) {
+      if (items !== undefined) { fields.push(`items=$${idx++}`); vals.push(JSON.stringify(items)); }
+      if (total_amount !== undefined) { fields.push(`total_amount=$${idx++}`); vals.push(total_amount); }
+    }
+    if (notes !== undefined) { fields.push(`notes=$${idx++}`); vals.push(notes); }
+    if (!fields.length) return res.status(400).json({ error: isSent ? 'Seule la note est modifiable après envoi' : 'Rien à modifier' });
     vals.push(req.params.id, req.user.id);
     const r = await pool.query(`UPDATE invoices SET ${fields.join(',')} WHERE id=$${idx} AND restaurant_id=$${idx+1} RETURNING *`, vals);
     res.json(r.rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Delete invoice (only if not confirmed)
+// Soft-delete invoice → corbeille
 app.delete('/api/restaurant/invoices/:id', restaurantAuth, async (req, res) => {
   try {
-    const check = await pool.query('SELECT status FROM invoices WHERE id=$1 AND restaurant_id=$2', [req.params.id, req.user.id]);
+    const check = await pool.query('SELECT status FROM invoices WHERE id=$1 AND restaurant_id=$2 AND deleted_at IS NULL', [req.params.id, req.user.id]);
     if (!check.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
     if (check.rows[0].status === 'confirmed') return res.status(403).json({ error: 'Impossible de supprimer une facture confirmée' });
-    await pool.query('DELETE FROM invoices WHERE id=$1 AND restaurant_id=$2', [req.params.id, req.user.id]);
+    await pool.query('UPDATE invoices SET deleted_at=NOW() WHERE id=$1 AND restaurant_id=$2', [req.params.id, req.user.id]);
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -930,7 +1078,7 @@ app.post('/api/restaurant/invoices/:id/send', restaurantAuth, async (req, res) =
     await pool.query('UPDATE invoices SET sent=true, sent_at=NOW() WHERE id=$1', [req.params.id]);
     const invData = inv.rows[0];
     if (invData.email) {
-      sendMail(invData.email, `🧾 Facture de ${invData.restaurant_name}`, `<p>Vous avez reçu une facture de <strong>${invData.restaurant_name}</strong> d'un montant de <strong>${invData.total_amount} CFA</strong>.</p><p><a href="${req.protocol}://${req.get('host')}/api/restaurant/invoices/${invData.id}/pdf">Télécharger la facture PDF</a></p>`).catch(err => console.error('Email send error:', err));
+      sendMail(invData.email, `🧾 Facture de ${invData.restaurant_name}`, `<p>Vous avez reçu une facture de <strong>${invData.restaurant_name}</strong> d'un montant de <strong>${fmtP(invData.total_amount)} FCFA</strong>.</p><p><a href="${req.protocol}://${req.get('host')}/api/restaurant/invoices/${invData.id}/pdf">Télécharger la facture PDF</a></p>`).catch(err => console.error('Email send error:', err));
     }
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -953,7 +1101,11 @@ const PDF_CREAM  = '#FFF8F3';
 const PDF_LIGHT  = '#FFF0E8';
 const PDF_MUTED  = '#8B6554';
 const PDF_BROWN  = '#4A3728';
-
+// PDFKit ne gère pas le U+00A0 (espace insécable) produit par toLocaleString('fr-FR')
+// → remplacé par un espace normal pour éviter l'affichage "1 /500"
+function fmtP(value) {
+  return Math.round(parseFloat(value) || 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 }).replace(/ /g, ' ');
+}
 function pdfDrawHeader(doc, title, invNumber, invDate, fromDate, toDate) {
   const W = doc.page.width;
   doc.rect(0, 0, W, 130).fill(PDF_ORANGE);
@@ -1058,17 +1210,28 @@ function renderStandardInvoicePdf(doc, inv_data, items, invoiceId) {
       .text(empName,                  cols[1].x + 4, y, { width: cols[1].w - 8, ellipsis: true })
       .text(restName,                 cols[2].x + 4, y, { width: cols[2].w - 8, ellipsis: true })
       .text(dishName,                 cols[3].x + 4, y, { width: cols[3].w - 8, ellipsis: true })
-      .text(`${pu.toLocaleString('fr-FR')} F`,  cols[4].x, y, { width: cols[4].w, align: 'right' })
-      .text(`${pu.toLocaleString('fr-FR')} F`,  cols[5].x, y, { width: cols[5].w, align: 'right' });
+      .text(`${fmtP(pu)} FCFA`,  cols[4].x, y, { width: cols[4].w, align: 'right' })
+      .text(`${fmtP(pu)} FCFA`,  cols[5].x, y, { width: cols[5].w, align: 'right' });
     y += rowH + 2;
   });
 
   y += 12;
   doc.rect(W - 210, y, 160, 38).fill(PDF_ORANGE);
   doc.fillColor(PDF_CREAM).fontSize(8).font('Helvetica').text('TOTAL TTC', W - 205, y + 6, { width: 150, align: 'right' });
-  doc.fontSize(15).font('Helvetica-Bold').text(`${parseFloat(inv_data.total_amount || 0).toLocaleString('fr-FR')} FCFA`, W - 205, y + 17, { width: 150, align: 'right' });
+  doc.fontSize(15).font('Helvetica-Bold').text(`${fmtP(inv_data.total_amount)} FCFA`, W - 205, y + 17, { width: 150, align: 'right' });
 
   pdfDrawFooter(doc);
+}
+
+const DAY_FR_NAMES = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+
+function formatWeekLabel(fromDate, toDate) {
+  if (!fromDate) return null;
+  const from = new Date(fromDate + 'T12:00:00');
+  const to   = toDate ? new Date(toDate + 'T12:00:00') : null;
+  const fromLabel = `${DAY_FR_NAMES[from.getDay()]} ${from.toLocaleDateString('fr-FR')}`;
+  const toLabel   = to ? `${DAY_FR_NAMES[to.getDay()]} ${to.toLocaleDateString('fr-FR')}` : null;
+  return toLabel ? `${fromLabel} au ${toLabel}` : fromLabel;
 }
 
 function renderWeeklyInvoicePdf(doc, inv_data, items) {
@@ -1077,88 +1240,91 @@ function renderWeeklyInvoicePdf(doc, inv_data, items) {
   const invDate = inv_data.created_at
     ? new Date(String(inv_data.created_at).replace(' ', 'T')).toLocaleDateString('fr-FR')
     : new Date().toLocaleDateString('fr-FR');
-  const fromD = inv_data.from_date ? new Date(inv_data.from_date + 'T12:00:00').toLocaleDateString('fr-FR') : null;
-  const toD   = inv_data.to_date   ? new Date(inv_data.to_date   + 'T12:00:00').toLocaleDateString('fr-FR') : null;
+  const weekLabel = formatWeekLabel(inv_data.from_date, inv_data.to_date);
   const invNum = inv_data.invoice_number || `FAC-HB-${String(inv_data.id).padStart(5,'0')}`;
+  const isDaily = inv_data.invoice_type === 'daily';
+  const title   = isDaily ? 'POINT DU JOUR' : 'FACTURE HEBDOMADAIRE';
 
-  pdfDrawHeader(doc, 'FACTURE HEBDOMADAIRE', invNum, invDate, fromD, toD);
+  // Header with week label
+  const W2 = doc.page.width;
+  doc.rect(0, 0, W2, 130).fill(PDF_ORANGE);
+  let textX = 50;
+  if (fs.existsSync(LOGO_PATH)) {
+    try { doc.image(LOGO_PATH, 50, 18, { width: 65, height: 65 }); textX = 125; } catch(e) {}
+  }
+  doc.fillColor(PDF_CREAM).fontSize(22).font('Helvetica-Bold').text('FoodChooseApp', textX, 27);
+  doc.fontSize(9).font('Helvetica').text('Gestion des repas d\'entreprise', textX, 54);
+  doc.fontSize(14).font('Helvetica-Bold').text(title, W2 - 260, 24, { width: 210, align: 'right' });
+  doc.fontSize(9).font('Helvetica').text(`N° ${invNum}`, W2 - 260, 46, { width: 210, align: 'right' });
+  doc.text(`Émise le ${invDate}`, W2 - 260, 60, { width: 210, align: 'right' });
+  if (weekLabel) {
+    doc.text(`Semaine : ${weekLabel}`, W2 - 260, 74, { width: 210, align: 'right' });
+  }
+
   let y = pdfDrawParties(doc, inv_data.restaurant_name, inv_data.restaurant_address || null, inv_data.company_name, inv_data.company_address || null);
 
-  // Pack info bar
-  if (inv_data.pack_name) {
-    doc.rect(50, y, W - 100, 34).fill(PDF_LIGHT).lineWidth(0.5).rect(50, y, W - 100, 34).stroke('#DDCFC6');
-    doc.fillColor(PDF_MUTED).fontSize(8).font('Helvetica-Bold').text('PACK SOUSCRIT', 58, y + 5);
-    doc.fillColor(PDF_DARK).fontSize(11).font('Helvetica-Bold').text(inv_data.pack_name, 58, y + 17);
-    if (inv_data.pack_description) {
-      doc.fillColor(PDF_BROWN).fontSize(8).font('Helvetica').text(inv_data.pack_description, W / 2, y + 10, { width: W / 2 - 60, ellipsis: true });
-    }
-    y += 42;
+  // Restaurant phone for Mobile Money
+  if (inv_data.restaurant_phone) {
+    doc.rect(50, y, W - 100, 22).fill('#FFF8F3').lineWidth(0.5).rect(50, y, W - 100, 22).stroke('#DDCFC6');
+    doc.fillColor(PDF_MUTED).fontSize(8).font('Helvetica-Bold').text('PAIEMENT MOBILE MONEY — Restaurant :', 58, y + 7);
+    doc.fillColor(PDF_BROWN).fontSize(9).font('Helvetica-Bold').text(inv_data.restaurant_phone, 58 + 220, y + 6);
+    y += 28;
   }
+
   y += 6;
 
+  // Columns: JOUR | PLAT | P. UNITAIRE | QTÉ | P. TOTAL
   const cols = [
-    { label: 'DÉSIGNATION', x: 50,  w: 285, align: 'left'  },
-    { label: 'QTÉ',         x: 335, w: 70,  align: 'right' },
-    { label: 'P.U.',        x: 405, w: 70,  align: 'right' },
-    { label: 'TOTAL',       x: 475, w: 70,  align: 'right' }
+    { label: 'JOUR',        x: 50,  w: 90,  align: 'left'  },
+    { label: 'PLAT',        x: 140, w: 195, align: 'left'  },
+    { label: 'P. UNITAIRE', x: 335, w: 80,  align: 'right' },
+    { label: 'QTÉ',         x: 415, w: 50,  align: 'right' },
+    { label: 'P. TOTAL',    x: 465, w: 80,  align: 'right' }
   ];
   y = pdfDrawTableHeader(doc, y, cols);
 
-  const packUnitPrice = parseFloat(inv_data.pack_price || inv_data.total_amount || 0);
-  const packQty       = parseInt(inv_data.min_order_qty) || items.reduce((s, i) => s + (parseInt(i.qty) || 1), 0) || 1;
-  const packTotal     = parseFloat(inv_data.total_amount || packUnitPrice * packQty);
+  let grandTotal = 0;
 
-  if (inv_data.pack_name) {
-    // Main pack row
-    const rowH = inv_data.pack_description ? 32 : 20;
-    doc.rect(50, y - 2, W - 100, rowH).fill(PDF_LIGHT);
-    doc.fillColor(PDF_DARK).fontSize(9).font('Helvetica-Bold').text(inv_data.pack_name, cols[0].x + 4, y, { width: cols[0].w - 8 });
-    if (inv_data.pack_description) {
-      doc.fillColor(PDF_BROWN).fontSize(8).font('Helvetica').text(inv_data.pack_description, cols[0].x + 4, y + 13, { width: cols[0].w - 8, ellipsis: true });
-    }
-    const textY = rowH > 20 ? y + 8 : y;
-    doc.fillColor(PDF_DARK).fontSize(9).font('Helvetica')
-      .text(String(packQty),                                       cols[1].x, textY, { width: cols[1].w, align: 'right' })
-      .text(`${packUnitPrice.toLocaleString('fr-FR')} F`,          cols[2].x, textY, { width: cols[2].w, align: 'right' })
-      .text(`${packTotal.toLocaleString('fr-FR')} F`,              cols[3].x, textY, { width: cols[3].w, align: 'right' });
-    y += rowH + 4;
-
-    // Detail rows
-    if (items.length > 0) {
-      y += 6;
-      doc.fillColor(PDF_MUTED).fontSize(8).font('Helvetica-Bold').text('Détails du pack :', cols[0].x + 4, y);
-      y += 14;
-      items.forEach((item, i) => {
-        const rh = 16;
-        if (y + rh > H - 60) { pdfDrawFooter(doc); doc.addPage(); y = 50; y = pdfDrawTableHeader(doc, y, cols); }
-        doc.rect(50, y - 2, W - 100, rh).fill(i % 2 === 0 ? '#F5F0EC' : '#FFFFFF');
-        doc.fillColor(PDF_BROWN).fontSize(8).font('Helvetica')
-          .text(`• ${item.name || '—'}`,                        cols[0].x + 12, y, { width: cols[0].w - 16, ellipsis: true })
-          .text(String(parseFloat(item.qty) || 1),               cols[1].x, y, { width: cols[1].w, align: 'right' })
-          .text(`${parseFloat(item.price || 0).toLocaleString('fr-FR')} F`, cols[2].x, y, { width: cols[2].w, align: 'right' })
-          .text(`${parseFloat(item.price || 0).toLocaleString('fr-FR')} F`, cols[3].x, y, { width: cols[3].w, align: 'right' });
-        y += rh + 2;
-      });
-    }
+  if (items.length === 0) {
+    doc.rect(50, y - 2, W - 100, 20).fill(PDF_LIGHT);
+    doc.fillColor(PDF_MUTED).fontSize(9).font('Helvetica').text('Aucun article', cols[0].x + 4, y + 2);
+    y += 22;
   } else {
     items.forEach((item, i) => {
+      const isHoliday = item.holiday || String(item.name).toLowerCase() === 'null' || String(item.name).toLowerCase() === 'férié';
       const rh = 18;
       if (y + rh > H - 60) { pdfDrawFooter(doc); doc.addPage(); y = 50; y = pdfDrawTableHeader(doc, y, cols); }
       doc.rect(50, y - 2, W - 100, rh).fill(i % 2 === 0 ? PDF_LIGHT : '#FFFFFF');
-      const qty = parseFloat(item.qty || 1), price = parseFloat(item.price || 0);
-      doc.fillColor(PDF_DARK).fontSize(8).font('Helvetica')
-        .text(item.name || '—', cols[0].x + 4, y, { width: cols[0].w - 8, ellipsis: true })
-        .text(String(qty),       cols[1].x, y, { width: cols[1].w, align: 'right' })
-        .text(`${price.toLocaleString('fr-FR')} F`, cols[2].x, y, { width: cols[2].w, align: 'right' })
-        .text(`${(qty * price).toLocaleString('fr-FR')} F`, cols[3].x, y, { width: cols[3].w, align: 'right' });
+
+      if (isHoliday) {
+        doc.fillColor(PDF_MUTED).fontSize(8).font('Helvetica-Bold')
+          .text(item.day || '—', cols[0].x + 4, y + 2, { width: cols[0].w - 8, ellipsis: true })
+          .text('— Jour férié —', cols[1].x + 4, y + 2, { width: cols[1].w - 8, ellipsis: true })
+          .text('0', cols[2].x, y + 2, { width: cols[2].w, align: 'right' })
+          .text('0', cols[3].x, y + 2, { width: cols[3].w, align: 'right' })
+          .text('0', cols[4].x, y + 2, { width: cols[4].w, align: 'right' });
+      } else {
+        const unitPrice = parseFloat(item.price || item.unit_price || 0);
+        const qty       = parseFloat(item.qty || 0);
+        const lineTotal = unitPrice * qty;
+        grandTotal += lineTotal;
+        doc.fillColor(PDF_DARK).fontSize(8).font('Helvetica')
+          .text(item.day || '—',                                   cols[0].x + 4, y + 2, { width: cols[0].w - 8, ellipsis: true })
+          .text(item.name || '—',                                  cols[1].x + 4, y + 2, { width: cols[1].w - 8, ellipsis: true })
+          .text(`${fmtP(unitPrice)} FCFA`,          cols[2].x, y + 2, { width: cols[2].w, align: 'right' })
+          .text(String(qty),                                        cols[3].x, y + 2, { width: cols[3].w, align: 'right' })
+          .text(`${fmtP(lineTotal)} FCFA`,          cols[4].x, y + 2, { width: cols[4].w, align: 'right' });
+      }
       y += rh + 2;
     });
   }
 
+  const displayTotal = parseFloat(inv_data.total_amount || grandTotal);
+
   y += 12;
-  doc.rect(W - 210, y, 160, 38).fill(PDF_ORANGE);
-  doc.fillColor(PDF_CREAM).fontSize(8).font('Helvetica').text('TOTAL TTC', W - 205, y + 6, { width: 150, align: 'right' });
-  doc.fontSize(15).font('Helvetica-Bold').text(`${packTotal.toLocaleString('fr-FR')} FCFA`, W - 205, y + 17, { width: 150, align: 'right' });
+  doc.rect(W - 215, y, 165, 38).fill(PDF_ORANGE);
+  doc.fillColor(PDF_CREAM).fontSize(8).font('Helvetica').text('TOTAL TTC', W - 210, y + 6, { width: 155, align: 'right' });
+  doc.fontSize(15).font('Helvetica-Bold').text(`${fmtP(displayTotal)} FCFA`, W - 210, y + 17, { width: 155, align: 'right' });
 
   pdfDrawFooter(doc);
 }
@@ -1267,7 +1433,7 @@ app.get('/api/restaurant/export-pdf', restaurantAuth, async (req, res) => {
     doc.fontSize(11).text(`Restaurant : ${req.user.name} | Généré le ${new Date().toLocaleDateString('fr-FR')}`, 50, 82);
     let y = 135;
     const total = orders.rows.reduce((s,o) => s + parseFloat(o.price||0), 0);
-    doc.fillColor('#2C1810').fontSize(13).font('Helvetica-Bold').text(`${orders.rows.length} commandes — Total : ${total.toLocaleString()} FCFA`, 50, y);
+    doc.fillColor('#2C1810').fontSize(13).font('Helvetica-Bold').text(`${orders.rows.length} commandes — Total : ${fmtP(total)} FCFA`, 50, y);
     y += 28;
     doc.rect(50, y, doc.page.width-100, 22).fill('#2C1810');
     doc.fillColor('#FFF8F3').fontSize(9).font('Helvetica-Bold');
@@ -1283,7 +1449,7 @@ app.get('/api/restaurant/export-pdf', restaurantAuth, async (req, res) => {
       doc.text(d,50,y); doc.text((o.company_name||'').substring(0,12),120,y);
       doc.text(`${o.last_name} ${o.first_name}`.substring(0,14),210,y);
       doc.text((o.menu_name||'').substring(0,18),300,y);
-      doc.text(`${parseFloat(o.price||0).toLocaleString()}`,410,y);
+      doc.text(`${fmtP(o.price)} FCFA`,410,y);
       doc.fillColor(o.status==='validated'||o.status==='confirmed'?'#16a34a':'#E85A2A').text(o.status,480,y);
       doc.fillColor('#2C1810'); y += 20;
     });
@@ -1471,6 +1637,8 @@ app.delete('/api/restaurant/weekly-menus/:id', restaurantAuth, async (req, res) 
 app.post('/api/restaurant/dishes', restaurantAuth, async (req, res) => {
   const { weekly_menu_day_id, name, description, price, image } = req.body;
   try {
+    if (!name) return res.status(400).json({ error: 'Le nom du plat est requis' });
+    const _price = parseFloat(price); if (!price || isNaN(_price) || _price <= 0) return res.status(400).json({ error: 'Le prix du plat est obligatoire (> 0)' });
     const day = await pool.query(
       'SELECT wmd.id FROM weekly_menu_days wmd JOIN weekly_menus wm ON wmd.weekly_menu_id=wm.id WHERE wmd.id=$1 AND wm.restaurant_id=$2',
       [weekly_menu_day_id, req.user.id]
@@ -1559,7 +1727,7 @@ app.get('/api/restaurant/weekly-invoices', restaurantAuth, async (req, res) => {
       LEFT JOIN companies c ON wi.company_id=c.id
       LEFT JOIN restaurants r ON wi.restaurant_id=r.id
       LEFT JOIN weekly_packs wp ON wi.weekly_pack_id=wp.id
-      WHERE wi.restaurant_id=$1
+      WHERE wi.restaurant_id=$1 AND wi.deleted_at IS NULL
     `;
     const params = [req.user.id];
     if (from) { q += ` AND wi.from_date >= $${params.length+1}`; params.push(from); }
@@ -1587,13 +1755,15 @@ app.get('/api/restaurant/weekly-invoices/:id', restaurantAuth, async (req, res) 
 });
 
 app.put('/api/restaurant/weekly-invoices/:id', restaurantAuth, async (req, res) => {
-  const { items, total_amount, status, billing_frequency, sent } = req.body;
+  const { items, total_amount, status, billing_frequency, sent, notes } = req.body;
   try {
-    const sentClause = sent !== undefined ? ', sent=$7, sent_at=CASE WHEN $7 THEN NOW() ELSE sent_at END' : '';
+    const notesClause = notes !== undefined ? ', notes=$8' : '';
+    const sentClause = sent !== undefined ? `, sent=$7, sent_at=CASE WHEN $7 THEN NOW() ELSE sent_at END` : '';
     const params = [items ? JSON.stringify(items) : null, total_amount !== undefined ? total_amount : null, status || null, billing_frequency || null, req.params.id, req.user.id];
     if (sent !== undefined) params.push(sent);
+    if (notes !== undefined) params.push(notes);
     const r = await pool.query(
-      `UPDATE weekly_invoices SET items=COALESCE($1,items), total_amount=COALESCE($2,total_amount), status=COALESCE($3,status), billing_frequency=COALESCE($4,billing_frequency)${sentClause} WHERE id=$5 AND restaurant_id=$6 RETURNING *`,
+      `UPDATE weekly_invoices SET items=COALESCE($1,items), total_amount=COALESCE($2,total_amount), status=COALESCE($3,status), billing_frequency=COALESCE($4,billing_frequency)${sentClause}${notesClause} WHERE id=$5 AND restaurant_id=$6 RETURNING *`,
       params
     );
     if (!r.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
@@ -1603,7 +1773,8 @@ app.put('/api/restaurant/weekly-invoices/:id', restaurantAuth, async (req, res) 
 
 app.delete('/api/restaurant/weekly-invoices/:id', restaurantAuth, async (req, res) => {
   try {
-    await pool.query('DELETE FROM weekly_invoices WHERE id=$1 AND restaurant_id=$2', [req.params.id, req.user.id]);
+    const r = await pool.query('UPDATE weekly_invoices SET deleted_at=NOW() WHERE id=$1 AND restaurant_id=$2 AND deleted_at IS NULL RETURNING id', [req.params.id, req.user.id]);
+    if (!r.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -1613,18 +1784,30 @@ app.get('/api/restaurant/weekly-invoices/:id/pdf', async (req, res) => {
   if (!token) return res.status(401).json({ error: 'Token manquant' });
   try {
     const d = jwt.verify(token, JWT_SECRET);
-    if (d.role !== 'restaurant') return res.status(403).json({ error: 'Accès refusé' });
-    const inv = await pool.query(`
-      SELECT wi.*, c.name AS company_name, c.address AS company_address,
-             r.name AS restaurant_name, r.address AS restaurant_address,
-             wp.name AS pack_name, wp.description AS pack_description,
-             wp.price AS pack_price, wp.min_order_qty
-      FROM weekly_invoices wi
-      LEFT JOIN companies c ON wi.company_id = c.id
-      LEFT JOIN restaurants r ON wi.restaurant_id = r.id
-      LEFT JOIN weekly_packs wp ON wi.weekly_pack_id = wp.id
-      WHERE wi.id=$1 AND wi.restaurant_id=$2
-    `, [req.params.id, d.id]);
+    if (d.role !== 'restaurant' && d.role !== 'company') return res.status(403).json({ error: 'Accès refusé' });
+    let q, params;
+    if (d.role === 'restaurant') {
+      q = `SELECT wi.*, c.name AS company_name, c.address AS company_address,
+               r.name AS restaurant_name, r.address AS restaurant_address, r.phone AS restaurant_phone,
+               wp.name AS pack_name, wp.description AS pack_description, wp.price AS pack_price, wp.min_order_qty
+             FROM weekly_invoices wi
+             LEFT JOIN companies c ON wi.company_id=c.id
+             LEFT JOIN restaurants r ON wi.restaurant_id=r.id
+             LEFT JOIN weekly_packs wp ON wi.weekly_pack_id=wp.id
+             WHERE wi.id=$1 AND wi.restaurant_id=$2`;
+      params = [req.params.id, d.id];
+    } else {
+      q = `SELECT wi.*, c.name AS company_name, c.address AS company_address,
+               r.name AS restaurant_name, r.address AS restaurant_address, r.phone AS restaurant_phone,
+               wp.name AS pack_name, wp.description AS pack_description, wp.price AS pack_price, wp.min_order_qty
+             FROM weekly_invoices wi
+             LEFT JOIN companies c ON wi.company_id=c.id
+             LEFT JOIN restaurants r ON wi.restaurant_id=r.id
+             LEFT JOIN weekly_packs wp ON wi.weekly_pack_id=wp.id
+             WHERE wi.id=$1 AND wi.company_id=$2`;
+      params = [req.params.id, d.id];
+    }
+    const inv = await pool.query(q, params);
     if (!inv.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
     const inv_data = inv.rows[0];
     const items = Array.isArray(inv_data.items) ? inv_data.items : JSON.parse(inv_data.items || '[]');
@@ -1637,12 +1820,215 @@ app.get('/api/restaurant/weekly-invoices/:id/pdf', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ——— Daily Invoice Entries (Point du Jour) ———
+
+// POST /api/restaurant/daily-entries — save a daily point du jour
+app.post('/api/restaurant/daily-entries', restaurantAuth, async (req, res) => {
+  const { company_id, items, total_amount, day_date, from_date, to_date, delivered, restaurant_note } = req.body;
+  try {
+    if (!company_id) return res.status(400).json({ error: 'Entreprise requise' });
+    if (!day_date) return res.status(400).json({ error: 'Date du jour requise' });
+    if (!items || !items.length) return res.status(400).json({ error: 'Ajoutez au moins un plat' });
+    const isDelivered = delivered !== false && delivered !== 'false';
+    const note = (restaurant_note || '').trim();
+    const existing = await pool.query(
+      `SELECT id FROM weekly_invoices WHERE restaurant_id=$1 AND company_id=$2 AND day_date=$3 AND invoice_type='daily'`,
+      [req.user.id, company_id, day_date]
+    );
+    if (existing.rows.length) {
+      const r = await pool.query(
+        `UPDATE weekly_invoices SET items=$1, total_amount=$2, from_date=$3, to_date=$4, delivered=$5, restaurant_note=$6 WHERE id=$7 RETURNING *`,
+        [JSON.stringify(items), total_amount || 0, from_date || day_date, to_date || day_date, isDelivered, note, existing.rows[0].id]
+      );
+      return res.json(r.rows[0]);
+    }
+    const count = await pool.query('SELECT COUNT(*)+1 AS next FROM weekly_invoices WHERE restaurant_id=$1', [req.user.id]);
+    const invNum = `PDJ-${String(req.user.id).padStart(3,'0')}-${String(count.rows[0].next).padStart(4,'0')}`;
+    const r = await pool.query(
+      `INSERT INTO weekly_invoices (restaurant_id, company_id, invoice_number, items, total_amount, from_date, to_date, day_date, invoice_type, billing_frequency, delivered, restaurant_note)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'daily','weekly',$9,$10) RETURNING *`,
+      [req.user.id, company_id, invNum, JSON.stringify(items), total_amount || 0, from_date || day_date, to_date || day_date, day_date, isDelivered, note]
+    );
+    res.status(201).json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/restaurant/daily-entries?week_start=YYYY-MM-DD&company_id=X
+app.get('/api/restaurant/daily-entries', restaurantAuth, async (req, res) => {
+  const { week_start, company_id } = req.query;
+  try {
+    let q = `SELECT wi.*, c.name AS company_name FROM weekly_invoices wi
+             LEFT JOIN companies c ON wi.company_id=c.id
+             WHERE wi.restaurant_id=$1 AND wi.invoice_type='daily' AND wi.deleted_at IS NULL`;
+    const params = [req.user.id];
+    if (company_id) { q += ` AND wi.company_id=$${params.length+1}`; params.push(company_id); }
+    if (week_start) {
+      const endDate = new Date(week_start + 'T12:00:00');
+      endDate.setDate(endDate.getDate() + 6);
+      q += ` AND wi.day_date >= $${params.length+1}`; params.push(week_start);
+      q += ` AND wi.day_date <= $${params.length+1}`; params.push(endDate.toISOString().split('T')[0]);
+    }
+    q += ' ORDER BY wi.day_date';
+    const r = await pool.query(q, params);
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/restaurant/daily-entries/:date — soft-delete point du jour → corbeille
+app.delete('/api/restaurant/daily-entries/:date', restaurantAuth, async (req, res) => {
+  const { date } = req.params;
+  const { company_id } = req.query;
+  try {
+    let q = `UPDATE weekly_invoices SET deleted_at=NOW() WHERE restaurant_id=$1 AND day_date=$2 AND invoice_type='daily' AND deleted_at IS NULL`;
+    const params = [req.user.id, date];
+    if (company_id) { q += ` AND company_id=$3`; params.push(company_id); }
+    const r = await pool.query(q + ' RETURNING id', params);
+    if (!r.rows.length) return res.status(404).json({ error: 'Aucune entrée trouvée pour cette date' });
+    res.json({ success: true, deleted: r.rows.length });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/restaurant/daily-entries — soft-delete toute la semaine → corbeille
+app.delete('/api/restaurant/daily-entries', restaurantAuth, async (req, res) => {
+  const { week_start, company_id } = req.query;
+  try {
+    if (!week_start) return res.status(400).json({ error: 'week_start requis' });
+    const endDate = new Date(week_start + 'T12:00:00');
+    endDate.setDate(endDate.getDate() + 6);
+    let q = `UPDATE weekly_invoices SET deleted_at=NOW() WHERE restaurant_id=$1 AND invoice_type='daily' AND day_date>=$2 AND day_date<=$3 AND deleted_at IS NULL`;
+    const params = [req.user.id, week_start, endDate.toISOString().split('T')[0]];
+    if (company_id) { q += ` AND company_id=$4`; params.push(company_id); }
+    const r = await pool.query(q + ' RETURNING id', params);
+    res.json({ success: true, deleted: r.rows.length });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/restaurant/weekly-program-dishes?company_id=X&week_start=YYYY-MM-DD
+// Retourne les plats du programme hebdo pour pré-remplir le Point du Jour
+app.get('/api/restaurant/weekly-program-dishes', restaurantAuth, async (req, res) => {
+  const { company_id, week_start } = req.query;
+  try {
+    if (!company_id || !week_start) return res.json({ dishes: {}, dish_qty: 8 });
+    const sel = await pool.query(
+      `SELECT cws.id, cws.dish_qty, cws.weekly_pack_id FROM company_weekly_selections cws
+       WHERE cws.company_id=$1 AND cws.restaurant_id=$2 AND cws.week_start=$3 LIMIT 1`,
+      [company_id, req.user.id, week_start]
+    );
+    if (!sel.rows.length || !sel.rows[0].weekly_pack_id)
+      return res.json({ dishes: {}, dish_qty: 8 });
+    const packId  = sel.rows[0].weekly_pack_id;
+    const dishQty = sel.rows[0].dish_qty || 8;
+    const r = await pool.query(
+      `SELECT wmd.day_of_week, wdd.name, wdd.price, wdd.description
+       FROM weekly_day_dishes wdd
+       JOIN weekly_menu_days wmd ON wdd.weekly_menu_day_id = wmd.id
+       JOIN weekly_menus wm ON wmd.weekly_menu_id = wm.id
+       WHERE wm.weekly_pack_id = $1
+       ORDER BY wmd.day_of_week, wdd.sort_order`,
+      [packId]
+    );
+    const byDay = {};
+    r.rows.forEach(d => {
+      if (!byDay[d.day_of_week]) byDay[d.day_of_week] = [];
+      byDay[d.day_of_week].push({ name: d.name, price: parseFloat(d.price) || 0 });
+    });
+    res.json({ dishes: byDay, dish_qty: dishQty, pack_id: packId });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/company/weekly-daily-entries?week_start=YYYY-MM-DD&restaurant_id=X
+// Entreprise consulte les points du jour + avis
+app.get('/api/company/weekly-daily-entries', companyAuth, async (req, res) => {
+  const { week_start, restaurant_id } = req.query;
+  try {
+    if (!week_start) return res.status(400).json({ error: 'week_start requis' });
+    const endDate = new Date(week_start + 'T12:00:00');
+    endDate.setDate(endDate.getDate() + 6);
+    let q = `SELECT wi.id, wi.day_date, wi.items, wi.total_amount, wi.delivered,
+               wi.restaurant_note, wi.company_feedback, wi.company_feedback_at,
+               r.name AS restaurant_name, r.id AS restaurant_id
+             FROM weekly_invoices wi
+             LEFT JOIN restaurants r ON wi.restaurant_id = r.id
+             WHERE wi.company_id=$1 AND wi.invoice_type='daily' AND wi.deleted_at IS NULL
+               AND wi.day_date >= $2 AND wi.day_date <= $3`;
+    const params = [req.user.id, week_start, endDate.toISOString().split('T')[0]];
+    if (restaurant_id) { q += ` AND wi.restaurant_id=$4`; params.push(parseInt(restaurant_id)); }
+    q += ' ORDER BY wi.restaurant_id, wi.day_date';
+    const r = await pool.query(q, params);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/company/weekly-invoices/:id/feedback — entreprise donne son avis sur le repas du jour
+app.put('/api/company/weekly-invoices/:id/feedback', companyAuth, async (req, res) => {
+  const { feedback } = req.body;
+  try {
+    if (!feedback || !feedback.trim()) return res.status(400).json({ error: 'Avis requis' });
+    const r = await pool.query(
+      `UPDATE weekly_invoices SET company_feedback=$1, company_feedback_at=NOW()
+       WHERE id=$2 AND company_id=$3 AND invoice_type='daily' RETURNING id, day_date, company_feedback, company_feedback_at`,
+      [feedback.trim(), req.params.id, req.user.id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: 'Entrée introuvable' });
+    res.json(r.rows[0]);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/restaurant/weekly-invoices/compile — compile daily entries into global weekly invoice
+app.post('/api/restaurant/weekly-invoices/compile', restaurantAuth, async (req, res) => {
+  const { company_id, from_date, to_date } = req.body;
+  try {
+    if (!company_id || !from_date || !to_date) return res.status(400).json({ error: 'Paramètres manquants' });
+    const entries = await pool.query(
+      `SELECT * FROM weekly_invoices WHERE restaurant_id=$1 AND company_id=$2 AND invoice_type='daily'
+       AND day_date >= $3 AND day_date <= $4 ORDER BY day_date`,
+      [req.user.id, company_id, from_date, to_date]
+    );
+    if (!entries.rows.length) return res.status(400).json({ error: 'Aucune entrée quotidienne pour cette semaine' });
+    const globalItems = [];
+    let total = 0;
+    for (const entry of entries.rows) {
+      const items = Array.isArray(entry.items) ? entry.items : JSON.parse(entry.items || '[]');
+      const dayDate = new Date(entry.day_date + 'T12:00:00');
+      const dayNum  = dayDate.getDay();
+      const dayName = DAY_FR_NAMES[dayNum === 0 ? 0 : dayNum];
+      for (const item of items) {
+        const unitPrice = parseFloat(item.price || item.unit_price || 0);
+        const qty       = parseFloat(item.qty || 0);
+        const lineTotal = unitPrice * qty;
+        globalItems.push({ day: dayName, name: item.name, price: unitPrice, qty, total: lineTotal, holiday: !!item.holiday });
+        if (!item.holiday) total += lineTotal;
+      }
+    }
+    const count = await pool.query('SELECT COUNT(*)+1 AS next FROM weekly_invoices WHERE restaurant_id=$1', [req.user.id]);
+    const invNum = `WFAC-${String(req.user.id).padStart(3,'0')}-${String(count.rows[0].next).padStart(4,'0')}`;
+    const r = await pool.query(
+      `INSERT INTO weekly_invoices (restaurant_id, company_id, invoice_number, items, total_amount, from_date, to_date, invoice_type, billing_frequency)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'global','weekly') RETURNING *`,
+      [req.user.id, company_id, invNum, JSON.stringify(globalItems), total, from_date, to_date]
+    );
+    res.status(201).json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/company/weekly-invoices/:id/confirm — entreprise confirme une facture hebdo
+app.put('/api/company/weekly-invoices/:id/confirm', companyAuth, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `UPDATE weekly_invoices SET status='confirmed' WHERE id=$1 AND company_id=$2 RETURNING *`,
+      [req.params.id, req.user.id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/company/weekly-invoices — entreprise voit les factures hebdo qui lui sont adressées
 app.get('/api/company/weekly-invoices', companyAuth, async (req, res) => {
   const { from, to } = req.query;
   try {
     let q = `
-      SELECT wi.*, r.name AS restaurant_name, c.name AS company_name, wp.name AS pack_name
+      SELECT wi.*, r.name AS restaurant_name, r.phone AS restaurant_phone, c.name AS company_name, wp.name AS pack_name
       FROM weekly_invoices wi
       LEFT JOIN restaurants r ON wi.restaurant_id=r.id
       LEFT JOIN companies c ON wi.company_id=c.id
@@ -1862,7 +2248,7 @@ app.get('/api/admin/all-restaurants', companyAuth, async (req, res) => {
 });
 
 app.get('/api/admin/restaurants/:id/menus', companyAuth, async (req, res) => {
-  const r = await pool.query('SELECT * FROM menus WHERE restaurant_id=$1 AND available=TRUE ORDER BY category,name', [req.params.id]);
+  const r = await pool.query('SELECT * FROM menus WHERE restaurant_id=$1 AND available=TRUE AND deleted_at IS NULL ORDER BY category,name', [req.params.id]);
   const rest = await pool.query('SELECT name,address,specialties,photo_url FROM restaurants WHERE id=$1', [req.params.id]);
   if (!rest.rows.length) return res.status(404).json({ error: 'Restaurant introuvable' });
   res.json({ restaurant: rest.rows[0], menus: r.rows });
@@ -2015,7 +2401,7 @@ app.get('/api/admin/orders/export-pdf', companyAuth, async (req, res) => {
     doc.fontSize(10).text(`Entreprise : ${coName}`, _hx, 78);
     let y = 135;
     const total = orders.rows.reduce((s, o) => s + parseFloat(o.price || 0), 0);
-    doc.fillColor('#2C1810').fontSize(12).font('Helvetica-Bold').text(`${orders.rows.length} commandes — ${total.toLocaleString()} FCFA`, 50, y);
+    doc.fillColor('#2C1810').fontSize(12).font('Helvetica-Bold').text(`${orders.rows.length} commandes — ${fmtP(total)} FCFA`, 50, y);
     y += 28;
     doc.rect(50, y, doc.page.width - 100, 22).fill('#2C1810');
     doc.fillColor('#FFF8F3').fontSize(9).font('Helvetica-Bold');
@@ -2029,7 +2415,7 @@ app.get('/api/admin/orders/export-pdf', companyAuth, async (req, res) => {
       doc.text((o.restaurant_name || '').substring(0, 16), 130, y);
       doc.text(`${o.last_name} ${o.first_name}`.substring(0, 14), 260, y);
       doc.text((o.menu_name || '').substring(0, 18), 370, y);
-      doc.text(`${parseFloat(o.price || 0).toLocaleString()}`, 480, y);
+      doc.text(`${fmtP(o.price)} FCFA`, 480, y);
       y += 20;
     });
     doc.rect(0, doc.page.height - 35, doc.page.width, 35).fill('#2C1810');
@@ -2069,7 +2455,7 @@ app.get('/api/admin/invoices', companyAuth, async (req, res) => {
     FROM invoices i
     JOIN restaurants r ON i.restaurant_id=r.id
     LEFT JOIN companies c ON i.company_id=c.id
-    WHERE i.company_id=$1`;
+    WHERE i.company_id=$1 AND i.deleted_at IS NULL`;
   if (from) { q += ` AND i.created_at >= $${params.length+1}`; params.push(from); }
   if (to)   { q += ` AND i.created_at <= $${params.length+1}::date + interval '1 day'`; params.push(to); }
   q += ' ORDER BY i.created_at DESC';
@@ -2077,6 +2463,219 @@ app.get('/api/admin/invoices', companyAuth, async (req, res) => {
     const r = await pool.query(q, params);
     res.json(r.rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Soft-delete facture classique (côté entreprise) → corbeille
+app.delete('/api/admin/invoices/:id', companyAuth, async (req, res) => {
+  try {
+    const r = await pool.query('UPDATE invoices SET deleted_at=NOW() WHERE id=$1 AND company_id=$2 AND deleted_at IS NULL RETURNING id', [req.params.id, req.user.id]);
+    if (!r.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Soft-delete facture hebdo (côté entreprise) → corbeille
+app.delete('/api/company/weekly-invoices/:id', companyAuth, async (req, res) => {
+  try {
+    const r = await pool.query('UPDATE weekly_invoices SET deleted_at=NOW() WHERE id=$1 AND company_id=$2 AND deleted_at IS NULL RETURNING id', [req.params.id, req.user.id]);
+    if (!r.rows.length) return res.status(404).json({ error: 'Facture introuvable' });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Vider historique factures classiques (entreprise) → corbeille
+app.delete('/api/admin/invoices-history', companyAuth, async (req, res) => {
+  try {
+    await pool.query('UPDATE invoices SET deleted_at=NOW() WHERE company_id=$1 AND deleted_at IS NULL', [req.user.id]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Vider historique factures hebdo (entreprise) → corbeille
+app.delete('/api/company/weekly-invoices-history', companyAuth, async (req, res) => {
+  try {
+    await pool.query('UPDATE weekly_invoices SET deleted_at=NOW() WHERE company_id=$1 AND deleted_at IS NULL', [req.user.id]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Vider historique factures classiques (restaurant) → corbeille
+app.delete('/api/restaurant/invoices-history', restaurantAuth, async (req, res) => {
+  try {
+    await pool.query('UPDATE invoices SET deleted_at=NOW() WHERE restaurant_id=$1 AND deleted_at IS NULL', [req.user.id]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Vider historique factures hebdo (restaurant) → corbeille
+app.delete('/api/restaurant/weekly-invoices-history', restaurantAuth, async (req, res) => {
+  try {
+    await pool.query('UPDATE weekly_invoices SET deleted_at=NOW() WHERE restaurant_id=$1 AND deleted_at IS NULL', [req.user.id]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ════ CORBEILLE — RESTAURANT ════════════════════════════════════════════════
+app.get('/api/restaurant/trash', restaurantAuth, async (req, res) => {
+  try {
+    const [menus, invoices, weeklyInv] = await Promise.all([
+      pool.query(`SELECT id,'menu' AS type, name, category, price, deleted_at FROM menus WHERE restaurant_id=$1 AND deleted_at IS NOT NULL ORDER BY deleted_at DESC`, [req.user.id]),
+      pool.query(`SELECT i.id,'invoice' AS type, i.total_amount, i.status, i.invoice_date AS date, i.deleted_at, c.name AS company_name FROM invoices i LEFT JOIN companies c ON i.company_id=c.id WHERE i.restaurant_id=$1 AND i.deleted_at IS NOT NULL ORDER BY i.deleted_at DESC`, [req.user.id]),
+      pool.query(`SELECT id, CASE WHEN invoice_type='daily' THEN 'daily_entry' ELSE 'weekly_invoice' END AS type, invoice_number, total_amount, status, day_date, from_date, to_date, deleted_at, (SELECT name FROM companies WHERE id=company_id) AS company_name FROM weekly_invoices WHERE restaurant_id=$1 AND deleted_at IS NOT NULL ORDER BY deleted_at DESC`, [req.user.id])
+    ]);
+    res.json({ menus: menus.rows, invoices: invoices.rows, weekly_invoices: weeklyInv.rows });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/restaurant/trash/restore/:type/:id', restaurantAuth, async (req, res) => {
+  const { type, id } = req.params;
+  try {
+    let r;
+    if (type === 'menu') {
+      r = await pool.query('UPDATE menus SET deleted_at=NULL WHERE id=$1 AND restaurant_id=$2 RETURNING id', [id, req.user.id]);
+    } else if (type === 'invoice') {
+      r = await pool.query('UPDATE invoices SET deleted_at=NULL WHERE id=$1 AND restaurant_id=$2 RETURNING id', [id, req.user.id]);
+    } else if (type === 'weekly_invoice' || type === 'daily_entry') {
+      r = await pool.query('UPDATE weekly_invoices SET deleted_at=NULL WHERE id=$1 AND restaurant_id=$2 RETURNING id', [id, req.user.id]);
+    } else return res.status(400).json({ error: 'Type inconnu' });
+    if (!r.rows.length) return res.status(404).json({ error: 'Élément introuvable' });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/restaurant/trash/purge/:type/:id', restaurantAuth, async (req, res) => {
+  const { type, id } = req.params;
+  try {
+    let r;
+    if (type === 'menu') {
+      r = await pool.query('DELETE FROM menus WHERE id=$1 AND restaurant_id=$2 AND deleted_at IS NOT NULL RETURNING id', [id, req.user.id]);
+    } else if (type === 'invoice') {
+      r = await pool.query('DELETE FROM invoices WHERE id=$1 AND restaurant_id=$2 AND deleted_at IS NOT NULL RETURNING id', [id, req.user.id]);
+    } else if (type === 'weekly_invoice' || type === 'daily_entry') {
+      r = await pool.query('DELETE FROM weekly_invoices WHERE id=$1 AND restaurant_id=$2 AND deleted_at IS NOT NULL RETURNING id', [id, req.user.id]);
+    } else return res.status(400).json({ error: 'Type inconnu' });
+    if (!r.rows.length) return res.status(404).json({ error: 'Élément introuvable' });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/restaurant/trash', restaurantAuth, async (req, res) => {
+  try {
+    await Promise.all([
+      pool.query('DELETE FROM menus WHERE restaurant_id=$1 AND deleted_at IS NOT NULL', [req.user.id]),
+      pool.query('DELETE FROM invoices WHERE restaurant_id=$1 AND deleted_at IS NOT NULL', [req.user.id]),
+      pool.query('DELETE FROM weekly_invoices WHERE restaurant_id=$1 AND deleted_at IS NOT NULL', [req.user.id])
+    ]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ════ CORBEILLE — ENTREPRISE ═════════════════════════════════════════════════
+app.get('/api/admin/trash', companyAuth, async (req, res) => {
+  try {
+    const [invoices, weeklyInv] = await Promise.all([
+      pool.query(`SELECT i.id,'invoice' AS type, i.total_amount, i.status, i.invoice_date AS date, i.deleted_at, r.name AS restaurant_name FROM invoices i LEFT JOIN restaurants r ON i.restaurant_id=r.id WHERE i.company_id=$1 AND i.deleted_at IS NOT NULL ORDER BY i.deleted_at DESC`, [req.user.id]),
+      pool.query(`SELECT id,'weekly_invoice' AS type, invoice_number, total_amount, status, from_date, to_date, deleted_at, (SELECT name FROM restaurants WHERE id=restaurant_id) AS restaurant_name FROM weekly_invoices WHERE company_id=$1 AND deleted_at IS NOT NULL ORDER BY deleted_at DESC`, [req.user.id])
+    ]);
+    res.json({ invoices: invoices.rows, weekly_invoices: weeklyInv.rows });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/admin/trash/restore/:type/:id', companyAuth, async (req, res) => {
+  const { type, id } = req.params;
+  try {
+    let r;
+    if (type === 'invoice') {
+      r = await pool.query('UPDATE invoices SET deleted_at=NULL WHERE id=$1 AND company_id=$2 RETURNING id', [id, req.user.id]);
+    } else if (type === 'weekly_invoice') {
+      r = await pool.query('UPDATE weekly_invoices SET deleted_at=NULL WHERE id=$1 AND company_id=$2 RETURNING id', [id, req.user.id]);
+    } else return res.status(400).json({ error: 'Type inconnu' });
+    if (!r.rows.length) return res.status(404).json({ error: 'Élément introuvable' });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/admin/trash/purge/:type/:id', companyAuth, async (req, res) => {
+  const { type, id } = req.params;
+  try {
+    let r;
+    if (type === 'invoice') {
+      r = await pool.query('DELETE FROM invoices WHERE id=$1 AND company_id=$2 AND deleted_at IS NOT NULL RETURNING id', [id, req.user.id]);
+    } else if (type === 'weekly_invoice') {
+      r = await pool.query('DELETE FROM weekly_invoices WHERE id=$1 AND company_id=$2 AND deleted_at IS NOT NULL RETURNING id', [id, req.user.id]);
+    } else return res.status(400).json({ error: 'Type inconnu' });
+    if (!r.rows.length) return res.status(404).json({ error: 'Élément introuvable' });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/admin/trash', companyAuth, async (req, res) => {
+  try {
+    await Promise.all([
+      pool.query('DELETE FROM invoices WHERE company_id=$1 AND deleted_at IS NOT NULL', [req.user.id]),
+      pool.query('DELETE FROM weekly_invoices WHERE company_id=$1 AND deleted_at IS NOT NULL', [req.user.id])
+    ]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// Historique combiné factures restaurant (classique + hebdo)
+app.get('/api/restaurant/invoices-history', restaurantAuth, async (req, res) => {
+  try {
+    const { from, to, company_id } = req.query;
+    let params = [req.user.id];
+    let classicQ = `SELECT i.id, 'classic' AS type, i.invoice_date AS date, i.total_amount, i.status, i.sent,
+      i.from_date, i.to_date, i.notes, i.created_at,
+      c.name AS company_name, c.id AS company_id,
+      NULL AS invoice_number, NULL AS day_date, NULL AS invoice_type
+      FROM invoices i LEFT JOIN companies c ON i.company_id=c.id
+      WHERE i.restaurant_id=$1 AND i.deleted_at IS NULL`;
+    let hebdoQ = `SELECT wi.id, 'hebdo' AS type, wi.created_at AS date, wi.total_amount, wi.status, wi.sent,
+      wi.from_date, wi.to_date, wi.notes, wi.created_at,
+      c.name AS company_name, c.id AS company_id,
+      wi.invoice_number, wi.day_date, wi.invoice_type
+      FROM weekly_invoices wi LEFT JOIN companies c ON wi.company_id=c.id
+      WHERE wi.restaurant_id=$1 AND wi.deleted_at IS NULL`;
+    if (from) { classicQ += ` AND i.created_at>=$${params.length+1}`; hebdoQ += ` AND wi.created_at>=$${params.length+1}`; params.push(from); }
+    if (to)   { classicQ += ` AND i.created_at<=$${params.length+1}::date+interval '1 day'`; hebdoQ += ` AND wi.created_at<=$${params.length+1}::date+interval '1 day'`; params.push(to); }
+    if (company_id) { classicQ += ` AND i.company_id=$${params.length+1}`; hebdoQ += ` AND wi.company_id=$${params.length+1}`; params.push(company_id); }
+    const [classic, hebdo] = await Promise.all([
+      pool.query(classicQ + ' ORDER BY i.created_at DESC', params),
+      pool.query(hebdoQ + ' ORDER BY wi.created_at DESC', params)
+    ]);
+    const all = [...classic.rows, ...hebdo.rows].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    res.json(all);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Historique combiné factures entreprise (classique + hebdo)
+app.get('/api/admin/invoices-history', companyAuth, async (req, res) => {
+  try {
+    const { from, to, restaurant_id } = req.query;
+    let params = [req.user.id];
+    let classicQ = `SELECT i.id, 'classic' AS type, i.invoice_date AS date, i.total_amount, i.status, i.sent,
+      i.from_date, i.to_date, i.notes, i.created_at,
+      r.name AS restaurant_name, r.id AS restaurant_id,
+      NULL AS invoice_number, NULL AS day_date, NULL AS invoice_type
+      FROM invoices i LEFT JOIN restaurants r ON i.restaurant_id=r.id
+      WHERE i.company_id=$1`;
+    let hebdoQ = `SELECT wi.id, 'hebdo' AS type, wi.created_at AS date, wi.total_amount, wi.status, wi.sent,
+      wi.from_date, wi.to_date, wi.notes, wi.created_at,
+      r.name AS restaurant_name, r.id AS restaurant_id,
+      wi.invoice_number, wi.day_date, wi.invoice_type
+      FROM weekly_invoices wi LEFT JOIN restaurants r ON wi.restaurant_id=r.id
+      WHERE wi.company_id=$1`;
+    if (from) { classicQ += ` AND i.created_at>=$${params.length+1}`; hebdoQ += ` AND wi.created_at>=$${params.length+1}`; params.push(from); }
+    if (to)   { classicQ += ` AND i.created_at<=$${params.length+1}::date+interval '1 day'`; hebdoQ += ` AND wi.created_at<=$${params.length+1}::date+interval '1 day'`; params.push(to); }
+    if (restaurant_id) { classicQ += ` AND i.restaurant_id=$${params.length+1}`; hebdoQ += ` AND wi.restaurant_id=$${params.length+1}`; params.push(restaurant_id); }
+    const [classic, hebdo] = await Promise.all([
+      pool.query(classicQ + ' ORDER BY i.created_at DESC', params),
+      pool.query(hebdoQ + ' ORDER BY wi.created_at DESC', params)
+    ]);
+    const all = [...classic.rows, ...hebdo.rows].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    res.json(all);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/admin/invoices/:id/confirm', companyAuth, async (req, res) => {
@@ -2138,6 +2737,62 @@ app.get('/api/admin/history', companyAuth, async (req, res) => {
   res.json(r.rows);
 });
 
+app.delete('/api/admin/history', companyAuth, async (req, res) => {
+  try {
+    const { before } = req.query;
+    if (before) {
+      await pool.query('DELETE FROM order_history WHERE company_id=$1 AND order_date<=$2', [req.user.id, before]);
+    } else {
+      await pool.query('DELETE FROM order_history WHERE company_id=$1', [req.user.id]);
+    }
+    res.json({ message: 'Historique supprimé' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Subventions entreprise
+app.get('/api/admin/subsidies', companyAuth, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT * FROM company_subsidies WHERE company_id=$1', [req.user.id]);
+    res.json(r.rows[0] || { food_amount: 0, drink_amount: 0, period_type: 'daily', active: false });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/admin/subsidies', companyAuth, async (req, res) => {
+  const { food_amount, drink_amount, period_type, active } = req.body;
+  try {
+    const r = await pool.query(
+      `INSERT INTO company_subsidies (company_id, food_amount, drink_amount, period_type, active, updated_at)
+       VALUES ($1,$2,$3,$4,$5,NOW())
+       ON CONFLICT (company_id) DO UPDATE SET
+         food_amount=$2, drink_amount=$3, period_type=$4, active=$5, updated_at=NOW()
+       RETURNING *`,
+      [req.user.id, food_amount || 0, drink_amount || 0, period_type || 'daily', active !== false]
+    );
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/admin/subsidy-stats', companyAuth, async (req, res) => {
+  try {
+    const sub = await pool.query('SELECT * FROM company_subsidies WHERE company_id=$1 AND active=true', [req.user.id]);
+    if (!sub.rows.length) return res.json({ active: false, usage: [] });
+    const cfg = sub.rows[0];
+    const now = new Date();
+    const periodKey = cfg.period_type === 'monthly'
+      ? `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
+      : now.toISOString().slice(0,10);
+    const usage = await pool.query(
+      `SELECT su.user_id, u.first_name, u.last_name, su.used_food, su.used_drink
+       FROM subsidy_usage su
+       JOIN users u ON u.id=su.user_id
+       WHERE su.company_id=$1 AND su.period_key=$2
+       ORDER BY u.last_name`,
+      [req.user.id, periodKey]
+    );
+    res.json({ active: true, config: cfg, period_key: periodKey, usage: usage.rows });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/admin/stats', companyAuth, async (req, res) => {
   const companyId = req.user.id;
   try {
@@ -2190,7 +2845,7 @@ app.get('/api/admin/export-pdf', companyAuth, async (req, res) => {
     doc.fontSize(10).text(`Entreprise : ${coName}`, 50, 82);
     let y = 135;
     const total = orders.rows.reduce((s,o)=>s+parseFloat(o.price||0),0);
-    doc.fillColor('#2C1810').fontSize(12).font('Helvetica-Bold').text(`${orders.rows.length} commandes — ${total.toLocaleString()} FCFA`, 50, y);
+    doc.fillColor('#2C1810').fontSize(12).font('Helvetica-Bold').text(`${orders.rows.length} commandes — ${fmtP(total)} FCFA`, 50, y);
     y += 28;
     doc.rect(50,y,doc.page.width-100,22).fill('#2C1810');
     doc.fillColor('#FFF8F3').fontSize(9).font('Helvetica-Bold');
@@ -2320,7 +2975,7 @@ app.post('/api/company/weekly-selections', companyAuth, async (req, res) => {
       ON CONFLICT (company_id,restaurant_id,week_start) DO UPDATE SET
         weekly_pack_id=$3, dish_qty=$5, notes=$6, updated_at=NOW()
       RETURNING *
-    `, [req.user.id, restaurant_id, weekly_pack_id, week_start, parseInt(dish_qty)||8, notes||null]);
+    `, [req.user.id, restaurant_id, weekly_pack_id, week_start, Math.max(1, parseInt(dish_qty)||8), notes||null]);
     const selId = r.rows[0].id;
     // Remplacer les extras
     await pool.query('DELETE FROM company_weekly_extras WHERE selection_id=$1', [selId]);
@@ -2420,6 +3075,18 @@ app.put('/api/restaurant/weekly-selections/:id', restaurantAuth, async (req, res
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// DELETE /api/restaurant/weekly-selections/:id — supprimer un abonnement
+app.delete('/api/restaurant/weekly-selections/:id', restaurantAuth, async (req, res) => {
+  try {
+    const r = await pool.query(
+      'DELETE FROM company_weekly_selections WHERE id=$1 AND restaurant_id=$2 RETURNING id',
+      [req.params.id, req.user.id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: 'Abonnement introuvable' });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/restaurant/weekly-selections/:id/deliveries/init — initialiser les jours de livraison
 app.post('/api/restaurant/weekly-selections/:id/deliveries/init', restaurantAuth, async (req, res) => {
   try {
@@ -2507,180 +3174,6 @@ app.put('/api/company/delivery/:logId/acknowledge', companyAuth, async (req, res
     res.json(r.rows[0]);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-
-// GET /api/restaurant/contract — statut du contrat + offre de service + packs
-app.get('/api/restaurant/contract', restaurantAuth, async (req, res) => {
-  try {
-    const r = await pool.query('SELECT * FROM restaurant_contracts WHERE restaurant_id=$1', [req.user.id]);
-    const packs = await pool.query('SELECT id, name, price, min_order_qty FROM weekly_packs WHERE restaurant_id=$1 AND is_active=true ORDER BY id', [req.user.id]);
-    const contract = r.rows[0] || { status: 'pending', restaurant_id: req.user.id };
-    contract.packs = packs.rows;
-    res.json(contract);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// PUT /api/restaurant/contract — mettre à jour l'offre de service (sans signer)
-app.put('/api/restaurant/contract', restaurantAuth, async (req, res) => {
-  const { offer_description, service_days, delivery_zone, cancellation_policy, extra_terms, payment_schedule } = req.body;
-  try {
-    const r = await pool.query(`
-      INSERT INTO restaurant_contracts (restaurant_id, offer_description, service_days, delivery_zone, cancellation_policy, extra_terms, payment_schedule)
-      VALUES ($1,$2,$3,$4,$5,$6,$7)
-      ON CONFLICT (restaurant_id) DO UPDATE SET
-        offer_description = COALESCE($2, restaurant_contracts.offer_description),
-        service_days      = COALESCE($3, restaurant_contracts.service_days),
-        delivery_zone     = COALESCE($4, restaurant_contracts.delivery_zone),
-        cancellation_policy = COALESCE($5, restaurant_contracts.cancellation_policy),
-        extra_terms       = COALESCE($6, restaurant_contracts.extra_terms),
-        payment_schedule  = COALESCE($7, restaurant_contracts.payment_schedule)
-      RETURNING *
-    `, [req.user.id, offer_description||null, service_days||null, delivery_zone||null, cancellation_policy||null, extra_terms||null, payment_schedule||null]);
-    res.json(r.rows[0]);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST /api/restaurant/contract/sign — signer le contrat
-app.post('/api/restaurant/contract/sign', restaurantAuth, async (req, res) => {
-  const { payment_schedule } = req.body;
-  const schedule = ['weekly','monthly'].includes(payment_schedule) ? payment_schedule : 'monthly';
-  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.connection?.remoteAddress || 'unknown';
-  try {
-    const r = await pool.query(`
-      INSERT INTO restaurant_contracts (restaurant_id, status, payment_schedule, commission_rate, signed_at, ip_address)
-      VALUES ($1,'signed',$2,1.00,NOW(),$3)
-      ON CONFLICT (restaurant_id) DO UPDATE SET status='signed', payment_schedule=$2, signed_at=NOW(), ip_address=$3
-      RETURNING *
-    `, [req.user.id, schedule, ip]);
-    const rest = await pool.query('SELECT name, email FROM restaurants WHERE id=$1', [req.user.id]);
-    if (rest.rows.length) {
-      createNotification('admin', 1, '📝 Contrat signé', `${rest.rows[0].name} a signé le contrat d'exclusivité.`, 'contract', { restaurantId: req.user.id });
-    }
-    res.json(r.rows[0]);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// GET /api/admin/contracts — liste tous les contrats (admin)
-app.get('/api/admin/contracts', adminAuth, async (req, res) => {
-  try {
-    const r = await pool.query(`
-      SELECT rc.*, rest.name AS restaurant_name, rest.email AS restaurant_email, rest.phone, rest.address
-      FROM restaurants rest
-      LEFT JOIN restaurant_contracts rc ON rc.restaurant_id = rest.id
-      ORDER BY CASE WHEN rc.status='pending' OR rc.status IS NULL THEN 0 ELSE 1 END, rest.name
-    `);
-    res.json(r.rows);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ─── Affiliation contracts ────────────────────────────────────────
-
-// GET /api/restaurant/affiliation-contracts — liste les contrats d'affiliation du restaurant
-app.get('/api/restaurant/affiliation-contracts', restaurantAuth, async (req, res) => {
-  try {
-    const r = await pool.query(`
-      SELECT a.id AS affiliation_id, c.name AS company_name, c.logo_url AS company_logo,
-             ac.id AS contract_id, ac.restaurant_signed_at, ac.company_signed_at, ac.created_at,
-             ac.subscription_pack_id, ac.start_date, ac.end_date, ac.quantity, ac.company_notes, ac.status,
-             wp.name AS pack_name
-      FROM affiliations a
-      JOIN companies c ON c.id = a.company_id
-      LEFT JOIN affiliation_contracts ac ON ac.affiliation_id = a.id
-      LEFT JOIN weekly_packs wp ON wp.id = ac.subscription_pack_id
-      WHERE a.restaurant_id = $1
-      ORDER BY a.created_at DESC
-    `, [req.user.id]);
-    res.json(r.rows);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST /api/restaurant/affiliation-contracts/:affiliationId/sign — restaurant signe
-app.post('/api/restaurant/affiliation-contracts/:affiliationId/sign', restaurantAuth, async (req, res) => {
-  const affiliationId = parseInt(req.params.affiliationId);
-  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.connection?.remoteAddress || 'unknown';
-  try {
-    const check = await pool.query('SELECT id FROM affiliations WHERE id=$1 AND restaurant_id=$2', [affiliationId, req.user.id]);
-    if (!check.rows.length) return res.status(403).json({ error: 'Affiliation introuvable' });
-    const r = await pool.query(`
-      INSERT INTO affiliation_contracts (affiliation_id, restaurant_signed_at, restaurant_ip)
-      VALUES ($1, NOW(), $2)
-      ON CONFLICT (affiliation_id) DO UPDATE SET restaurant_signed_at=NOW(), restaurant_ip=$2
-      RETURNING *
-    `, [affiliationId, ip]);
-    const co = await pool.query('SELECT c.id, c.name FROM affiliations a JOIN companies c ON c.id=a.company_id WHERE a.id=$1', [affiliationId]);
-    if (co.rows.length) {
-      createNotification('company', co.rows[0].id, '📝 Contrat d\'affiliation signé', `Le restaurant a signé le contrat d'affiliation.`, 'contract', { affiliationId });
-    }
-    res.json(r.rows[0]);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// GET /api/company/affiliation-contracts — liste les contrats d'affiliation de l'entreprise
-app.get('/api/company/affiliation-contracts', companyAuth, async (req, res) => {
-  try {
-    const r = await pool.query(`
-      SELECT a.id AS affiliation_id, rest.name AS restaurant_name, rest.photo_url AS restaurant_photo,
-             ac.id AS contract_id, ac.restaurant_signed_at, ac.company_signed_at, ac.created_at,
-             ac.subscription_pack_id, ac.start_date, ac.end_date, ac.quantity, ac.company_notes, ac.status,
-             wp.name AS pack_name,
-             rc.offer_description, rc.service_days, rc.delivery_zone, rc.cancellation_policy, rc.extra_terms,
-             rc.status AS restaurant_contract_status,
-             COALESCE((SELECT json_agg(json_build_object('id',p.id,'name',p.name,'price',p.price,'min_order_qty',p.min_order_qty))
-                       FROM weekly_packs p WHERE p.restaurant_id=a.restaurant_id AND p.is_active=true), '[]'::json) AS restaurant_packs
-      FROM affiliations a
-      JOIN restaurants rest ON rest.id = a.restaurant_id
-      LEFT JOIN affiliation_contracts ac ON ac.affiliation_id = a.id
-      LEFT JOIN restaurant_contracts rc ON rc.restaurant_id = a.restaurant_id
-      LEFT JOIN weekly_packs wp ON wp.id = ac.subscription_pack_id
-      WHERE a.company_id = $1
-      ORDER BY a.created_at DESC
-    `, [req.user.id]);
-    res.json(r.rows);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// PUT /api/company/affiliation-contracts/:affiliationId — entreprise définit ses termes de souscription
-app.put('/api/company/affiliation-contracts/:affiliationId', companyAuth, async (req, res) => {
-  const affiliationId = parseInt(req.params.affiliationId);
-  const { subscription_pack_id, start_date, end_date, quantity, company_notes } = req.body;
-  try {
-    const check = await pool.query('SELECT id FROM affiliations WHERE id=$1 AND company_id=$2', [affiliationId, req.user.id]);
-    if (!check.rows.length) return res.status(403).json({ error: 'Affiliation introuvable' });
-    const r = await pool.query(`
-      INSERT INTO affiliation_contracts (affiliation_id, subscription_pack_id, start_date, end_date, quantity, company_notes)
-      VALUES ($1,$2,$3,$4,$5,$6)
-      ON CONFLICT (affiliation_id) DO UPDATE SET
-        subscription_pack_id = COALESCE($2, affiliation_contracts.subscription_pack_id),
-        start_date   = COALESCE($3, affiliation_contracts.start_date),
-        end_date     = COALESCE($4, affiliation_contracts.end_date),
-        quantity     = COALESCE($5, affiliation_contracts.quantity),
-        company_notes = COALESCE($6, affiliation_contracts.company_notes)
-      RETURNING *
-    `, [affiliationId, subscription_pack_id||null, start_date||null, end_date||null, quantity ? parseInt(quantity) : null, company_notes||null]);
-    res.json(r.rows[0]);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST /api/company/affiliation-contracts/:affiliationId/sign — entreprise signe
-app.post('/api/company/affiliation-contracts/:affiliationId/sign', companyAuth, async (req, res) => {
-  const affiliationId = parseInt(req.params.affiliationId);
-  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.connection?.remoteAddress || 'unknown';
-  try {
-    const check = await pool.query('SELECT id FROM affiliations WHERE id=$1 AND company_id=$2', [affiliationId, req.user.id]);
-    if (!check.rows.length) return res.status(403).json({ error: 'Affiliation introuvable' });
-    const r = await pool.query(`
-      INSERT INTO affiliation_contracts (affiliation_id, company_signed_at, company_ip)
-      VALUES ($1, NOW(), $2)
-      ON CONFLICT (affiliation_id) DO UPDATE SET company_signed_at=NOW(), company_ip=$2
-      RETURNING *
-    `, [affiliationId, ip]);
-    const rest = await pool.query('SELECT r.id, r.name FROM affiliations a JOIN restaurants r ON r.id=a.restaurant_id WHERE a.id=$1', [affiliationId]);
-    if (rest.rows.length) {
-      createNotification('restaurant', rest.rows[0].id, '📝 Contrat d\'affiliation signé', `L'entreprise a signé le contrat d'affiliation.`, 'contract', { affiliationId });
-    }
-    res.json(r.rows[0]);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
 // ════════════════════════════════════════════════════════════════
 //  EMPLOYEE ROUTES
 // ════════════════════════════════════════════════════════════════
@@ -2801,7 +3294,7 @@ app.get('/api/employee/restaurants', employeeAuth, async (req, res) => {
 });
 
 app.get('/api/employee/restaurants/:id/menus', employeeAuth, async (req, res) => {
-  const r = await pool.query('SELECT * FROM menus WHERE restaurant_id=$1 AND available=TRUE ORDER BY category,name', [req.params.id]);
+  const r = await pool.query('SELECT * FROM menus WHERE restaurant_id=$1 AND available=TRUE AND deleted_at IS NULL ORDER BY category,name', [req.params.id]);
   res.json(r.rows);
 });
 
@@ -2819,19 +3312,42 @@ app.post('/api/employee/order', employeeAuth, async (req, res) => {
   const { menuId, restaurantId, drinkPreference, notes } = req.body;
   if (!menuId||!restaurantId) return res.status(400).json({ error: 'Menu et restaurant requis' });
   try {
-    const menu = await pool.query('SELECT restaurant_id FROM menus WHERE id=$1 AND available=TRUE', [menuId]);
+    const menu = await pool.query('SELECT restaurant_id, price, category FROM menus WHERE id=$1 AND available=TRUE', [menuId]);
     if (!menu.rows.length) return res.status(404).json({ error: 'Menu indisponible' });
     const r = await pool.query(
       'INSERT INTO orders (company_id,restaurant_id,user_id,menu_id,order_date,drink_preference,notes) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
       [req.user.companyId, restaurantId, req.user.id, menuId, todayStr(), drinkPreference||null, notes||null]
     );
     if (drinkPreference) await pool.query('UPDATE users SET drink_preference=$1 WHERE id=$2', [drinkPreference, req.user.id]);
+    // Tracking subvention si active
+    try {
+      const sub = await pool.query('SELECT * FROM company_subsidies WHERE company_id=$1 AND active=true', [req.user.companyId]);
+      if (sub.rows.length) {
+        const cfg = sub.rows[0];
+        const now = new Date();
+        const periodKey = cfg.period_type === 'monthly'
+          ? `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
+          : now.toISOString().slice(0,10);
+        const menuPrice = parseFloat(menu.rows[0].price) || 0;
+        const isFood = !['boisson'].includes(menu.rows[0].category);
+        const foodUsed = isFood ? menuPrice : 0;
+        const drinkUsed = !isFood ? menuPrice : 0;
+        await pool.query(
+          `INSERT INTO subsidy_usage (company_id, user_id, period_key, used_food, used_drink)
+           VALUES ($1,$2,$3,$4,$5)
+           ON CONFLICT (company_id, user_id, period_key) DO UPDATE SET
+             used_food = subsidy_usage.used_food + $4,
+             used_drink = subsidy_usage.used_drink + $5`,
+          [req.user.companyId, req.user.id, periodKey, foodUsed, drinkUsed]
+        );
+      }
+    } catch(subErr) { console.error('subsidy tracking error:', subErr.message); }
     const menuData = await pool.query('SELECT name FROM menus WHERE id=$1', [menuId]);
-    const restData = await pool.query('SELECT name,email FROM restaurants WHERE id=$1', [restaurantId]);
+    const restData = await pool.query('SELECT id,name,email FROM restaurants WHERE id=$1', [restaurantId]);
     const coData = await pool.query('SELECT name FROM companies WHERE id=$1', [req.user.companyId]);
     const d = todayStr();
-    await pool.query('INSERT INTO order_history (user_id,company_id,employee_id,employee_name,restaurant_name,menu_name,order_date,drink_preference,action) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
-      [req.user.id, req.user.companyId, req.user.employeeId, req.user.name, restData.rows[0]?.name, menuData.rows[0]?.name, d, drinkPreference||null, 'created']);
+    await pool.query('INSERT INTO order_history (user_id,company_id,employee_id,employee_name,restaurant_name,menu_name,order_date,drink_preference,action,restaurant_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
+      [req.user.id, req.user.companyId, req.user.employeeId, req.user.name, restData.rows[0]?.name, menuData.rows[0]?.name, d, drinkPreference||null, 'created', restData.rows[0]?.id]);
     // Notify restaurant
     await createNotification('restaurant', restaurantId, '🛒 Nouvelle commande', `Commande de ${coData.rows[0]?.name} pour le ${d}`, 'order', { companyId: req.user.companyId, date: d });
     // Send email to restaurant
@@ -3301,7 +3817,7 @@ app.get('/test', async (req, res) => {
 });
 
 if (!process.env.VERCEL) {
-  const server = app.listen(PORT, () => console.log(`🍽 FoodChooseApp → http://localhost:${PORT}`));
+  const server = app.listen(PORT, '0.0.0.0', () => console.log(`🍽 FoodChooseApp → http://0.0.0.0:${PORT}  (réseau local disponible)`));
 
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
@@ -3345,7 +3861,7 @@ app.post('/api/auth/admin/login', async (req, res) => {
     if (!r.rows.length) return res.status(401).json({ error: 'Identifiants incorrects' });
     const admin = r.rows[0];
     if (!await bcrypt.compare(password, admin.password_hash)) return res.status(401).json({ error: 'Identifiants incorrects' });
-    const token = jwt.sign({ id: admin.id, role: 'admin', name: admin.name }, JWT_SECRET, { expiresIn: '8h' });
+    const token = jwt.sign({ id: admin.id, role: 'admin', name: admin.name }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, role: 'admin', id: admin.id, name: admin.name });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -3622,24 +4138,6 @@ app.put('/api/super-admin/platform-terms', adminAuth, async (req, res) => {
       extra_platform_terms || ''
     ]);
     res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// GET /api/super-admin/affiliation-contracts — tous les contrats d'affiliation
-app.get('/api/super-admin/affiliation-contracts', adminAuth, async (req, res) => {
-  try {
-    const r = await pool.query(`
-      SELECT ac.*,
-        r.name AS restaurant_name, r.email AS restaurant_email,
-        c.name AS company_name, c.email AS company_email,
-        wp.name AS pack_name
-      FROM affiliation_contracts ac
-      JOIN restaurants r ON r.id = ac.restaurant_id
-      JOIN companies c ON c.id = ac.company_id
-      LEFT JOIN weekly_packs wp ON wp.id = ac.subscription_pack_id
-      ORDER BY ac.created_at DESC
-    `);
-    res.json(r.rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

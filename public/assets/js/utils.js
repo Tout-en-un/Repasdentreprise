@@ -1,6 +1,15 @@
-/* ═══ FoodChooseApp — Shared Utilities ═══ */
+﻿/* ═══ FoodChooseApp — Shared Utilities ═══ */
 // Ce fichier centralise toutes les fonctions réutilisables de l'app,
 // pour éviter de dupliquer la logique dans chaque page.
+
+// ─── Formatage monétaire ──────────────────────────────────────────
+// Le FCFA est une monnaie entière : pas de centimes.
+// fmtCFA() arrondit toujours à l'entier le plus proche avant d'afficher.
+function fmtCFA(v) {
+  return Math.round(parseFloat(v) || 0)
+    .toLocaleString('fr-FR', { maximumFractionDigits: 0 })
+    .replace(/ /g, ' ');
+}
 
 // L'API est sur le même domaine, donc une chaîne vide suffit comme base URL.
 // Si un jour on déplace l'API ailleurs, on n'a qu'un seul endroit à modifier.
@@ -22,12 +31,18 @@ async function apiFetch(url, opts = {}, tok = null) {
   const res = await fetch(API + url, {
     headers: hdrs(tok),
     ...opts,
-    // On sérialise le body seulement si nécessaire — si c'est déjà une string, on le laisse tel quel
     body: opts.body ? (typeof opts.body === 'string' ? opts.body : JSON.stringify(opts.body)) : undefined
   });
-  // On tente de parser le JSON, mais si la réponse est vide ou invalide, on retourne un objet vide plutôt que de planter
   const data = await res.json().catch(() => ({}));
-  // Si le serveur répond avec un code d'erreur HTTP, on lève une exception avec le message du serveur si disponible
+  if (res.status === 401) {
+    // Session expirée ou token invalide → nettoyer et rediriger vers login
+    const role = localStorage.getItem('fc_role');
+    localStorage.clear();
+    const loginMap = { restaurant: '/restaurant/login', company: '/company/login', employee: '/employee/login', admin: '/admin/login' };
+    toast('Session expirée. Reconnectez-vous.', 'error');
+    setTimeout(() => { window.location.href = loginMap[role] || '/'; }, 1500);
+    throw new Error('Session expirée');
+  }
   if (!res.ok) throw new Error(data.error || `Erreur ${res.status}`);
   return data;
 }
@@ -545,61 +560,16 @@ function initPageLoadBar() {
   else window.addEventListener('load', done, { once: true });
 }
 
-// ─── Number counter animation ────────────────────────
-// Anime un nombre de 0 vers sa valeur cible avec un easing smooth.
-function countUp(el, end, onDone, duration = 650) {
-  const startTime = performance.now();
-  const endNum = Math.round(end);
-  if (endNum <= 0) { if (onDone) onDone(); return; }
-  function step(now) {
-    const progress = Math.min((now - startTime) / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    el.textContent = Math.round(eased * endNum).toLocaleString('fr-FR');
-    if (progress < 1) requestAnimationFrame(step);
-    else { el.textContent = endNum.toLocaleString('fr-FR'); if (onDone) onDone(); }
-  }
-  requestAnimationFrame(step);
+// ─── Number counter — désactivé
+function countUp(el, end, onDone) {
+  if (el) el.textContent = fmtCFA(end);
+  if (onDone) onDone();
 }
-
-// ─── Auto-animate .stat-number via MutationObserver ──
-// Observe tous les éléments .stat-number et déclenche countUp dès qu'une valeur numérique arrive.
-// Marche automatiquement sur tous les dashboards sans modifier leur code.
-function initStatCounters() {
-  const targets = document.querySelectorAll('.stat-number');
-  if (!targets.length) return;
-  const animating = new WeakSet();
-  const obs = new MutationObserver(mutations => {
-    mutations.forEach(m => {
-      const el = m.target;
-      if (animating.has(el)) return;
-      const text = el.textContent.trim();
-      const num = parseInt(text.replace(/[\s  ,.]/g, ''));
-      if (isNaN(num) || num <= 0) return;
-      animating.add(el);
-      const origColor = el.style.color;
-      el.style.transition = 'color .3s ease';
-      el.style.color = 'var(--orange)';
-      countUp(el, num, () => {
-        animating.delete(el);
-        setTimeout(() => { el.style.color = origColor || ''; }, 300);
-      });
-    });
-  });
-  targets.forEach(el => obs.observe(el, { childList: true, subtree: true }));
-}
-
-// ─── Scroll reveal via IntersectionObserver ──────────
-// Re-callable : observe uniquement les éléments pas encore visibles.
+function initStatCounters() {}
+// ─── Scroll reveal — désactivé (animations supprimées) ─
 function initScrollReveal() {
-  const sel = '.reveal:not(.visible), .reveal-left:not(.visible), .reveal-right:not(.visible), .reveal-scale:not(.visible)';
-  const els = document.querySelectorAll(sel);
-  if (!els.length) return;
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
-    });
-  }, { threshold: 0.05, rootMargin: '0px 0px -20px 0px' });
-  els.forEach(el => obs.observe(el));
+  document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale')
+    .forEach(el => el.classList.add('visible'));
 }
 
 // ─── Floating particles canvas ────────────────────────
@@ -629,18 +599,8 @@ function initParticles() {
   draw();
 }
 
-// ─── Mouse parallax for decorative orbs ──────────────
-function initParallaxOrbs() {
-  const orb1 = document.querySelector('.orb-1');
-  const orb2 = document.querySelector('.orb-2');
-  if (!orb1 && !orb2) return;
-  document.addEventListener('mousemove', (e) => {
-    const x = (e.clientX / window.innerWidth  - 0.5);
-    const y = (e.clientY / window.innerHeight - 0.5);
-    if (orb1) orb1.style.transform = `translate(${x * 35}px, ${y * 25}px)`;
-    if (orb2) orb2.style.transform = `translate(${x * -25}px, ${y * -18}px)`;
-  }, { passive: true });
-}
+// ─── Mouse parallax — désactivé ──────────────────────
+function initParallaxOrbs() {}
 
 // ─── Scroll progress bar ─────────────────────────────
 function initScrollProgress() {
@@ -676,45 +636,11 @@ function initTopbarScroll() {
   }, { passive: true });
 }
 
-// ─── 3D card tilt (event delegation on .card) ────────
-function initCardTilt() {
-  document.addEventListener('mousemove', (e) => {
-    const card = e.target.closest?.('.card');
-    if (!card || card.closest('.modal')) return;
-    const rect = card.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width  - 0.5) * 7;
-    const y = ((e.clientY - rect.top)  / rect.height - 0.5) * -5;
-    card.style.setProperty('--tilt-x', `${x}deg`);
-    card.style.setProperty('--tilt-y', `${y}deg`);
-  }, { passive: true });
-  document.addEventListener('mouseout', (e) => {
-    const card = e.target.closest?.('.card');
-    if (!card || card.closest('.modal') || card.contains(e.relatedTarget)) return;
-    card.style.removeProperty('--tilt-x');
-    card.style.removeProperty('--tilt-y');
-  }, { passive: true });
-}
+// ─── 3D card tilt — désactivé ────────────────────────
+function initCardTilt() {}
 
-// ─── Magnetic buttons (subtle cursor-follow) ─────────
-function initMagneticButtons() {
-  document.addEventListener('mousemove', (e) => {
-    const btn = e.target.closest?.('.btn-primary:not([disabled])');
-    if (!btn) return;
-    const rect = btn.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width  - 0.5) * 10;
-    const y = ((e.clientY - rect.top)  / rect.height - 0.5) * 6;
-    btn.classList.remove('magnetic-reset');
-    btn.style.transform = `translate(${x}px, ${y}px) translateY(-1px)`;
-    btn.style.transition = 'transform .1s ease';
-  }, { passive: true });
-  document.addEventListener('mouseout', (e) => {
-    const btn = e.target.closest?.('.btn-primary:not([disabled])');
-    if (!btn || btn.contains(e.relatedTarget)) return;
-    btn.style.transform = '';
-    btn.classList.add('magnetic-reset');
-    setTimeout(() => btn.classList.remove('magnetic-reset'), 400);
-  }, { passive: true });
-}
+// ─── Magnetic buttons — désactivé ────────────────────
+function initMagneticButtons() {}
 
 // ─── Animated modal close ─────────────────────────────
 function closeModal(overlay) {
@@ -897,3 +823,4 @@ document.addEventListener('DOMContentLoaded', () => {
   initServiceWorker();
   initNetworkIndicator();
 });
+

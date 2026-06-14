@@ -190,90 +190,101 @@
       </div>
     </div>
 
-    <!-- Bannière de commande du jour — visible si une commande existe déjà -->
+    <!-- ── Bannière commande du jour ── -->
     <div id="todayBanner" style="display:none" class="order-banner">
-      <div>
-        <!-- Nom du menu commandé et restaurant -->
+      <div style="flex:1;min-width:0">
         <div class="ob-title">🎉 Commande du jour</div>
         <div class="ob-menu" id="obMenu">—</div>
-        <!-- Préférence boisson + statut de la commande -->
-        <div class="ob-meta" id="obMeta">—</div>
+        <div class="ob-meta" id="obMeta"></div>
       </div>
-      <!-- Actions disponibles sur la commande du jour -->
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <!-- Bouton modification : pré-sélectionne le restaurant et permet de changer le menu -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0">
         <button class="btn btn-outline btn-sm" style="background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.4);color:white" onclick="modifyTodayOrder()">✏️ Modifier</button>
-        <!-- Bouton annulation : appelle cancelTodayOrder() -->
         <button class="btn btn-outline btn-sm" style="background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.4);color:white" onclick="cancelTodayOrder()">🗑 Annuler</button>
-        <!-- Bouton notation : ouvre le modal de notation via rateCurrentOrder() -->
         <button class="btn btn-outline btn-sm" style="background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.4);color:white" onclick="rateCurrentOrder()">⭐ Noter</button>
       </div>
     </div>
 
-    <!-- ─────────────────────────────────────────────────────────────
-         VUE : SÉLECTION DU RESTAURANT
-         Affiche la liste de tous les restaurants affiliés à l'entreprise.
-         Masquée quand un restaurant est sélectionné.
-    ───────────────────────────────────────────────────────────────── -->
-    <div id="restaurantSelectionView">
+    <!-- ── ÉTAPE 1 : Choix du type de commande ── -->
+    <div id="orderTypeView">
+      <div style="margin-bottom:14px;font-size:13px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Que souhaitez-vous commander ?</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <button id="typeBtnFood" onclick="chooseOrderType('food')"
+          style="padding:20px 10px;border-radius:14px;border:2px solid var(--border);background:white;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:8px">
+          <span style="font-size:32px">🍽</span>
+          <span style="font-size:13px;font-weight:700;color:var(--brown)">Nourriture</span>
+        </button>
+        <button id="typeBtnDrink" onclick="chooseOrderType('drink')"
+          style="padding:20px 10px;border-radius:14px;border:2px solid var(--border);background:white;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:8px">
+          <span style="font-size:32px">🥤</span>
+          <span style="font-size:13px;font-weight:700;color:var(--brown)">Boisson</span>
+        </button>
+        <button id="typeBtnBoth" onclick="chooseOrderType('both')"
+          style="padding:20px 10px;border-radius:14px;border:2px solid var(--border);background:white;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:8px">
+          <span style="font-size:32px">🍽🥤</span>
+          <span style="font-size:13px;font-weight:700;color:var(--brown)">Les deux</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── ÉTAPE 2 : Sélection du restaurant ── -->
+    <div id="restaurantSelectionView" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <button class="btn btn-outline btn-sm" onclick="backToTypeChoice()">← Retour</button>
+        <span id="orderTypeLabel" style="font-size:13px;font-weight:600;color:var(--orange)"></span>
+      </div>
       <div class="card reveal">
-        <div class="card-header"><span class="card-title">🍽 Restaurants disponibles</span></div>
+        <div class="card-header"><span class="card-title">🏪 Choisir un restaurant</span></div>
         <div class="card-body">
-          <!-- Liste des restaurants (remplie par loadRestaurants) -->
-          <div class="rest-list scroll-box" id="restList" style="max-height:460px"></div>
+          <div class="rest-list scroll-box" id="restList" style="max-height:400px"></div>
         </div>
       </div>
     </div>
 
-    <!-- ─────────────────────────────────────────────────────────────
-         VUE : SÉLECTION DU MENU
-         Affichée après qu'un restaurant a été sélectionné.
-         Contient : grille des menus, préférence boisson, aperçu.
-    ───────────────────────────────────────────────────────────────── -->
+    <!-- ── ÉTAPE 3 : Sélection nourriture + boisson ── -->
     <div id="menuSelectionView" style="display:none">
-
-      <!-- En-tête avec bouton retour et nom du restaurant sélectionné -->
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
-        <!-- Retour à la liste des restaurants -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
         <button class="btn btn-outline btn-sm" onclick="backToRestaurants()">← Restaurants</button>
-        <!-- Nom du restaurant courant (mis à jour par selectRestaurant) -->
         <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--brown)" id="selectedRestName">—</div>
       </div>
 
-      <!-- Grille des menus disponibles (remplie par selectRestaurant) -->
-      <div class="menu-grid" id="menuGrid"></div>
+      <!-- Section nourriture (visible si food ou both) -->
+      <div id="foodSection">
+        <div style="font-size:13px;font-weight:700;color:var(--brown);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <span style="background:#FFF0EA;border-radius:8px;padding:4px 10px">🍽 Choisissez votre plat</span>
+        </div>
+        <div class="menu-grid" id="menuGrid"></div>
+      </div>
 
-      <!-- Carte de préférence de boisson (Lipton / Caféine / Les deux) -->
-      <div class="card reveal" style="margin-top:18px">
-        <div class="card-header"><span class="card-title">🥤 Préférence boisson</span></div>
-        <div class="card-body" style="display:flex;gap:14px;flex-wrap:wrap">
-          <!-- Option Lipton -->
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
-            <input type="radio" name="drink" value="lipton" id="drinkLipton" style="accent-color:var(--orange);width:16px;height:16px">🍵 Lipton
-          </label>
-          <!-- Option Caféine -->
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
-            <input type="radio" name="drink" value="cafeine" id="drinkCafeine" style="accent-color:var(--orange);width:16px;height:16px">☕ Caféine
-          </label>
-          <!-- Option Les deux -->
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
-            <input type="radio" name="drink" value="both" id="drinkBoth" style="accent-color:var(--orange);width:16px;height:16px">🍵☕ Les deux
-          </label>
+      <!-- Section boisson (visible si drink ou both) -->
+      <div id="drinkSection" style="margin-top:18px">
+        <div style="font-size:13px;font-weight:700;color:var(--brown);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <span style="background:#EFF6FF;border-radius:8px;padding:4px 10px">🥤 Choisissez votre boisson</span>
+        </div>
+        <div class="menu-grid" id="drinkGrid"></div>
+        <div id="noDrinksMsg" style="display:none;padding:16px;text-align:center;color:var(--muted);font-size:13px;background:#F9F9F9;border-radius:10px">
+          Aucune boisson disponible chez ce restaurant.
         </div>
       </div>
 
-      <!-- Aperçu du menu sélectionné + bouton de validation de commande -->
-      <div id="selectedMenuPreview" style="display:none;margin-top:14px" class="card reveal-scale">
-        <div class="card-body" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-          <div>
-            <div style="font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Menu sélectionné</div>
-            <!-- Nom du menu sélectionné (mis à jour par selectMenu) -->
-            <div style="font-size:16px;font-weight:700;color:var(--brown);margin-top:3px" id="previewMenuName">—</div>
-            <!-- Prix du menu en FCFA -->
-            <div style="font-size:13px;color:var(--orange)" id="previewMenuPrice">—</div>
+      <!-- Aperçu + validation -->
+      <div id="selectedMenuPreview" style="display:none;margin-top:18px" class="card reveal-scale">
+        <div class="card-body">
+          <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+            <div id="foodPreviewWrap" style="flex:1;min-width:140px;background:#FFF8F3;border-radius:10px;padding:12px">
+              <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">🍽 Plat</div>
+              <div style="font-size:14px;font-weight:700;color:var(--brown)" id="previewMenuName">—</div>
+              <div style="font-size:12px;color:var(--orange)" id="previewMenuPrice"></div>
+            </div>
+            <div id="drinkPreviewWrap" style="flex:1;min-width:140px;background:#EFF6FF;border-radius:10px;padding:12px;display:none">
+              <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">🥤 Boisson</div>
+              <div style="font-size:14px;font-weight:700;color:#1e40af" id="previewDrinkName">—</div>
+              <div style="font-size:12px;color:#3b82f6" id="previewDrinkPrice"></div>
+            </div>
           </div>
-          <!-- Bouton de validation finale — appelle confirmOrder() (texte mis à jour en mode modification) -->
-          <button class="btn btn-primary" id="confirmOrderBtn" style="padding:12px 24px" onclick="confirmOrder()">✅ Valider ma commande</button>
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+            <div id="previewTotal" style="font-size:15px;font-weight:700;color:var(--orange)"></div>
+            <button class="btn btn-primary" id="confirmOrderBtn" style="padding:12px 24px" onclick="confirmOrder()">✅ Valider ma commande</button>
+          </div>
         </div>
       </div>
     </div>
@@ -635,38 +646,36 @@ function goToRestaurantMenu(restId, restName, highlightMenuId) {
  * Appel API : GET /api/employee/order
  */
 async function initMealPage() {
-  // Vérification de la commande du jour
   try {
     const orders = await apiFetch('/api/employee/order', {}, empToken);
     const banner = document.getElementById('todayBanner');
-
     if (orders && orders.length > 0) {
-      // Une commande existe aujourd'hui : affiche la bannière avec ses détails
       const o = orders[0];
       banner.style.display = 'flex';
-
-      // Affiche le nom du menu et le restaurant
-      document.getElementById('obMenu').textContent = `${o.menu_name} @ ${o.restaurant_name}`;
-
-      // Affiche la préférence boisson et le statut de la commande
-      document.getElementById('obMeta').textContent = `${DRINK_LABELS[o.drink_preference]||''} — Statut : ${o.status}`;
-
-      // Stocke les données de la commande dans des variables globales de fenêtre
-      // pour permettre l'annulation et la notation
-      window._todayOrderId = o.id;
-      window._todayMenuId = o.menu_id;
-      window._todayRestId = o.restaurant_id;
+      const type = o.order_type || 'food';
+      // Ligne principale selon le type
+      let menuLine = '';
+      if (type === 'food' || type === 'both') menuLine += `🍽 ${o.menu_name || '—'}`;
+      if (type === 'both') menuLine += ' + ';
+      if (type === 'drink' || type === 'both') menuLine += `🥤 ${o.drink_menu_name || '—'}`;
+      document.getElementById('obMenu').textContent = menuLine + ` @ ${o.restaurant_name}`;
+      // Montant total
+      const total = (parseFloat(o.price)||0) + (parseFloat(o.drink_price)||0);
+      document.getElementById('obMeta').textContent = `${fmtCFA(total)} FCFA — ${o.status}`;
+      window._todayOrderId  = o.id;
+      window._todayMenuId   = o.menu_id;
+      window._todayDrinkId  = o.drink_menu_id;
+      window._todayRestId   = o.restaurant_id;
       window._todayRestName = o.restaurant_name;
+      window._todayOrderType= type;
     } else {
-      // Aucune commande aujourd'hui : masque la bannière
       banner.style.display = 'none';
+      window._todayOrderId = null;
     }
-  } catch(e) {
-    // En cas d'erreur API, masque la bannière sans bloquer l'utilisateur
-    document.getElementById('todayBanner').style.display = 'none';
-  }
+  } catch(e) { document.getElementById('todayBanner').style.display = 'none'; }
 
-  // Chargement de la liste des restaurants disponibles
+  // Revenir à l'étape 1 (choix du type)
+  showOrderTypeView();
   loadRestaurants();
 }
 
@@ -715,121 +724,172 @@ async function loadRestaurants() {
  * @param {number} id - Identifiant du restaurant sélectionné
  * @param {string} name - Nom du restaurant à afficher
  */
-async function selectRestaurant(id, name) {
-  // Mémorisation du restaurant sélectionné
-  selectedRestId = id;
-  document.getElementById('selectedRestName').textContent = name;
+// ── État de la commande en cours ──────────────────────────────────
+let _currentOrderType = 'food'; // 'food' | 'drink' | 'both'
+let selectedDrinkId   = null;
+let selectedDrinkData = null;
 
-  // Basculement entre les deux vues (restaurants → menus)
+function showOrderTypeView() {
+  document.getElementById('orderTypeView').style.display = '';
   document.getElementById('restaurantSelectionView').style.display = 'none';
-  document.getElementById('menuSelectionView').style.display = 'block';
-
-  // Réinitialisation de la sélection de menu
-  selectedMenuId = null;
-  document.getElementById('selectedMenuPreview').style.display = 'none';
-
-  // Restauration de la préférence boisson sauvegardée dans le profil
-  try {
-    const profile = await apiFetch('/api/employee/profile', {}, empToken);
-    if (profile.drink_preference) document.querySelector(`input[name="drink"][value="${profile.drink_preference}"]`)?.click();
-  } catch(e) {
-    // Ignoré silencieusement — la boisson reste non sélectionnée
-  }
-
-  // Chargement des menus du restaurant sélectionné
-  try {
-    const menus = await apiFetch(`/api/employee/restaurants/${id}/menus`, {}, empToken);
-    const grid = document.getElementById('menuGrid');
-
-    // Cas : aucun menu disponible pour ce jour
-    if (!menus.length) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><span class="icon">🍜</span>Aucun menu disponible ce jour</div>'; return; }
-
-    // Regroupement des menus par catégorie (ex. Entrée, Plat, Dessert)
-    const byCat = {};
-    menus.forEach(m=>{ if(!byCat[m.category]) byCat[m.category]=[]; byCat[m.category].push(m); });
-
-    // Génère le HTML groupé par catégorie avec titre et icône
-    grid.innerHTML = Object.entries(byCat).map(([cat, items]) => `
-      <!-- Titre de section de catégorie -->
-      <div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:6px">${CAT_ICONS[cat]||'🍽'} ${cat}</div>
-      ${items.map(m=>`
-        <!-- Carte menu cliquable — appelle selectMenu() au clic -->
-        <div class="menu-card" id="mc-${m.id}" onclick="selectMenu(${m.id}, '${m.name.replace(/'/g,"\\'")}', ${m.price||0})">
-          <div style="font-weight:700;font-size:13.5px;color:var(--brown);margin-bottom:5px">${m.name}</div>
-          ${m.description?`<div style="font-size:12px;color:var(--muted);margin-bottom:6px">${m.description}</div>`:''}
-          <div style="font-weight:600;color:var(--orange)">${fmtCFA(m.price||0)} FCFA</div>
-        </div>
-      `).join('')}
-    `).join('');
-  } catch(e) {
-    toast('Erreur chargement menus', 'error');
-  }
+  document.getElementById('menuSelectionView').style.display = 'none';
+  // Réinitialiser les boutons
+  ['typeBtnFood','typeBtnDrink','typeBtnBoth'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) { b.style.borderColor = 'var(--border)'; b.style.background = 'white'; }
+  });
 }
 
-/**
- * backToRestaurants — Revient à la vue liste des restaurants.
- * Réinitialise les sélections de menu et restaurant.
- */
+function chooseOrderType(type) {
+  _currentOrderType = type;
+  // Highlight du bouton choisi
+  const btnIds = { food:'typeBtnFood', drink:'typeBtnDrink', both:'typeBtnBoth' };
+  ['typeBtnFood','typeBtnDrink','typeBtnBoth'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) { b.style.borderColor = 'var(--border)'; b.style.background = 'white'; }
+  });
+  const active = document.getElementById(btnIds[type]);
+  if (active) { active.style.borderColor = 'var(--orange)'; active.style.background = '#FFF8F3'; }
+  // Mettre à jour le label et aller à la liste des restaurants
+  const labels = { food:'🍽 Nourriture', drink:'🥤 Boisson', both:'🍽🥤 Nourriture + Boisson' };
+  const lbl = document.getElementById('orderTypeLabel');
+  if (lbl) lbl.textContent = labels[type];
+  document.getElementById('orderTypeView').style.display = 'none';
+  document.getElementById('restaurantSelectionView').style.display = '';
+  document.getElementById('menuSelectionView').style.display = 'none';
+  selectedMenuId = null; selectedDrinkId = null; selectedRestId = null;
+}
+
+async function selectRestaurant(id, name) {
+  selectedRestId = id;
+  selectedMenuId = null; selectedDrinkId = null;
+  document.getElementById('selectedRestName').textContent = name;
+  document.getElementById('restaurantSelectionView').style.display = 'none';
+  document.getElementById('menuSelectionView').style.display = 'block';
+  document.getElementById('selectedMenuPreview').style.display = 'none';
+
+  // Afficher/masquer les sections selon le type
+  const showFood  = _currentOrderType !== 'drink';
+  const showDrink = _currentOrderType !== 'food';
+  document.getElementById('foodSection').style.display  = showFood  ? '' : 'none';
+  document.getElementById('drinkSection').style.display = showDrink ? '' : 'none';
+  document.getElementById('foodPreviewWrap').style.display  = showFood  ? '' : 'none';
+  document.getElementById('drinkPreviewWrap').style.display = showDrink ? '' : 'none';
+
+  try {
+    const menus = await apiFetch(`/api/employee/restaurants/${id}/menus`, {}, empToken);
+
+    // Plats alimentaires
+    if (showFood) {
+      const foods = menus.filter(m => m.category !== 'boisson');
+      const grid = document.getElementById('menuGrid');
+      if (!foods.length) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><span class="icon">🍜</span>Aucun plat disponible</div>'; }
+      else {
+        const byCat = {};
+        foods.forEach(m => { if (!byCat[m.category]) byCat[m.category] = []; byCat[m.category].push(m); });
+        grid.innerHTML = Object.entries(byCat).map(([cat, items]) =>
+          `<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:6px">${CAT_ICONS[cat]||'🍽'} ${cat}</div>
+          ${items.map(m => `
+            <div class="menu-card" id="mc-${m.id}" onclick="selectMenu(${m.id}, '${m.name.replace(/'/g,"\\'")}', ${m.price||0})">
+              <div style="font-weight:700;font-size:13.5px;color:var(--brown);margin-bottom:5px">${m.name}</div>
+              ${m.description ? `<div style="font-size:12px;color:var(--muted);margin-bottom:6px">${m.description}</div>` : ''}
+              <div style="font-weight:600;color:var(--orange)">${fmtCFA(m.price||0)} FCFA</div>
+            </div>`).join('')}`
+        ).join('');
+      }
+    }
+
+    // Boissons
+    if (showDrink) {
+      const drinks = menus.filter(m => m.category === 'boisson');
+      const dgrid = document.getElementById('drinkGrid');
+      const noMsg = document.getElementById('noDrinksMsg');
+      if (!drinks.length) { dgrid.innerHTML = ''; noMsg.style.display = ''; }
+      else {
+        noMsg.style.display = 'none';
+        dgrid.innerHTML = drinks.map(m => `
+          <div class="menu-card" id="dc-${m.id}" onclick="selectDrink(${m.id}, '${m.name.replace(/'/g,"\\'")}', ${m.price||0})">
+            <div style="font-weight:700;font-size:13.5px;color:#1e40af;margin-bottom:5px">🥤 ${m.name}</div>
+            ${m.description ? `<div style="font-size:12px;color:var(--muted);margin-bottom:6px">${m.description}</div>` : ''}
+            <div style="font-weight:600;color:#3b82f6">${fmtCFA(m.price||0)} FCFA</div>
+          </div>`).join('');
+      }
+    }
+  } catch(e) { toast('Erreur chargement menus', 'error'); }
+}
+
 function backToRestaurants() {
-  selectedMenuId = null; selectedRestId = null;
+  selectedMenuId = null; selectedDrinkId = null;
   window._isModifying = false;
   const btn = document.getElementById('confirmOrderBtn');
   if (btn) btn.textContent = '✅ Valider ma commande';
-  document.getElementById('restaurantSelectionView').style.display = 'block';
+  document.getElementById('restaurantSelectionView').style.display = '';
   document.getElementById('menuSelectionView').style.display = 'none';
 }
 
-/**
- * selectMenu — Marque un menu comme sélectionné et affiche l'aperçu.
- * Retire la classe 'selected' de toutes les cartes, puis l'ajoute au menu cliqué.
- * Met à jour les variables globales et l'aperçu de commande.
- * @param {number} id - Identifiant du menu
- * @param {string} name - Nom du menu
- * @param {number} price - Prix du menu en FCFA
- */
-function selectMenu(id, name, price) {
-  // Désélectionne toutes les cartes menu
-  document.querySelectorAll('.menu-card').forEach(c=>c.classList.remove('selected'));
-
-  // Sélectionne la carte cliquée
-  document.getElementById(`mc-${id}`)?.classList.add('selected');
-
-  // Mémorisation du menu sélectionné
-  selectedMenuId = id;
-  selectedMenuData = { id, name, price };
-
-  // Mise à jour de l'aperçu de commande (nom + prix)
-  document.getElementById('previewMenuName').textContent = name;
-  document.getElementById('previewMenuPrice').textContent = `${fmtCFA(price)} FCFA`;
-
-  // Affiche le bloc d'aperçu avec le bouton de validation
-  document.getElementById('selectedMenuPreview').style.display = 'block';
+function backToTypeChoice() {
+  selectedRestId = null;
+  showOrderTypeView();
 }
 
-/**
- * confirmOrder — Valide et enregistre la commande du jour.
- * Vérifie qu'un menu et un restaurant sont sélectionnés.
- * Appel API : POST /api/employee/order
- * En cas de succès : revient à la liste des restaurants et rafraîchit la bannière.
- */
+function _refreshPreview() {
+  const showFood  = _currentOrderType !== 'drink';
+  const showDrink = _currentOrderType !== 'food';
+  const foodOK  = !showFood  || selectedMenuId;
+  const drinkOK = !showDrink || selectedDrinkId;
+  if (foodOK || drinkOK) document.getElementById('selectedMenuPreview').style.display = 'block';
+  const total = (selectedMenuData?.price||0) + (selectedDrinkData?.price||0);
+  const tEl = document.getElementById('previewTotal');
+  if (tEl && total > 0) tEl.textContent = `Total : ${fmtCFA(total)} FCFA`;
+  const btn = document.getElementById('confirmOrderBtn');
+  if (btn) btn.disabled = !(foodOK && drinkOK);
+}
+
+function selectMenu(id, name, price) {
+  document.querySelectorAll('#menuGrid .menu-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`mc-${id}`)?.classList.add('selected');
+  selectedMenuId   = id;
+  selectedMenuData = { id, name, price };
+  document.getElementById('previewMenuName').textContent  = name;
+  document.getElementById('previewMenuPrice').textContent = fmtCFA(price) + ' FCFA';
+  _refreshPreview();
+}
+
+function selectDrink(id, name, price) {
+  document.querySelectorAll('#drinkGrid .menu-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`dc-${id}`)?.classList.add('selected');
+  selectedDrinkId   = id;
+  selectedDrinkData = { id, name, price };
+  document.getElementById('drinkPreviewWrap').style.display = '';
+  document.getElementById('previewDrinkName').textContent  = name;
+  document.getElementById('previewDrinkPrice').textContent = fmtCFA(price) + ' FCFA';
+  _refreshPreview();
+}
+
 async function confirmOrder() {
-  if (!selectedMenuId || !selectedRestId) { toast('Sélectionnez un menu', 'error'); return; }
-  const drink = document.querySelector('input[name="drink"]:checked')?.value || null;
+  const showFood  = _currentOrderType !== 'drink';
+  const showDrink = _currentOrderType !== 'food';
+  if (showFood  && !selectedMenuId)  { toast('Sélectionnez un plat', 'error');   return; }
+  if (showDrink && !selectedDrinkId) { toast('Sélectionnez une boisson', 'error'); return; }
+  if (!selectedRestId) { toast('Restaurant requis', 'error'); return; }
+  const body = {
+    menuId:      selectedMenuId  || null,
+    drinkMenuId: selectedDrinkId || null,
+    restaurantId:selectedRestId,
+    orderType:   _currentOrderType
+  };
   try {
     if (window._isModifying && window._todayOrderId) {
-      // Mode modification : PUT sur la commande existante
-      await apiFetch(`/api/employee/order/${window._todayOrderId}`, { method: 'PUT', body: JSON.stringify({ menuId: selectedMenuId, drinkPreference: drink }) }, empToken);
+      await apiFetch(`/api/employee/order/${window._todayOrderId}`, { method: 'PUT', body: JSON.stringify(body) }, empToken);
       toast('Commande modifiée !', 'success');
     } else {
-      // Mode création : POST nouvelle commande
-      await apiFetch('/api/employee/order', { method: 'POST', body: JSON.stringify({ menuId: selectedMenuId, restaurantId: selectedRestId, drinkPreference: drink }) }, empToken);
+      await apiFetch('/api/employee/order', { method: 'POST', body: JSON.stringify(body) }, empToken);
       toast('Commande enregistrée !', 'success');
     }
-    backToRestaurants();
+    window._isModifying = false;
+    showOrderTypeView();
     initMealPage();
-  } catch(e) {
-    toast(e.message, 'error');
-  }
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 /**
@@ -838,37 +898,28 @@ async function confirmOrder() {
  * En cas de succès : rafraîchit la page repas (masque la bannière).
  */
 async function cancelTodayOrder() {
-  // Vérifie qu'une commande du jour existe
   if (!window._todayOrderId) return;
-
-  // Demande confirmation à l'utilisateur avant suppression
   if (!confirm('Annuler votre commande du jour ?')) return;
-
   try {
-    // Suppression de la commande via son identifiant
     await apiFetch(`/api/employee/order/${window._todayOrderId}`, { method: 'DELETE' }, empToken);
     toast('Commande annulée', 'info');
-    initMealPage(); // Rafraîchit la page (masque la bannière)
-  } catch(e) {
-    toast(e.message, 'error');
-  }
+    window._todayOrderId = null;
+    initMealPage();
+  } catch(e) { toast(e.message, 'error'); }
 }
 
-/**
- * modifyTodayOrder — Passe en mode modification et charge directement les menus
- * du restaurant déjà sélectionné pour que l'employé choisisse un autre plat.
- */
 async function modifyTodayOrder() {
   if (!window._todayOrderId) return;
   window._isModifying = true;
+  // Restaurer le type de commande original
+  _currentOrderType = window._todayOrderType || 'food';
   const btn = document.getElementById('confirmOrderBtn');
   if (btn) btn.textContent = '✏️ Modifier ma commande';
-  // Aller directement aux menus du restaurant existant
   if (window._todayRestId && window._todayRestName) {
+    chooseOrderType(_currentOrderType);
     await selectRestaurant(window._todayRestId, window._todayRestName);
   } else {
-    document.getElementById('restaurantSelectionView').style.display = 'block';
-    document.getElementById('menuSelectionView').style.display = 'none';
+    chooseOrderType(_currentOrderType);
   }
 }
 
@@ -1337,12 +1388,15 @@ window.searchDishes = searchDishes;
 window.goToRestaurantMenu = goToRestaurantMenu;
 window.initMealPage = initMealPage;
 window.loadRestaurants = loadRestaurants;
-window.selectRestaurant = selectRestaurant;
+window.selectRestaurant  = selectRestaurant;
 window.backToRestaurants = backToRestaurants;
-window.selectMenu = selectMenu;
-window.confirmOrder = confirmOrder;
-window.cancelTodayOrder = cancelTodayOrder;
-window.modifyTodayOrder = modifyTodayOrder;
+window.backToTypeChoice  = backToTypeChoice;
+window.chooseOrderType   = chooseOrderType;
+window.selectMenu        = selectMenu;
+window.selectDrink       = selectDrink;
+window.confirmOrder      = confirmOrder;
+window.cancelTodayOrder  = cancelTodayOrder;
+window.modifyTodayOrder  = modifyTodayOrder;
 window.rateCurrentOrder = rateCurrentOrder;
 window.setRating = setRating;
 window.submitRating = submitRating;

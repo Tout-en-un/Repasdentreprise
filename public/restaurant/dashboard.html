@@ -178,14 +178,11 @@
         <div class="card-body">
           <div class="form-group">
             <label>Nom *</label>
-            <div class="ac-wrap">
-              <input class="form-control" id="menuName" placeholder="Riz sauce arachide" autocomplete="off" oninput="acFilter('menuName','menuNameDropdown','menuCat')">
-              <div class="ac-dropdown" id="menuNameDropdown"></div>
-            </div>
+            <input class="form-control" id="menuName" placeholder="Riz sauce arachide" autocomplete="new-password">
           </div>
           <div class="form-group">
             <label>Catégorie</label>
-            <select class="form-control" id="menuCat" onchange="acFilter('menuName','menuNameDropdown','menuCat')">
+            <select class="form-control" id="menuCat">
               <option value="plat">🍜 Plat principal</option>
               <option value="boisson">🥤 Boisson</option>
               <option value="snack">🥨 Snack</option>
@@ -914,10 +911,7 @@
     <div class="modal-title">✏️ Modifier le menu</div>
     <input type="hidden" id="editMenuId">
     <div class="form-group"><label>Nom *</label>
-      <div class="ac-wrap">
-        <input class="form-control" id="editMenuName" placeholder="Nom du menu" autocomplete="off" oninput="acFilter('editMenuName','editMenuNameDropdown','editMenuCat')">
-        <div class="ac-dropdown" id="editMenuNameDropdown"></div>
-      </div>
+      <input class="form-control" id="editMenuName" placeholder="Nom du menu" autocomplete="new-password">
     </div>
     <div class="form-group"><label>Catégorie</label>
       <select class="form-control" id="editMenuCat">
@@ -960,10 +954,7 @@
     <input type="hidden" id="dishModalId">
     <input type="hidden" id="dishModalDayId">
     <div class="form-group"><label>Nom *</label>
-      <div class="ac-wrap">
-        <input class="form-control" id="dishModalName" placeholder="Nom du plat" autocomplete="off" oninput="acFilter('dishModalName','dishModalNameDropdown',null)" onfocus="acFilter('dishModalName','dishModalNameDropdown',null)">
-        <div class="ac-dropdown" id="dishModalNameDropdown"></div>
-      </div>
+      <input class="form-control" id="dishModalName" placeholder="Nom du plat" autocomplete="new-password" name="dish-name-field">
     </div>
     <div class="form-group"><label>Prix (FCFA) *</label><input type="number" class="form-control" id="dishModalPrice" min="1" value="" placeholder="Ex: 2000"></div>
     <div class="form-group" id="dishDescGroup"><label>Description</label><textarea class="form-control" id="dishModalDesc" rows="2" placeholder="Description (optionnelle)"></textarea></div>
@@ -999,81 +990,12 @@
   </div>
 </div>
 
-<script src="/assets/js/food-list.js"></script>
 <script src="/assets/js/utils.js"></script>
 <script>
 const token = localStorage.getItem('fc_token');
 if (!token || localStorage.getItem('fc_role') !== 'restaurant') window.location.href = '/restaurant/login';
 
 // ── AUTOCOMPLETE ─────────────────────────────────────────────────────
-// Fusionne la liste statique (food-list.js) avec les suggestions de la DB
-let _acExtrasSynced = false;
-async function syncAcExtras() {
-  if (_acExtrasSynced) return;
-  try {
-    const extras = await apiFetch('/api/menu-suggestions', {}, token);
-    extras.forEach(e => {
-      if (!ALL_FOOD_SUGGESTIONS.some(s => s.name.toLowerCase() === e.name.toLowerCase())) {
-        ALL_FOOD_SUGGESTIONS.push(e);
-      }
-    });
-    ALL_FOOD_SUGGESTIONS.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-    _acExtrasSynced = true;
-  } catch(e) {}
-}
-
-function acHighlight(text, query) {
-  if (!query) return text;
-  const idx = text.toLowerCase().indexOf(query.toLowerCase());
-  if (idx < 0) return text;
-  return text.slice(0,idx) + '<mark>' + text.slice(idx, idx+query.length) + '</mark>' + text.slice(idx+query.length);
-}
-
-function acFilter(inputId, dropdownId, catSelectId) {
-  syncAcExtras();
-  const input = document.getElementById(inputId);
-  const dropdown = document.getElementById(dropdownId);
-  if (!input || !dropdown) return;
-  const q = input.value.trim();
-  const cat = catSelectId ? document.getElementById(catSelectId)?.value : null;
-  let filtered;
-  if (!q) {
-    const base = cat ? ALL_FOOD_SUGGESTIONS.filter(i => i.category === cat) : ALL_FOOD_SUGGESTIONS;
-    filtered = base.slice(0, 50);
-  } else {
-    filtered = ALL_FOOD_SUGGESTIONS.filter(item => {
-      const match = item.name.toLowerCase().includes(q.toLowerCase());
-      const catMatch = !cat || item.category === cat;
-      return match && catMatch;
-    }).slice(0, 15);
-  }
-  if (!filtered.length) { closeAcDropdown(dropdownId); return; }
-  dropdown.innerHTML = filtered.map(item =>
-    `<div class="ac-item"
-      onmousedown="event.preventDefault();acSelect('${inputId}','${dropdownId}',${JSON.stringify(item.name)})"
-      ontouchend="event.preventDefault();acSelect('${inputId}','${dropdownId}',${JSON.stringify(item.name)})"
-    >${acHighlight(item.name, q)}</div>`
-  ).join('');
-  dropdown.classList.add('open');
-}
-
-function acSelect(inputId, dropdownId, name) {
-  const input = document.getElementById(inputId);
-  if (input) { input.value = name; input.dispatchEvent(new Event('change')); }
-  closeAcDropdown(dropdownId);
-}
-
-function closeAcDropdown(dropdownId) {
-  const d = document.getElementById(dropdownId);
-  if (d) d.classList.remove('open');
-}
-
-// Fermer les dropdowns quand on clique ailleurs
-document.addEventListener('click', e => {
-  if (!e.target.closest('.ac-wrap')) {
-    document.querySelectorAll('.ac-dropdown.open').forEach(d => d.classList.remove('open'));
-  }
-});
 
 // Global functions for onclick handlers
 function logout() { localStorage.clear(); window.location.href = '/'; }
@@ -1283,17 +1205,10 @@ async function addMenu() {
   try {
     await apiFetch('/api/restaurant/menus', { method: 'POST', body: { name, category, description, price } }, token);
     toast('Menu ajouté!', 'success');
-    // Auto-save to shared suggestions if not already in list
-    const exists = ALL_FOOD_SUGGESTIONS.some(s => s.name.toLowerCase() === name.toLowerCase());
-    if (!exists) {
-      apiFetch('/api/menu-suggestions', { method: 'POST', body: { name, category } }, token).catch(() => {});
-      ALL_FOOD_SUGGESTIONS.push({ name, category });
-      ALL_FOOD_SUGGESTIONS.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-    }
+
     document.getElementById('menuName').value = '';
     document.getElementById('menuDesc').value = '';
     document.getElementById('menuPrice').value = '';
-    closeAcDropdown('menuNameDropdown');
     loadMenus();
   } catch(e) { toast(e.message, 'error'); }
 }
@@ -1653,7 +1568,7 @@ async function cancelInvoice(id) {
 }
 
 // ═══ MESSAGES ═══
-function _restId() { return JSON.parse(atob(token.split('.')[1])).id; }
+function _restId() { return parseInt(localStorage.getItem('fc_id') || '0'); }
 
 async function loadConversations() {
   try {
@@ -2545,11 +2460,24 @@ const WI_DAYS_ORDERED = [
 ];
 
 function getWeekMondayFromDate(d) {
-  const dt = new Date(d); dt.setHours(12,0,0,0);
-  const day = dt.getDay();
+  // Forcer heure locale (midi) pour éviter les décalages UTC
+  const dt = new Date(d + 'T12:00:00');
+  const day = dt.getDay(); // 0=dim, 1=lun … 6=sam
   const diff = (day === 0) ? -6 : 1 - day;
   dt.setDate(dt.getDate() + diff);
-  return dt.toISOString().split('T')[0];
+  // Retourner en format local YYYY-MM-DD
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+
+function todayLocalISO() {
+  const now = new Date();
+  const y  = now.getFullYear();
+  const m  = String(now.getMonth() + 1).padStart(2, '0');
+  const d  = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function wiWeekLabel(isoMonday) {
@@ -2563,7 +2491,7 @@ function wiWeekLabel(isoMonday) {
 function initPdjWeek() {
   const inp = document.getElementById('pdjWeekStart');
   if (inp && !inp.value) {
-    inp.value = getWeekMondayFromDate(new Date().toISOString().split('T')[0]);
+    inp.value = getWeekMondayFromDate(todayLocalISO());
     onPdjWeekChange();
   }
 }
@@ -2697,9 +2625,10 @@ function renderPdjGrid(byDate, weekStart) {
   const mon = new Date(weekStart + 'T12:00:00');
 
   grid.innerHTML = WI_DAYS_ORDERED.map(({num, label, req}) => {
-    const dayDate = new Date(mon);
-    dayDate.setDate(mon.getDate() + (num - 1));
-    const iso      = dayDate.toISOString().split('T')[0];
+    const dayDate = new Date(weekStart + 'T12:00:00');
+    dayDate.setDate(dayDate.getDate() + (num - 1));
+    // ISO local (évite décalage UTC)
+    const iso = `${dayDate.getFullYear()}-${String(dayDate.getMonth()+1).padStart(2,'0')}-${String(dayDate.getDate()).padStart(2,'0')}`;
     const entry    = byDate[iso];
     const items    = entry ? (Array.isArray(entry.items) ? entry.items : JSON.parse(entry.items||'[]')) : [];
     const fmtDate  = dayDate.toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',year:'2-digit'});
@@ -2835,13 +2764,7 @@ function pdjRowHtml(iso, dayLabel, ri, item) {
   const qty = parseFloat(item.qty || 0);
   const tot = pu && qty ? fmtCFA(pu * qty) : '0';
   return `<div id="pdjRow-${safeIso}-${ri}" style="display:grid;grid-template-columns:2fr 1fr 60px 1fr 32px;gap:5px;margin-bottom:4px;align-items:center">
-    <div class="ac-wrap" style="min-width:0">
-      <input class="form-control" value="${item.name||''}" placeholder="Nom du plat" style="font-size:12px;padding:5px 8px" id="pdjName-${safeIso}-${ri}" autocomplete="off"
-        oninput="acFilter('pdjName-${safeIso}-${ri}','pdjNameDrop-${safeIso}-${ri}',null)"
-        onfocus="acFilter('pdjName-${safeIso}-${ri}','pdjNameDrop-${safeIso}-${ri}',null)"
-        onchange="pdjAutoFillPrice('${safeIso}',${ri})">
-      <div class="ac-dropdown" id="pdjNameDrop-${safeIso}-${ri}"></div>
-    </div>
+    <input class="form-control" value="${item.name||''}" placeholder="Nom du plat" style="font-size:12px;padding:5px 8px" id="pdjName-${safeIso}-${ri}" autocomplete="new-password">
     <input type="number" class="form-control" value="${pu||''}" placeholder="P.U." min="1" style="font-size:12px;padding:5px 6px;text-align:right" id="pdjPU-${safeIso}-${ri}" oninput="calcPdjRow('${safeIso}',${ri})">
     <input type="number" class="form-control" value="${qty||''}" placeholder="Qté" min="0" style="font-size:12px;padding:5px 6px;text-align:center" id="pdjQty-${safeIso}-${ri}"
       oninput="calcPdjRow('${safeIso}',${ri})"
@@ -2903,20 +2826,6 @@ function updatePdjWeekSummary() {
   }
 }
 
-function pdjAutoFillPrice(safeIso, ri) {
-  const nameEl = document.getElementById(`pdjName-${safeIso}-${ri}`);
-  const puEl   = document.getElementById(`pdjPU-${safeIso}-${ri}`);
-  if (!nameEl || !puEl || puEl.value) return;
-  const name = nameEl.value.trim().toLowerCase();
-  if (!name) return;
-  for (const el of document.querySelectorAll('[id^="pdjName-"]')) {
-    if (el === nameEl) continue;
-    if (el.value.trim().toLowerCase() !== name) continue;
-    const otherKey = el.id.replace('pdjName-', '');
-    const otherPu  = document.getElementById(`pdjPU-${otherKey}`)?.value;
-    if (otherPu) { puEl.value = otherPu; calcPdjRow(safeIso, ri); break; }
-  }
-}
 
 function duplicatePdjDay(iso) {
   const grid = document.getElementById('pdjDaysGrid');
@@ -3139,13 +3048,7 @@ function addWiItem() {
       <option value="Vendredi">Vendredi</option><option value="Samedi">Samedi</option>
       <option value="Dimanche">Dimanche</option>
     </select>
-    <div class="ac-wrap" style="min-width:0">
-      <input class="form-control" id="wiName-${idx}" placeholder="Nom du plat" style="font-size:12px;padding:4px 8px;width:100%" autocomplete="off"
-        oninput="acFilter('wiName-${idx}','wiNameDrop-${idx}',null)"
-        onfocus="acFilter('wiName-${idx}','wiNameDrop-${idx}',null)"
-        onchange="wiAutoFillPrice(${idx})">
-      <div class="ac-dropdown" id="wiNameDrop-${idx}"></div>
-    </div>
+    <input class="form-control" id="wiName-${idx}" placeholder="Nom du plat" style="font-size:12px;padding:4px 8px;width:100%" autocomplete="new-password">
     <input type="number" class="form-control" id="wiPrice-${idx}" value="" min="1" placeholder="P.U." style="font-size:12px;padding:4px 6px;text-align:right" oninput="calcWiTotal()">
     <input type="number" class="form-control" id="wiQty-${idx}" value="" min="0" placeholder="Qté" style="font-size:12px;padding:4px 6px;text-align:center"
       oninput="calcWiTotal()"
@@ -3172,20 +3075,6 @@ function calcWiTotal() {
   if (totalEl) totalEl.textContent = fmtCFA(total);
 }
 
-function wiAutoFillPrice(idx) {
-  const nameEl  = document.getElementById(`wiName-${idx}`);
-  const priceEl = document.getElementById(`wiPrice-${idx}`);
-  if (!nameEl || !priceEl || priceEl.value) return;
-  const name = nameEl.value.trim().toLowerCase();
-  if (!name) return;
-  for (const el of document.querySelectorAll('[id^="wiName-"]')) {
-    if (el === nameEl) continue;
-    if (el.value.trim().toLowerCase() !== name) continue;
-    const otherIdx = el.id.replace('wiName-', '');
-    const p = document.getElementById(`wiPrice-${otherIdx}`)?.value;
-    if (p) { priceEl.value = p; calcWiTotal(); break; }
-  }
-}
 
 function wiQtyEnter(event) {
   event.preventDefault();
@@ -3696,7 +3585,6 @@ window.loadWeeklyInvoicesList = loadWeeklyInvoicesList;
 window.loadWiPacks = loadWiPacks;
 window.addWiItem = addWiItem;
 window.calcWiTotal = calcWiTotal;
-window.wiAutoFillPrice = wiAutoFillPrice;
 window.wiQtyEnter = wiQtyEnter;
 window.wiFilterWeek = wiFilterWeek;
 window.wiFilterMonth = wiFilterMonth;
@@ -3728,7 +3616,6 @@ window.getBfHoliday = getBfHoliday;
 window.removePdjRow = removePdjRow;
 window.calcPdjRow = calcPdjRow;
 window.duplicatePdjDay = duplicatePdjDay;
-window.pdjAutoFillPrice = pdjAutoFillPrice;
 window.pdjQtyEnter = pdjQtyEnter;
 window.updatePdjDayTotal = updatePdjDayTotal;
 window.updatePdjWeekSummary = updatePdjWeekSummary;

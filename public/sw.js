@@ -1,5 +1,5 @@
 /* ═══ FoodChooseApp Service Worker ═══ */
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const STATIC_CACHE  = 'fca-static-'  + CACHE_VERSION;
 const PAGES_CACHE   = 'fca-pages-'   + CACHE_VERSION;
 const API_CACHE     = 'fca-api-'     + CACHE_VERSION;

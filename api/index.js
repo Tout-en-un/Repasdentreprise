@@ -420,6 +420,10 @@ async function initDB(retries = 5, delay = 3000) {
     ALTER TABLE weekly_invoices ADD COLUMN IF NOT EXISTS restaurant_note TEXT DEFAULT '';
     ALTER TABLE weekly_invoices ADD COLUMN IF NOT EXISTS company_feedback TEXT DEFAULT '';
     ALTER TABLE weekly_invoices ADD COLUMN IF NOT EXISTS company_feedback_at TIMESTAMPTZ;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type VARCHAR(10) DEFAULT 'food';
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS drink_menu_id INTEGER REFERENCES menus(id) ON DELETE SET NULL;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS price DECIMAL(10,2) DEFAULT 0;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS drink_price DECIMAL(10,2) DEFAULT 0;
   `;
   try {
     await pool.query(sql);
@@ -1982,25 +1986,43 @@ app.delete('/api/restaurant/daily-entries', restaurantAuth, async (req, res) => 
 });
 
 // GET /api/restaurant/weekly-program-dishes?company_id=X&week_start=YYYY-MM-DD
-// Retourne les plats du programme hebdo pour pré-remplir le Point du Jour
+// Retourne les plats du programme hebdo pour pré-remplir le Point du Jour.
+// Priorité : sélection de l'entreprise → pack actif du restaurant (fallback)
 app.get('/api/restaurant/weekly-program-dishes', restaurantAuth, async (req, res) => {
   const { company_id, week_start } = req.query;
   try {
-    if (!company_id || !week_start) return res.json({ dishes: {}, dish_qty: 8 });
-    const sel = await pool.query(
-      `SELECT cws.id, cws.dish_qty, cws.weekly_pack_id FROM company_weekly_selections cws
-       WHERE cws.company_id=$1 AND cws.restaurant_id=$2 AND cws.week_start=$3 LIMIT 1`,
-      [company_id, req.user.id, week_start]
-    );
-    if (!sel.rows.length || !sel.rows[0].weekly_pack_id)
-      return res.json({ dishes: {}, dish_qty: 8 });
-    const packId  = sel.rows[0].weekly_pack_id;
-    const dishQty = sel.rows[0].dish_qty || 8;
+    let packId  = null;
+    let dishQty = 8;
+
+    // 1. Essayer la sélection de l'entreprise pour cette semaine
+    if (company_id && week_start) {
+      const sel = await pool.query(
+        `SELECT cws.dish_qty, cws.weekly_pack_id FROM company_weekly_selections cws
+         WHERE cws.company_id=$1 AND cws.restaurant_id=$2 AND cws.week_start=$3 LIMIT 1`,
+        [company_id, req.user.id, week_start]
+      );
+      if (sel.rows.length && sel.rows[0].weekly_pack_id) {
+        packId  = sel.rows[0].weekly_pack_id;
+        dishQty = sel.rows[0].dish_qty || 8;
+      }
+    }
+
+    // 2. Fallback : pack actif le plus récent du restaurant
+    if (!packId) {
+      const pack = await pool.query(
+        `SELECT id FROM weekly_packs WHERE restaurant_id=$1 AND is_active=true ORDER BY created_at DESC LIMIT 1`,
+        [req.user.id]
+      );
+      if (pack.rows.length) packId = pack.rows[0].id;
+    }
+
+    if (!packId) return res.json({ dishes: {}, dish_qty: dishQty });
+
     const r = await pool.query(
-      `SELECT wmd.day_of_week, wdd.name, wdd.price, wdd.description
+      `SELECT wmd.day_of_week, wdd.name, wdd.price
        FROM weekly_day_dishes wdd
        JOIN weekly_menu_days wmd ON wdd.weekly_menu_day_id = wmd.id
-       JOIN weekly_menus wm ON wmd.weekly_menu_id = wm.id
+       JOIN weekly_menus wm      ON wmd.weekly_menu_id     = wm.id
        WHERE wm.weekly_pack_id = $1
        ORDER BY wmd.day_of_week, wdd.sort_order`,
       [packId]
@@ -3419,22 +3441,47 @@ app.get('/api/employee/restaurants/:id/menus', employeeAuth, async (req, res) =>
 app.get('/api/employee/order', employeeAuth, async (req, res) => {
   const { restaurantId } = req.query;
   const d = todayStr();
-  let q = `SELECT o.*,m.name AS menu_name,r.name AS restaurant_name FROM orders o JOIN menus m ON o.menu_id=m.id JOIN restaurants r ON o.restaurant_id=r.id WHERE o.user_id=$1 AND o.order_date=$2`;
+  let q = `SELECT o.*,
+    m.name AS menu_name, m.price AS menu_price, m.category AS menu_category,
+    dm.name AS drink_menu_name, dm.price AS drink_menu_price,
+    r.name AS restaurant_name
+    FROM orders o
+    LEFT JOIN menus m  ON o.menu_id      = m.id
+    LEFT JOIN menus dm ON o.drink_menu_id = dm.id
+    JOIN restaurants r ON o.restaurant_id = r.id
+    WHERE o.user_id=$1 AND o.order_date=$2`;
   const params = [req.user.id, d];
   if (restaurantId) { q += ` AND o.restaurant_id=$3`; params.push(restaurantId); }
+  q += ' ORDER BY o.created_at DESC';
   const r = await pool.query(q, params);
   res.json(restaurantId ? (r.rows[0]||null) : r.rows);
 });
 
 app.post('/api/employee/order', employeeAuth, async (req, res) => {
-  const { menuId, restaurantId, drinkPreference, notes } = req.body;
-  if (!menuId||!restaurantId) return res.status(400).json({ error: 'Menu et restaurant requis' });
+  const { menuId, drinkMenuId, restaurantId, orderType, drinkPreference, notes } = req.body;
+  const type = orderType || (menuId ? 'food' : 'drink');
+  if (!restaurantId) return res.status(400).json({ error: 'Restaurant requis' });
+  if (type !== 'drink' && !menuId) return res.status(400).json({ error: 'Plat requis' });
+  if (type !== 'food' && !drinkMenuId) return res.status(400).json({ error: 'Boisson requise' });
   try {
-    const menu = await pool.query('SELECT restaurant_id, price, category FROM menus WHERE id=$1 AND available=TRUE', [menuId]);
-    if (!menu.rows.length) return res.status(404).json({ error: 'Menu indisponible' });
+    let foodPrice = 0, drinkPrice = 0;
+    let menu = null;
+    if (menuId) {
+      const mRes = await pool.query('SELECT restaurant_id, price, category, name FROM menus WHERE id=$1 AND available=TRUE', [menuId]);
+      if (!mRes.rows.length) return res.status(404).json({ error: 'Plat indisponible' });
+      menu = mRes.rows[0];
+      foodPrice = parseFloat(menu.price) || 0;
+    }
+    if (drinkMenuId) {
+      const dRes = await pool.query('SELECT price FROM menus WHERE id=$1 AND available=TRUE', [drinkMenuId]);
+      if (!dRes.rows.length) return res.status(404).json({ error: 'Boisson indisponible' });
+      drinkPrice = parseFloat(dRes.rows[0].price) || 0;
+    }
     const r = await pool.query(
-      'INSERT INTO orders (company_id,restaurant_id,user_id,menu_id,order_date,drink_preference,notes) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
-      [req.user.companyId, restaurantId, req.user.id, menuId, todayStr(), drinkPreference||null, notes||null]
+      `INSERT INTO orders (company_id,restaurant_id,user_id,menu_id,drink_menu_id,order_type,order_date,drink_preference,notes,price,drink_price)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+      [req.user.companyId, restaurantId, req.user.id, menuId||null, drinkMenuId||null, type,
+       todayStr(), drinkPreference||null, notes||null, foodPrice, drinkPrice]
     );
     if (drinkPreference) await pool.query('UPDATE users SET drink_preference=$1 WHERE id=$2', [drinkPreference, req.user.id]);
     // Tracking subvention si active
@@ -3493,16 +3540,27 @@ app.post('/api/employee/order', employeeAuth, async (req, res) => {
 });
 
 app.put('/api/employee/order/:id', employeeAuth, async (req, res) => {
-  const { menuId, drinkPreference, notes } = req.body;
+  const { menuId, drinkMenuId, orderType, drinkPreference, notes } = req.body;
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
   try {
-    const ex = await pool.query('SELECT * FROM orders WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
+    const ex = await pool.query('SELECT * FROM orders WHERE id=$1 AND user_id=$2', [id, req.user.id]);
     if (!ex.rows.length) return res.status(404).json({ error: 'Commande introuvable' });
     if (ex.rows[0].status !== 'pending') return res.status(400).json({ error: 'Impossible de modifier cette commande' });
-    await pool.query('UPDATE orders SET menu_id=$1,drink_preference=$2,notes=$3,updated_at=NOW() WHERE id=$4 AND user_id=$5', [menuId, drinkPreference||null, notes||null, req.params.id, req.user.id]);
-    if (drinkPreference) await pool.query('UPDATE users SET drink_preference=$1 WHERE id=$2', [drinkPreference, req.user.id]);
-    const menuData = await pool.query('SELECT name FROM menus WHERE id=$1', [menuId]);
-    await pool.query('INSERT INTO order_history (user_id,company_id,employee_id,employee_name,restaurant_name,menu_name,order_date,drink_preference,action) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
-      [req.user.id, req.user.companyId, req.user.employeeId, req.user.name, '', menuData.rows[0]?.name, ex.rows[0].order_date, drinkPreference||null, 'updated']);
+    let foodPrice = 0, drinkPrice = 0;
+    if (menuId) { const m = await pool.query('SELECT price FROM menus WHERE id=$1', [menuId]); foodPrice = parseFloat(m.rows[0]?.price) || 0; }
+    if (drinkMenuId) { const d = await pool.query('SELECT price FROM menus WHERE id=$1', [drinkMenuId]); drinkPrice = parseFloat(d.rows[0]?.price) || 0; }
+    await pool.query(
+      `UPDATE orders SET menu_id=$1,drink_menu_id=$2,order_type=$3,drink_preference=$4,notes=$5,price=$6,drink_price=$7,updated_at=NOW()
+       WHERE id=$8 AND user_id=$9`,
+      [menuId||null, drinkMenuId||null, orderType||ex.rows[0].order_type,
+       drinkPreference||null, notes||null, foodPrice, drinkPrice, id, req.user.id]
+    );
+    const menuName = menuId ? (await pool.query('SELECT name FROM menus WHERE id=$1', [menuId])).rows[0]?.name : ex.rows[0].menu_name;
+    await pool.query(
+      'INSERT INTO order_history (user_id,company_id,employee_id,employee_name,restaurant_name,menu_name,order_date,drink_preference,action) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
+      [req.user.id, req.user.companyId, req.user.employeeId, req.user.name, '', menuName, ex.rows[0].order_date, drinkPreference||null, 'updated']
+    );
     res.json({ message: 'Commande mise à jour' });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -3512,7 +3570,7 @@ app.delete('/api/employee/order/:id', employeeAuth, async (req, res) => {
     const orderId = parseInt(req.params.id);
     if (isNaN(orderId)) return res.status(400).json({ error: 'ID invalide' });
     
-    const ex = await pool.query('SELECT o.*,m.name AS menu_name,r.name AS rest_name FROM orders o JOIN menus m ON o.menu_id=m.id JOIN restaurants r ON o.restaurant_id=r.id WHERE o.id=$1 AND o.user_id=$2', [orderId, req.user.id]);
+    const ex = await pool.query(`SELECT o.*, COALESCE(m.name,dm.name,'—') AS menu_name, r.name AS rest_name FROM orders o LEFT JOIN menus m ON o.menu_id=m.id LEFT JOIN menus dm ON o.drink_menu_id=dm.id JOIN restaurants r ON o.restaurant_id=r.id WHERE o.id=$1 AND o.user_id=$2`, [orderId, req.user.id]);
     if (!ex.rows.length) return res.status(404).json({ error: 'Introuvable' });
     if (ex.rows[0].status !== 'pending') return res.status(400).json({ error: 'Impossible de supprimer' });
     await pool.query('DELETE FROM orders WHERE id=$1 AND user_id=$2', [orderId, req.user.id]);

@@ -111,7 +111,8 @@
       "Bash(grep *)",
       "Bash(git checkout *)",
       "Bash(npx vercel *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(findstr /C:\"updateOrder\\\\|deleteOrder\\\\|editOrder\\\\|PUT.*order\\\\|DELETE.*order\" public\\\\employee\\\\index.html)"
     ]
   }
 }

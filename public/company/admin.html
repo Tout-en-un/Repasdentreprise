@@ -904,7 +904,6 @@
   </div>
 </div>
 
-<script src="/assets/js/food-list.js"></script>
 <script src="/assets/js/utils.js"></script>
 <script>
 const token = localStorage.getItem('fc_token');
@@ -2534,57 +2533,6 @@ function woSetType(i, v) {
 function woSetName(i, v)     { _woExtras[i].item_name = v; }
 
 // ── Autocomplete extras ──────────────────────────────────────────────
-function _woAcCat(itemType) {
-  if (itemType === 'drink')                 return 'boisson';
-  if (itemType === 'cake' || itemType === 'yogurt') return 'dessert';
-  return null;
-}
-function acHighlightWo(text, q) {
-  if (!q) return text;
-  const idx = text.toLowerCase().indexOf(q.toLowerCase());
-  if (idx < 0) return text;
-  return text.slice(0,idx) + '<mark>' + text.slice(idx, idx+q.length) + '</mark>' + text.slice(idx+q.length);
-}
-function acFilterWo(i) {
-  const cat = _woAcCat((_woExtras[i]||{}).item_type);
-  const inputId  = `woExtraName-${i}`;
-  const dropId   = `woExtraNameDrop-${i}`;
-  const input    = document.getElementById(inputId);
-  const dropdown = document.getElementById(dropId);
-  if (!input || !dropdown) return;
-  const q = input.value.trim();
-  let filtered;
-  if (!q) {
-    const base = cat ? ALL_FOOD_SUGGESTIONS.filter(it => it.category === cat) : ALL_FOOD_SUGGESTIONS;
-    filtered = base.slice(0, 50);
-  } else {
-    filtered = ALL_FOOD_SUGGESTIONS.filter(it =>
-      it.name.toLowerCase().includes(q.toLowerCase()) && (!cat || it.category === cat)
-    ).slice(0, 15);
-  }
-  if (!filtered.length) { closeAcDropdown(dropId); return; }
-  dropdown.innerHTML = filtered.map(it =>
-    `<div class="ac-item"
-      onmousedown="event.preventDefault();acSelectWo(${i},${JSON.stringify(it.name)})"
-      ontouchend="event.preventDefault();acSelectWo(${i},${JSON.stringify(it.name)})"
-    >${acHighlightWo(it.name, q)}</div>`
-  ).join('');
-  dropdown.classList.add('open');
-}
-function acSelectWo(i, name) {
-  const input = document.getElementById(`woExtraName-${i}`);
-  if (input) input.value = name;
-  woSetName(i, name);
-  closeAcDropdown(`woExtraNameDrop-${i}`);
-}
-function closeAcDropdown(id) {
-  const d = document.getElementById(id);
-  if (d) d.classList.remove('open');
-}
-document.addEventListener('click', e => {
-  if (!e.target.closest('.ac-wrap'))
-    document.querySelectorAll('.ac-dropdown.open').forEach(d => d.classList.remove('open'));
-});
 function woIncQty(i, d)      { _woExtras[i].quantity  = Math.max(1, (_woExtras[i].quantity||1) + d); renderWoExtras(); }
 function woToggleDay(i, day) {
   // Bloquer les jours passés
@@ -2692,12 +2640,7 @@ function renderWoExtras() {
             <option value="fruit"  ${ex.item_type==='fruit' ?'selected':''}>🍎 Fruit</option>
             <option value="other"  ${ex.item_type==='other' ?'selected':''}>📦 Autre</option>
           </select>
-          <div class="ac-wrap" style="flex:1;min-width:0">
-            <input class="form-control" id="woExtraName-${i}" style="font-size:12px;width:100%" placeholder="Nom du produit" value="${ex.item_name}" autocomplete="off"
-              oninput="woSetName(${i},this.value);acFilterWo(${i})"
-              onfocus="acFilterWo(${i})">
-            <div class="ac-dropdown" id="woExtraNameDrop-${i}"></div>
-          </div>
+          <input class="form-control" id="woExtraName-${i}" style="font-size:12px;flex:1" placeholder="Nom du produit" value="${ex.item_name}" oninput="woSetName(${i},this.value)">
           <button class="btn btn-danger btn-sm" style="padding:2px 8px;flex-shrink:0" onclick="removeWoExtra(${i})">✕</button>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
@@ -2975,8 +2918,8 @@ window.confirmWeeklyInv = confirmWeeklyInv;
   window.loadWeeklyMenus = loadWeeklyMenus;
   window.acknowledgeDelivery = acknowledgeDelivery;
   window.switchWeeklyTab = switchWeeklyTab;
-  window.loadAvisHebdo = loadAvisHebdo;
-  window.submitAvis = submitAvis;
+  window.loadAvisHebdo   = loadAvisHebdo;
+  window.submitAvis      = submitAvis;
   window.openWeeklyOrderModal = openWeeklyOrderModal;
   window.submitWeeklyOrder = submitWeeklyOrder;
   window.editWeeklyOrder = editWeeklyOrder;

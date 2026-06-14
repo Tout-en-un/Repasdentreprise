@@ -765,26 +765,6 @@ tbody tr:hover td { transition:background .12s ease, padding .12s ease; }
 }
 
 /* ─── Autocomplete ────────────────────────────────────── */
-.ac-wrap { position:relative; }
-.ac-dropdown {
-  position:absolute; top:calc(100% + 4px); left:0; right:0;
-  background:#fff; border:1px solid var(--border); border-radius:10px;
-  max-height:220px; overflow-y:auto; z-index:500;
-  box-shadow:0 8px 28px rgba(44,24,16,.13);
-  display:none;
-}
-.ac-dropdown.open { display:block; animation:fadeIn .15s ease; }
-.ac-item {
-  padding:9px 13px; font-size:13px; cursor:pointer;
-  color:var(--brown); border-bottom:1px solid rgba(44,24,16,.05);
-  transition:background .12s;
-}
-.ac-item:last-child { border-bottom:none; }
-.ac-item:hover, .ac-item.ac-active {
-  background:#FFF0EA; color:var(--orange);
-}
-.ac-item mark { background:none; color:var(--orange); font-weight:700; }
-.ac-empty { padding:10px 13px; font-size:12px; color:var(--muted); font-style:italic; }
 
 /* ─── Subvention badge ───────────────────────────────── */
 .subsidy-badge {

@@ -423,6 +423,9 @@ async function initDB(retries = 5, delay = 3000) {
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type VARCHAR(10) DEFAULT 'food';
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS drink_menu_id INTEGER REFERENCES menus(id) ON DELETE SET NULL;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS price DECIMAL(10,2) DEFAULT 0;
+    ALTER TABLE company_subsidies ADD COLUMN IF NOT EXISTS includes_drink BOOLEAN DEFAULT false;
+    ALTER TABLE company_subsidies ADD COLUMN IF NOT EXISTS amount DECIMAL(10,2) DEFAULT 0;
+    UPDATE company_subsidies SET amount = food_amount WHERE amount = 0 AND food_amount > 0;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS drink_price DECIMAL(10,2) DEFAULT 0;
   `;
   try {
@@ -590,6 +593,61 @@ function anyAuth(req, res, next) {
 }
 
 function todayStr() { return new Date().toISOString().split('T')[0]; }
+
+// ── Helpers allocation/subvention — enveloppe unique ──────────────
+// TZ_OFFSET_HOURS : décalage horaire local (0 pour Burkina UTC+0)
+function getPeriodKey(periodType) {
+  const offset = parseInt(process.env.TZ_OFFSET_HOURS || '0');
+  const now    = new Date(Date.now() + offset * 3600 * 1000);
+  const y  = now.getUTCFullYear();
+  const m  = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const d  = String(now.getUTCDate()).padStart(2, '0');
+  if (periodType === 'monthly') return `${y}-${m}`;
+  if (periodType === 'weekly') {
+    const dow = now.getUTCDay() || 7;
+    const mon = new Date(now);
+    mon.setUTCDate(now.getUTCDate() - (dow - 1));
+    return `${mon.getUTCFullYear()}-${String(mon.getUTCMonth()+1).padStart(2,'0')}-${String(mon.getUTCDate()).padStart(2,'0')}`;
+  }
+  return `${y}-${m}-${d}`;
+}
+
+// Calcule ce que l'enveloppe couvre — enveloppe unique
+// foodPrice  = prix du plat principal
+// drinkPrice = prix boisson (0 si boissons non incluses ou eau/lipton offerts)
+async function calcSubsidyApplied(pool, companyId, userId, foodPrice, drinkPrice) {
+  try {
+    const sub = await pool.query('SELECT * FROM company_subsidies WHERE company_id=$1 AND active=true', [companyId]);
+    if (!sub.rows.length) return { covered: 0, toPay: foodPrice + drinkPrice, totalCovered: 0, totalToPay: foodPrice + drinkPrice };
+    const cfg      = sub.rows[0];
+    const envelope = parseFloat(cfg.amount || cfg.food_amount || 0);
+    const inclDrink= cfg.includes_drink || false;
+    const key      = getPeriodKey(cfg.period_type);
+    const usage    = await pool.query(
+      'SELECT used_food FROM subsidy_usage WHERE company_id=$1 AND user_id=$2 AND period_key=$3',
+      [companyId, userId, key]
+    );
+    const usedSoFar  = parseFloat(usage.rows[0]?.used_food || 0);
+    const remaining  = Math.max(0, envelope - usedSoFar);
+    // Montant à couvrir par l'allocation : plat + boisson si incluse
+    const eligible   = foodPrice + (inclDrink ? drinkPrice : 0);
+    const covered    = Math.min(eligible, remaining);
+    const toPay      = eligible - covered + (inclDrink ? 0 : drinkPrice);
+    return { covered, toPay, totalCovered: covered, totalToPay: toPay, remaining, envelope, inclDrink, periodKey: key };
+  } catch(e) { return { covered: 0, toPay: foodPrice + drinkPrice, totalCovered: 0, totalToPay: foodPrice + drinkPrice }; }
+}
+
+// Débite ou rembourse l'enveloppe unique (colonne used_food = montant total utilisé)
+async function adjustSubsidyUsage(pool, companyId, userId, periodKey, delta, _unused = 0) {
+  if (delta === 0) return;
+  await pool.query(
+    `INSERT INTO subsidy_usage (company_id, user_id, period_key, used_food, used_drink)
+     VALUES ($1,$2,$3,$4,0)
+     ON CONFLICT (company_id, user_id, period_key) DO UPDATE SET
+       used_food = GREATEST(0, subsidy_usage.used_food + $4)`,
+    [companyId, userId, periodKey, delta]
+  );
+}
 
 // ════════════════════════════════════════════════════════════════
 //  AUTH ROUTES
@@ -805,30 +863,30 @@ app.delete('/api/restaurant/history', restaurantAuth, async (req, res) => {
 // Endpoint balance subvention pour l'employé
 app.get('/api/employee/subsidy-balance', employeeAuth, async (req, res) => {
   try {
-    const user = await pool.query('SELECT company_id FROM users WHERE id=$1', [req.user.id]);
-    if (!user.rows.length) return res.json({ active: false });
-    const companyId = user.rows[0].company_id;
-    const sub = await pool.query('SELECT * FROM company_subsidies WHERE company_id=$1 AND active=true', [companyId]);
+    const sub = await pool.query('SELECT * FROM company_subsidies WHERE company_id=$1 AND active=true', [req.user.companyId]);
     if (!sub.rows.length) return res.json({ active: false });
-    const cfg = sub.rows[0];
-    const now = new Date();
-    const periodKey = cfg.period_type === 'monthly'
-      ? `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
-      : now.toISOString().slice(0,10);
+    const cfg      = sub.rows[0];
+    const envelope = parseFloat(cfg.amount || cfg.food_amount || 0);
+    const inclDrink= cfg.includes_drink || false;
+    const periodKey = getPeriodKey(cfg.period_type);
     const usage = await pool.query(
-      'SELECT used_food, used_drink FROM subsidy_usage WHERE company_id=$1 AND user_id=$2 AND period_key=$3',
-      [companyId, req.user.id, periodKey]
+      'SELECT used_food FROM subsidy_usage WHERE company_id=$1 AND user_id=$2 AND period_key=$3',
+      [req.user.companyId, req.user.id, periodKey]
     );
-    const used = usage.rows[0] || { used_food: 0, used_drink: 0 };
+    const used      = parseFloat(usage.rows[0]?.used_food || 0);
+    const remaining = Math.max(0, envelope - used);
+    const pct       = envelope > 0 ? Math.min(100, Math.round(used / envelope * 100)) : 0;
+    const PERIOD_LABELS = { daily:"aujourd'hui", weekly:'cette semaine', monthly:'ce mois' };
     res.json({
-      active: true,
-      period_type: cfg.period_type,
-      food_amount: parseFloat(cfg.food_amount),
-      drink_amount: parseFloat(cfg.drink_amount),
-      used_food: parseFloat(used.used_food),
-      used_drink: parseFloat(used.used_drink),
-      remaining_food: Math.max(0, parseFloat(cfg.food_amount) - parseFloat(used.used_food)),
-      remaining_drink: Math.max(0, parseFloat(cfg.drink_amount) - parseFloat(used.used_drink)),
+      active:        true,
+      period_type:   cfg.period_type,
+      period_label:  PERIOD_LABELS[cfg.period_type] || cfg.period_type,
+      period_key:    periodKey,
+      amount:        envelope,
+      includes_drink:inclDrink,
+      used:          used,
+      remaining:     remaining,
+      pct:           pct,
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -987,9 +1045,15 @@ app.get('/api/restaurant/companies', restaurantAuth, async (req, res) => {
 });
 
 // Export orders PDF for restaurant (with date range and optional company filter)
-app.get('/api/restaurant/orders/export-pdf', restaurantAuth, async (req, res) => {
+app.get('/api/restaurant/orders/export-pdf', async (req, res) => {
+  const token = req.query.token || req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Token manquant' });
+  let user;
+  try { const d = require('jsonwebtoken').verify(token, JWT_SECRET); if (d.role !== 'restaurant') return res.status(403).json({ error: 'Accès refusé' }); user = d; }
+  catch { return res.status(401).json({ error: 'Token invalide' }); }
   const { from, to, companyId } = req.query;
   if (!from || !to) return res.status(400).json({ error: 'Dates required' });
+  req.user = user;
   try {
     let params = [req.user.id, from, to];
     let companyFilter = '';
@@ -1168,6 +1232,115 @@ app.get('/api/restaurant/companies', restaurantAuth, async (req, res) => {
     const companies = await pool.query('SELECT DISTINCT c.id, c.name FROM companies c JOIN affiliations a ON c.id = a.company_id WHERE a.restaurant_id=$1 ORDER BY c.name', [req.user.id]);
     res.json(companies.rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── Vue clients (entreprises affiliées) ─────────────────────────────────────
+
+// GET /api/restaurant/clients — liste toutes les entreprises avec métriques
+app.get('/api/restaurant/clients', restaurantAuth, async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT
+        c.id, c.name, c.email, c.phone, c.address, c.logo_url,
+        a.created_at AS affiliated_since,
+        -- Nombre d'employés
+        (SELECT COUNT(*) FROM users u WHERE u.company_id = c.id)::int AS employee_count,
+        -- Abonnement hebdo (semaine la plus récente)
+        (SELECT wp.name FROM company_weekly_selections cws
+         LEFT JOIN weekly_packs wp ON wp.id = cws.weekly_pack_id
+         WHERE cws.company_id = c.id AND cws.restaurant_id = $1
+         ORDER BY cws.week_start DESC LIMIT 1) AS pack_name,
+        (SELECT cws.week_start FROM company_weekly_selections cws
+         WHERE cws.company_id = c.id AND cws.restaurant_id = $1
+         ORDER BY cws.week_start DESC LIMIT 1) AS last_week_start,
+        (SELECT cws.dish_qty FROM company_weekly_selections cws
+         WHERE cws.company_id = c.id AND cws.restaurant_id = $1
+         ORDER BY cws.week_start DESC LIMIT 1)::int AS dish_qty,
+        -- Commandes ce mois
+        (SELECT COUNT(*) FROM orders o
+         WHERE o.company_id = c.id AND o.restaurant_id = $1
+         AND o.order_date >= date_trunc('month', CURRENT_DATE))::int AS orders_this_month,
+        -- CA ce mois
+        (SELECT COALESCE(SUM(m.price), 0) FROM orders o
+         LEFT JOIN menus m ON o.menu_id = m.id
+         WHERE o.company_id = c.id AND o.restaurant_id = $1
+         AND o.order_date >= date_trunc('month', CURRENT_DATE)) AS revenue_this_month,
+        -- CA total
+        (SELECT COALESCE(SUM(m.price), 0) FROM orders o
+         LEFT JOIN menus m ON o.menu_id = m.id
+         WHERE o.company_id = c.id AND o.restaurant_id = $1) AS revenue_total,
+        -- Dernière commande
+        (SELECT MAX(o.order_date) FROM orders o
+         WHERE o.company_id = c.id AND o.restaurant_id = $1) AS last_order_date,
+        -- Factures en attente
+        (SELECT COUNT(*) FROM invoices i
+         WHERE i.company_id = c.id AND i.restaurant_id = $1
+         AND i.status = 'pending' AND i.deleted_at IS NULL)::int
+        +
+        (SELECT COUNT(*) FROM weekly_invoices wi
+         WHERE wi.company_id = c.id AND wi.restaurant_id = $1
+         AND wi.status = 'pending' AND wi.deleted_at IS NULL)::int AS pending_invoices
+      FROM affiliations a
+      JOIN companies c ON c.id = a.company_id
+      WHERE a.restaurant_id = $1
+      ORDER BY last_order_date DESC NULLS LAST, c.name
+    `, [req.user.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/restaurant/clients/:companyId — détail d'un client
+app.get('/api/restaurant/clients/:companyId', restaurantAuth, async (req, res) => {
+  const companyId = parseInt(req.params.companyId, 10);
+  if (isNaN(companyId)) return res.status(400).json({ error: 'ID invalide' });
+  try {
+    // Vérifier l'affiliation
+    const aff = await pool.query('SELECT 1 FROM affiliations WHERE restaurant_id=$1 AND company_id=$2', [req.user.id, companyId]);
+    if (!aff.rows.length) return res.status(403).json({ error: 'Non affilié' });
+
+    const [company, employees, recentOrders, invoices, weeklyInvoices, selections] = await Promise.all([
+      // Info entreprise
+      pool.query('SELECT id,name,email,phone,address,logo_url FROM companies WHERE id=$1', [companyId]),
+      // Employés
+      pool.query(`SELECT id, employee_id, first_name, last_name, email,
+        (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.id AND o.restaurant_id=$2)::int AS total_orders,
+        (SELECT MAX(o.order_date) FROM orders o WHERE o.user_id = u.id AND o.restaurant_id=$2) AS last_order
+        FROM users u WHERE u.company_id=$1 ORDER BY u.last_name`, [companyId, req.user.id]),
+      // 30 derniers jours de commandes
+      pool.query(`SELECT o.id, o.order_date, o.status, o.drink_preference,
+        m.name AS menu_name, m.price,
+        u.first_name||' '||u.last_name AS employee_name
+        FROM orders o
+        LEFT JOIN menus m ON o.menu_id = m.id
+        LEFT JOIN users u ON o.user_id = u.id
+        WHERE o.company_id=$1 AND o.restaurant_id=$2
+        AND o.order_date >= CURRENT_DATE - 30
+        ORDER BY o.order_date DESC, u.last_name
+        LIMIT 100`, [companyId, req.user.id]),
+      // Factures classiques (pas de invoice_number dans cette table)
+      pool.query(`SELECT id, invoice_date, total_amount, status, sent, notes, from_date, to_date, created_at
+        FROM invoices WHERE company_id=$1 AND restaurant_id=$2 AND deleted_at IS NULL
+        ORDER BY created_at DESC LIMIT 20`, [companyId, req.user.id]),
+      // Factures hebdo
+      pool.query(`SELECT id, invoice_number, from_date, to_date, total_amount, status, sent, invoice_type, day_date
+        FROM weekly_invoices WHERE company_id=$1 AND restaurant_id=$2 AND deleted_at IS NULL
+        ORDER BY created_at DESC LIMIT 20`, [companyId, req.user.id]),
+      // Abonnements hebdo
+      pool.query(`SELECT cws.*, wp.name AS pack_name, wp.price AS pack_price
+        FROM company_weekly_selections cws
+        LEFT JOIN weekly_packs wp ON wp.id = cws.weekly_pack_id
+        WHERE cws.company_id=$1 AND cws.restaurant_id=$2
+        ORDER BY cws.week_start DESC LIMIT 8`, [companyId, req.user.id]),
+    ]);
+    res.json({
+      company:       company.rows[0],
+      employees:     employees.rows,
+      recent_orders: recentOrders.rows,
+      invoices:      invoices.rows,
+      weekly_invoices: weeklyInvoices.rows,
+      selections:    selections.rows,
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ─── PDF helpers ─────────────────────────────────────────────────────────────
@@ -1493,7 +1666,13 @@ app.get('/api/restaurant/ratings', restaurantAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/restaurant/export-pdf', restaurantAuth, async (req, res) => {
+app.get('/api/restaurant/export-pdf', async (req, res) => {
+  const token = req.query.token || req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Token manquant' });
+  let user;
+  try { const d = require('jsonwebtoken').verify(token, JWT_SECRET); if (d.role !== 'restaurant') return res.status(403).json({ error: 'Accès refusé' }); user = d; }
+  catch { return res.status(401).json({ error: 'Token invalide' }); }
+  req.user = user;
   const { period } = req.query;
   let whereDate = "o.order_date = CURRENT_DATE";
   let periodLabel = "Aujourd'hui";
@@ -1994,20 +2173,30 @@ app.get('/api/restaurant/weekly-program-dishes', restaurantAuth, async (req, res
     let packId  = null;
     let dishQty = 8;
 
-    // 1. Essayer la sélection de l'entreprise pour cette semaine
+    // 1. Sélection exacte pour cette semaine
     if (company_id && week_start) {
       const sel = await pool.query(
         `SELECT cws.dish_qty, cws.weekly_pack_id FROM company_weekly_selections cws
-         WHERE cws.company_id=$1 AND cws.restaurant_id=$2 AND cws.week_start=$3 LIMIT 1`,
+         WHERE cws.company_id=$1 AND cws.restaurant_id=$2 AND cws.week_start=$3
+           AND cws.weekly_pack_id IS NOT NULL LIMIT 1`,
         [company_id, req.user.id, week_start]
       );
-      if (sel.rows.length && sel.rows[0].weekly_pack_id) {
-        packId  = sel.rows[0].weekly_pack_id;
-        dishQty = sel.rows[0].dish_qty || 8;
-      }
+      if (sel.rows.length) { packId = sel.rows[0].weekly_pack_id; dishQty = sel.rows[0].dish_qty || 8; }
     }
 
-    // 2. Fallback : pack actif le plus récent du restaurant
+    // 2. Fallback : sélection la plus récente de cette entreprise chez ce restaurant
+    if (!packId && company_id) {
+      const sel = await pool.query(
+        `SELECT cws.dish_qty, cws.weekly_pack_id FROM company_weekly_selections cws
+         WHERE cws.company_id=$1 AND cws.restaurant_id=$2
+           AND cws.weekly_pack_id IS NOT NULL
+         ORDER BY cws.week_start DESC LIMIT 1`,
+        [company_id, req.user.id]
+      );
+      if (sel.rows.length) { packId = sel.rows[0].weekly_pack_id; dishQty = sel.rows[0].dish_qty || 8; }
+    }
+
+    // 3. Fallback : pack actif le plus récent du restaurant
     if (!packId) {
       const pack = await pool.query(
         `SELECT id FROM weekly_packs WHERE restaurant_id=$1 AND is_active=true ORDER BY created_at DESC LIMIT 1`,
@@ -2016,23 +2205,36 @@ app.get('/api/restaurant/weekly-program-dishes', restaurantAuth, async (req, res
       if (pack.rows.length) packId = pack.rows[0].id;
     }
 
-    if (!packId) return res.json({ dishes: {}, dish_qty: dishQty });
+    if (!packId) return res.json({ dishes: {}, dish_qty: dishQty, pack_name: null, menu_names: [] });
 
-    const r = await pool.query(
-      `SELECT wmd.day_of_week, wdd.name, wdd.price
-       FROM weekly_day_dishes wdd
-       JOIN weekly_menu_days wmd ON wdd.weekly_menu_day_id = wmd.id
-       JOIN weekly_menus wm      ON wmd.weekly_menu_id     = wm.id
-       WHERE wm.weekly_pack_id = $1
-       ORDER BY wmd.day_of_week, wdd.sort_order`,
-      [packId]
-    );
+    // Récupérer nom du pack + noms des menus + plats
+    const [packInfo, menuNames, dishRows] = await Promise.all([
+      // Nom du pack
+      pool.query(`SELECT name AS pack_name FROM weekly_packs WHERE id=$1`, [packId]),
+      // Noms des menus (sous-requête propre, sans DISTINCT+ORDER BY conflictuels)
+      pool.query(`SELECT name FROM weekly_menus WHERE weekly_pack_id=$1 ORDER BY sort_order`, [packId]),
+      // Plats par jour
+      pool.query(
+        `SELECT wmd.day_of_week, wdd.name, wdd.price
+         FROM weekly_day_dishes wdd
+         JOIN weekly_menu_days wmd ON wdd.weekly_menu_day_id = wmd.id
+         JOIN weekly_menus wm      ON wmd.weekly_menu_id     = wm.id
+         WHERE wm.weekly_pack_id = $1
+         ORDER BY wmd.day_of_week, wdd.sort_order`, [packId])
+    ]);
+
     const byDay = {};
-    r.rows.forEach(d => {
+    dishRows.rows.forEach(d => {
       if (!byDay[d.day_of_week]) byDay[d.day_of_week] = [];
       byDay[d.day_of_week].push({ name: d.name, price: parseFloat(d.price) || 0 });
     });
-    res.json({ dishes: byDay, dish_qty: dishQty, pack_id: packId });
+    res.json({
+      dishes:     byDay,
+      dish_qty:   dishQty,
+      pack_id:    packId,
+      pack_name:  packInfo.rows[0]?.pack_name || null,
+      menu_names: menuNames.rows.map(r => r.name),
+    });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2898,39 +3100,72 @@ app.get('/api/admin/subsidies', companyAuth, async (req, res) => {
 });
 
 app.put('/api/admin/subsidies', companyAuth, async (req, res) => {
-  const { food_amount, drink_amount, period_type, active } = req.body;
+  const { amount, includes_drink, period_type, active } = req.body;
+  const amt = parseFloat(amount) || 0;
+  const pt  = ['daily','weekly','monthly'].includes(period_type) ? period_type : 'daily';
+  if (active !== false && amt <= 0)
+    return res.status(400).json({ error: 'Définissez un montant d\'allocation > 0' });
   try {
     const r = await pool.query(
-      `INSERT INTO company_subsidies (company_id, food_amount, drink_amount, period_type, active, updated_at)
-       VALUES ($1,$2,$3,$4,$5,NOW())
+      `INSERT INTO company_subsidies (company_id, amount, food_amount, drink_amount, includes_drink, period_type, active, updated_at)
+       VALUES ($1,$2,$2,0,$3,$4,$5,NOW())
        ON CONFLICT (company_id) DO UPDATE SET
-         food_amount=$2, drink_amount=$3, period_type=$4, active=$5, updated_at=NOW()
+         amount=$2, food_amount=$2, drink_amount=0,
+         includes_drink=$3, period_type=$4, active=$5, updated_at=NOW()
        RETURNING *`,
-      [req.user.id, food_amount || 0, drink_amount || 0, period_type || 'daily', active !== false]
+      [req.user.id, amt, includes_drink === true || includes_drink === 'true', pt, active !== false]
     );
     res.json(r.rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/subsidy-stats?period_key=XXXX — statistiques par période
 app.get('/api/admin/subsidy-stats', companyAuth, async (req, res) => {
   try {
-    const sub = await pool.query('SELECT * FROM company_subsidies WHERE company_id=$1 AND active=true', [req.user.id]);
+    const sub = await pool.query('SELECT * FROM company_subsidies WHERE company_id=$1', [req.user.id]);
     if (!sub.rows.length) return res.json({ active: false, usage: [] });
     const cfg = sub.rows[0];
-    const now = new Date();
-    const periodKey = cfg.period_type === 'monthly'
-      ? `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
-      : now.toISOString().slice(0,10);
+    // Période demandée ou période courante
+    const currentKey = getPeriodKey(cfg.period_type);
+    const periodKey  = req.query.period_key || currentKey;
     const usage = await pool.query(
-      `SELECT su.user_id, u.first_name, u.last_name, su.used_food, su.used_drink
+      `SELECT su.user_id, u.first_name, u.last_name, su.used_food AS used, su.period_key
        FROM subsidy_usage su
        JOIN users u ON u.id=su.user_id
        WHERE su.company_id=$1 AND su.period_key=$2
        ORDER BY u.last_name`,
       [req.user.id, periodKey]
     );
-    res.json({ active: true, config: cfg, period_key: periodKey, usage: usage.rows });
+    // Liste des périodes historiques disponibles
+    const periods = await pool.query(
+      `SELECT DISTINCT period_key FROM subsidy_usage WHERE company_id=$1 ORDER BY period_key DESC LIMIT 24`,
+      [req.user.id]
+    );
+    res.json({
+      active:      cfg.active,
+      config:      cfg,
+      period_key:  periodKey,
+      current_key: currentKey,
+      periods:     periods.rows.map(p => p.period_key),
+      usage:       usage.rows
+    });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/admin/subsidy-reset/:userId — réinitialiser l'allocation d'un employé
+app.delete('/api/admin/subsidy-reset/:userId', companyAuth, async (req, res) => {
+  const userId = parseInt(req.params.userId, 10);
+  if (isNaN(userId)) return res.status(400).json({ error: 'ID invalide' });
+  try {
+    const sub = await pool.query('SELECT * FROM company_subsidies WHERE company_id=$1', [req.user.id]);
+    if (!sub.rows.length) return res.status(404).json({ error: 'Aucune configuration subvention' });
+    const key = getPeriodKey(sub.rows[0].period_type);
+    await pool.query(
+      'DELETE FROM subsidy_usage WHERE company_id=$1 AND user_id=$2 AND period_key=$3',
+      [req.user.id, userId, key]
+    );
+    res.json({ ok: true, message: 'Allocation réinitialisée pour la période courante' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/admin/stats', companyAuth, async (req, res) => {
@@ -2947,20 +3182,44 @@ app.get('/api/admin/stats', companyAuth, async (req, res) => {
 app.get('/api/admin/expenses', companyAuth, async (req, res) => {
   const companyId = req.user.id;
   const { period } = req.query;
-  let groupBy = "to_char(o.order_date,'YYYY-MM-DD')";
-  let whereDate = "o.order_date >= CURRENT_DATE - 7";
-  if (period === 'month') { whereDate = "o.order_date >= date_trunc('month',CURRENT_DATE)"; groupBy = "to_char(o.order_date,'YYYY-MM-DD')"; }
-  if (period === 'quarter') { whereDate = "o.order_date >= date_trunc('quarter',CURRENT_DATE)"; groupBy = "to_char(date_trunc('week',o.order_date),'YYYY-MM-DD')"; }
+  let whereDate = "o.order_date >= CURRENT_DATE - 6";
+  if (period === 'month')   whereDate = "o.order_date >= date_trunc('month',CURRENT_DATE)";
+  if (period === 'quarter') whereDate = "o.order_date >= date_trunc('quarter',CURRENT_DATE)";
   try {
-    const r = await pool.query(`
-      SELECT ${groupBy} AS period, COUNT(*) AS orders, COALESCE(SUM(m.price),0) AS total
-      FROM orders o JOIN menus m ON o.menu_id=m.id
-      WHERE o.company_id=$1 AND ${whereDate}
-      GROUP BY ${groupBy} ORDER BY period
-    `, [companyId]);
-    const totalWeek = await pool.query("SELECT COALESCE(SUM(m.price),0) AS total FROM orders o JOIN menus m ON o.menu_id=m.id WHERE o.company_id=$1 AND o.order_date>=date_trunc('week',CURRENT_DATE)", [companyId]);
-    const totalMonth = await pool.query("SELECT COALESCE(SUM(m.price),0) AS total FROM orders o JOIN menus m ON o.menu_id=m.id WHERE o.company_id=$1 AND o.order_date>=date_trunc('month',CURRENT_DATE)", [companyId]);
-    res.json({ series: r.rows, totalWeek: parseFloat(totalWeek.rows[0].total), totalMonth: parseFloat(totalMonth.rows[0].total) });
+    const [pivot, totDay, totWeek, totMonth] = await Promise.all([
+      // Données par jour ET par restaurant — pour le tableau pivot
+      pool.query(`
+        SELECT
+          to_char(o.order_date,'YYYY-MM-DD') AS day,
+          r.id   AS restaurant_id,
+          r.name AS restaurant,
+          COUNT(*)::int                    AS orders,
+          COALESCE(SUM(m.price),0)         AS total
+        FROM orders o
+        LEFT JOIN menus m        ON o.menu_id       = m.id
+        JOIN  restaurants r      ON o.restaurant_id = r.id
+        WHERE o.company_id=$1 AND ${whereDate}
+        GROUP BY o.order_date, r.id, r.name
+        ORDER BY o.order_date, r.name`, [companyId]),
+      // Total aujourd'hui
+      pool.query(`SELECT COALESCE(SUM(m.price),0) AS total
+        FROM orders o LEFT JOIN menus m ON o.menu_id=m.id
+        WHERE o.company_id=$1 AND o.order_date=CURRENT_DATE`, [companyId]),
+      // Total semaine courante
+      pool.query(`SELECT COALESCE(SUM(m.price),0) AS total
+        FROM orders o LEFT JOIN menus m ON o.menu_id=m.id
+        WHERE o.company_id=$1 AND o.order_date>=date_trunc('week',CURRENT_DATE)`, [companyId]),
+      // Total mois courant
+      pool.query(`SELECT COALESCE(SUM(m.price),0) AS total
+        FROM orders o LEFT JOIN menus m ON o.menu_id=m.id
+        WHERE o.company_id=$1 AND o.order_date>=date_trunc('month',CURRENT_DATE)`, [companyId]),
+    ]);
+    res.json({
+      pivot:        pivot.rows,
+      totalToday:   parseFloat(totDay.rows[0].total),
+      totalWeek:    parseFloat(totWeek.rows[0].total),
+      totalMonth:   parseFloat(totMonth.rows[0].total),
+    });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -3477,6 +3736,9 @@ app.post('/api/employee/order', employeeAuth, async (req, res) => {
       if (!dRes.rows.length) return res.status(404).json({ error: 'Boisson indisponible' });
       drinkPrice = parseFloat(dRes.rows[0].price) || 0;
     }
+    // ── Calcul reste-à-payer AVANT insertion ──────────────────────
+    const subsidy = await calcSubsidyApplied(pool, req.user.companyId, req.user.id, foodPrice, drinkPrice);
+
     const r = await pool.query(
       `INSERT INTO orders (company_id,restaurant_id,user_id,menu_id,drink_menu_id,order_type,order_date,drink_preference,notes,price,drink_price)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
@@ -3484,27 +3746,24 @@ app.post('/api/employee/order', employeeAuth, async (req, res) => {
        todayStr(), drinkPreference||null, notes||null, foodPrice, drinkPrice]
     );
     if (drinkPreference) await pool.query('UPDATE users SET drink_preference=$1 WHERE id=$2', [drinkPreference, req.user.id]);
-    // Tracking subvention si active
+    // ── Tracking enveloppe unique ──────────────────────────────
     try {
       const sub = await pool.query('SELECT * FROM company_subsidies WHERE company_id=$1 AND active=true', [req.user.companyId]);
       if (sub.rows.length) {
-        const cfg = sub.rows[0];
-        const now = new Date();
-        const periodKey = cfg.period_type === 'monthly'
-          ? `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
-          : now.toISOString().slice(0,10);
-        const menuPrice = parseFloat(menu.rows[0].price) || 0;
-        const isFood = !['boisson'].includes(menu.rows[0].category);
-        const foodUsed = isFood ? menuPrice : 0;
-        const drinkUsed = !isFood ? menuPrice : 0;
-        await pool.query(
-          `INSERT INTO subsidy_usage (company_id, user_id, period_key, used_food, used_drink)
-           VALUES ($1,$2,$3,$4,$5)
-           ON CONFLICT (company_id, user_id, period_key) DO UPDATE SET
-             used_food = subsidy_usage.used_food + $4,
-             used_drink = subsidy_usage.used_drink + $5`,
-          [req.user.companyId, req.user.id, periodKey, foodUsed, drinkUsed]
+        const cfg       = sub.rows[0];
+        const envelope  = parseFloat(cfg.amount || cfg.food_amount || 0);
+        const inclDrink = cfg.includes_drink || false;
+        const key       = getPeriodKey(cfg.period_type);
+        const eligible  = foodPrice + (inclDrink ? drinkPrice : 0);
+        if (eligible > 0) await adjustSubsidyUsage(pool, req.user.companyId, req.user.id, key, eligible);
+        const bal = await pool.query(
+          'SELECT used_food FROM subsidy_usage WHERE company_id=$1 AND user_id=$2 AND period_key=$3',
+          [req.user.companyId, req.user.id, key]
         );
+        const usedNow = parseFloat(bal.rows[0]?.used_food || 0);
+        if (envelope > 0 && usedNow >= envelope)
+          createNotification('employee', req.user.id, '⚠️ Allocation épuisée',
+            `Votre allocation de ${fmtP(envelope)} FCFA est entièrement utilisée pour cette période.`, 'subsidy', {}).catch(()=>{});
       }
     } catch(subErr) { console.error('subsidy tracking error:', subErr.message); }
     const menuData = await pool.query('SELECT name FROM menus WHERE id=$1', [menuId]);
@@ -3532,7 +3791,15 @@ app.post('/api/employee/order', employeeAuth, async (req, res) => {
         </div>`
       ).catch(err => console.error('Email commande erreur:', err));
     } catch(e) {}
-    res.status(201).json(r.rows[0]);
+    res.status(201).json({
+      ...r.rows[0],
+      subsidy_covered:   subsidy.totalCovered   || 0,
+      subsidy_to_pay:    subsidy.totalToPay      || 0,
+      food_covered:      subsidy.foodCovered     || 0,
+      drink_covered:     subsidy.drinkCovered    || 0,
+      food_to_pay:       subsidy.foodToPay       || 0,
+      drink_to_pay:      subsidy.drinkToPay      || 0,
+    });
   } catch (e) {
     if (e.code==='23505') return res.status(400).json({ error: 'Commande déjà existante pour ce restaurant aujourd\'hui' });
     res.status(500).json({ error: e.message });
@@ -3547,21 +3814,50 @@ app.put('/api/employee/order/:id', employeeAuth, async (req, res) => {
     const ex = await pool.query('SELECT * FROM orders WHERE id=$1 AND user_id=$2', [id, req.user.id]);
     if (!ex.rows.length) return res.status(404).json({ error: 'Commande introuvable' });
     if (ex.rows[0].status !== 'pending') return res.status(400).json({ error: 'Impossible de modifier cette commande' });
+
+    const oldFoodPrice  = parseFloat(ex.rows[0].price       || 0);
+    const oldDrinkPrice = parseFloat(ex.rows[0].drink_price  || 0);
+
     let foodPrice = 0, drinkPrice = 0;
-    if (menuId) { const m = await pool.query('SELECT price FROM menus WHERE id=$1', [menuId]); foodPrice = parseFloat(m.rows[0]?.price) || 0; }
-    if (drinkMenuId) { const d = await pool.query('SELECT price FROM menus WHERE id=$1', [drinkMenuId]); drinkPrice = parseFloat(d.rows[0]?.price) || 0; }
+    if (menuId)    { const m = await pool.query('SELECT price FROM menus WHERE id=$1', [menuId]);    foodPrice  = parseFloat(m.rows[0]?.price) || 0; }
+    if (drinkMenuId){ const d = await pool.query('SELECT price FROM menus WHERE id=$1', [drinkMenuId]); drinkPrice = parseFloat(d.rows[0]?.price) || 0; }
+
     await pool.query(
       `UPDATE orders SET menu_id=$1,drink_menu_id=$2,order_type=$3,drink_preference=$4,notes=$5,price=$6,drink_price=$7,updated_at=NOW()
        WHERE id=$8 AND user_id=$9`,
       [menuId||null, drinkMenuId||null, orderType||ex.rows[0].order_type,
        drinkPreference||null, notes||null, foodPrice, drinkPrice, id, req.user.id]
     );
+
+    // ── Ajuster la subvention : rembourser l'ancienne, débiter la nouvelle ──
+    try {
+      const sub = await pool.query('SELECT * FROM company_subsidies WHERE company_id=$1 AND active=true', [req.user.companyId]);
+      if (sub.rows.length) {
+        const cfg2      = sub.rows[0];
+        const inclDrink2= cfg2.includes_drink || false;
+        const key       = getPeriodKey(cfg2.period_type);
+        const oldEligible = oldFoodPrice + (inclDrink2 ? oldDrinkPrice : 0);
+        const newEligible = foodPrice    + (inclDrink2 ? drinkPrice    : 0);
+        if (oldEligible > 0) await adjustSubsidyUsage(pool, req.user.companyId, req.user.id, key, -oldEligible);
+        if (newEligible > 0) await adjustSubsidyUsage(pool, req.user.companyId, req.user.id, key,  newEligible);
+      }
+    } catch(subErr) { console.error('subsidy adjust on update:', subErr.message); }
+
+    // ── Calcul reste-à-payer pour la réponse ──
+    const subsidy = await calcSubsidyApplied(pool, req.user.companyId, req.user.id, foodPrice, drinkPrice);
+
     const menuName = menuId ? (await pool.query('SELECT name FROM menus WHERE id=$1', [menuId])).rows[0]?.name : ex.rows[0].menu_name;
     await pool.query(
       'INSERT INTO order_history (user_id,company_id,employee_id,employee_name,restaurant_name,menu_name,order_date,drink_preference,action) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
       [req.user.id, req.user.companyId, req.user.employeeId, req.user.name, '', menuName, ex.rows[0].order_date, drinkPreference||null, 'updated']
     );
-    res.json({ message: 'Commande mise à jour' });
+    res.json({
+      message: 'Commande mise à jour',
+      subsidy_covered: subsidy.totalCovered || 0,
+      subsidy_to_pay:  subsidy.totalToPay   || 0,
+      food_to_pay:     subsidy.foodToPay    || 0,
+      drink_to_pay:    subsidy.drinkToPay   || 0,
+    });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -3574,6 +3870,20 @@ app.delete('/api/employee/order/:id', employeeAuth, async (req, res) => {
     if (!ex.rows.length) return res.status(404).json({ error: 'Introuvable' });
     if (ex.rows[0].status !== 'pending') return res.status(400).json({ error: 'Impossible de supprimer' });
     await pool.query('DELETE FROM orders WHERE id=$1 AND user_id=$2', [orderId, req.user.id]);
+
+    // ── Rembourser l'allocation si active ──
+    try {
+      const sub = await pool.query('SELECT * FROM company_subsidies WHERE company_id=$1 AND active=true', [req.user.companyId]);
+      if (sub.rows.length) {
+        const key = getPeriodKey(sub.rows[0].period_type);
+        const inclDrinkDel = sub.rows[0].includes_drink || false;
+        const fp = parseFloat(ex.rows[0].price      || 0);
+        const dp = parseFloat(ex.rows[0].drink_price || 0);
+        const eligible = fp + (inclDrinkDel ? dp : 0);
+        if (eligible > 0) await adjustSubsidyUsage(pool, req.user.companyId, req.user.id, key, -eligible);
+      }
+    } catch(e) { console.error('subsidy refund error:', e.message); }
+
     await pool.query('INSERT INTO order_history (user_id,company_id,employee_id,employee_name,restaurant_name,menu_name,order_date,action) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
       [req.user.id, req.user.companyId, req.user.employeeId, req.user.name, ex.rows[0].rest_name, ex.rows[0].menu_name, ex.rows[0].order_date, 'deleted']);
     res.json({ message: 'Supprimée' });

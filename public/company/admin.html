@@ -354,27 +354,79 @@
 
   <!-- ═══ EXPENSES ═══ -->
   <div class="page" id="page-expenses">
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-number" id="expW">—</div><div class="stat-label">Dépenses semaine (FCFA)</div></div>
-      <div class="stat-card"><div class="stat-icon">📆</div><div class="stat-number" id="expM">—</div><div class="stat-label">Dépenses mois (FCFA)</div></div>
+
+    <!-- ── Hero + KPIs ── -->
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:14px;margin-bottom:14px;align-items:stretch">
+
+      <!-- Total du mois — hero -->
+      <div class="card reveal" style="margin:0;background:linear-gradient(135deg,var(--brown) 0%,#4A2010 100%);min-width:220px">
+        <div class="card-body" style="padding:20px 22px">
+          <div style="font-size:11px;color:rgba(255,248,243,.6);font-weight:600;letter-spacing:.6px;margin-bottom:8px">TOTAL CE MOIS</div>
+          <div style="font-size:34px;font-weight:900;color:#FFF8F3;line-height:1;margin-bottom:4px" id="expM">—</div>
+          <div style="font-size:12px;color:rgba(255,248,243,.5)">FCFA dépensés</div>
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);display:flex;gap:16px">
+            <div>
+              <div style="font-size:10px;color:rgba(255,248,243,.5);margin-bottom:2px">SEMAINE</div>
+              <div style="font-size:15px;font-weight:700;color:#FFF8F3" id="expW">—</div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:rgba(255,248,243,.5);margin-bottom:2px">AUJOURD'HUI</div>
+              <div style="font-size:15px;font-weight:700;color:#FFF8F3" id="expToday">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats secondaires + Insights -->
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex:1">
+          <div class="card reveal" style="margin:0">
+            <div class="card-body" style="padding:12px 16px">
+              <div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:5px">MOY. PAR JOUR</div>
+              <div style="font-size:20px;font-weight:800;color:var(--brown)" id="expAvg">—</div>
+              <div style="font-size:10px;color:var(--muted)">FCFA</div>
+            </div>
+          </div>
+          <div class="card reveal" style="margin:0">
+            <div class="card-body" style="padding:12px 16px">
+              <div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:5px">COMMANDES</div>
+              <div style="font-size:20px;font-weight:800;color:var(--brown)" id="expTotalCmds">—</div>
+              <div style="font-size:10px;color:var(--muted)">ce mois</div>
+            </div>
+          </div>
+          <div class="card reveal" style="margin:0">
+            <div class="card-body" style="padding:12px 16px">
+              <div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:5px">RESTAURANTS</div>
+              <div style="font-size:20px;font-weight:800;color:var(--brown)" id="expNbRests">—</div>
+              <div style="font-size:10px;color:var(--muted)">actifs ce mois</div>
+            </div>
+          </div>
+        </div>
+        <!-- Insights automatiques -->
+        <div id="expInsights" style="background:#FFF8F3;border:1px solid #FDDCBB;border-radius:10px;padding:10px 14px;font-size:12px;color:var(--brown);display:flex;gap:16px;flex-wrap:wrap;align-items:center;min-height:40px"></div>
+      </div>
     </div>
+
+    <!-- ── Tableau pivot ── -->
     <div class="card reveal">
       <div class="card-header">
-        <span class="card-title">Évolution des dépenses</span>
-        <select id="expPeriod" class="form-control" style="width:160px;font-size:13px" onchange="loadExpenses()">
-          <option value="week">Cette semaine</option>
-          <option value="month">Ce mois</option>
-          <option value="quarter">Ce trimestre</option>
-        </select>
+        <div>
+          <span class="card-title">Répartition des dépenses</span>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Par jour et par restaurant — intensité de couleur = montant</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button id="expBtnWeek"    onclick="setExpPeriod('week')"    class="btn btn-primary btn-sm" style="font-size:11px">Semaine</button>
+          <button id="expBtnMonth"   onclick="setExpPeriod('month')"   class="btn btn-outline btn-sm" style="font-size:11px">Mois</button>
+          <button id="expBtnQuarter" onclick="setExpPeriod('quarter')" class="btn btn-outline btn-sm" style="font-size:11px">Trimestre</button>
+        </div>
       </div>
-      <div class="card-body">
-        <div class="bar-chart" id="expChart" style="height:150px"></div>
-        <div class="table-wrap scroll-box" style="margin-top:18px">
-          <table><thead><tr><th>Période</th><th>Commandes</th><th>Montant total</th></tr></thead>
-          <tbody id="expTable"></tbody></table>
+      <div class="card-body" style="padding:0">
+        <div id="expPivotWrap" style="overflow-x:auto">
+          <div style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Chargement…</div>
         </div>
       </div>
     </div>
+
   </div>
 
   <!-- ═══ HISTORY ═══ -->
@@ -500,32 +552,50 @@
               Activer les subventions
             </label>
           </div>
+          <!-- Note contextuelle -->
+          <div style="font-size:12px;color:var(--muted);background:#F9F9F9;border-radius:8px;padding:10px 12px;margin-bottom:14px;line-height:1.7">
+            💧 <strong>Eau</strong> et ☕ <strong>Lipton / Nescafé / sucre</strong> sont offerts à tous les employés — ils ne sont jamais décomptés de l'allocation.
+          </div>
           <div id="subsidyFields" style="display:none">
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
               <div class="form-group" style="margin-bottom:0">
-                <label style="font-size:12px">Allocation nourriture (FCFA)</label>
-                <input type="number" class="form-control" id="subsidyFood" min="0" step="100" placeholder="Ex: 2000">
-              </div>
-              <div class="form-group" style="margin-bottom:0">
-                <label style="font-size:12px">Allocation boissons (FCFA)</label>
-                <input type="number" class="form-control" id="subsidyDrink" min="0" step="100" placeholder="Ex: 500">
+                <label style="font-size:12px">Allocation repas par employé (FCFA)</label>
+                <input type="number" class="form-control" id="subsidyAmount" min="0" step="100" placeholder="Ex: 2000">
               </div>
               <div class="form-group" style="margin-bottom:0">
                 <label style="font-size:12px">Période</label>
                 <select class="form-control" id="subsidyPeriod">
                   <option value="daily">Par jour</option>
+                  <option value="weekly">Par semaine</option>
                   <option value="monthly">Par mois</option>
                 </select>
+              </div>
+            </div>
+            <!-- Option inclusion boisson -->
+            <div style="padding:12px 14px;background:#FFF8F3;border:1px solid #FDDCBB;border-radius:10px;margin-bottom:14px">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--brown)">
+                <input type="checkbox" id="subsidyIncludesDrink" style="width:16px;height:16px;accent-color:var(--orange)">
+                Inclure les boissons dans l'allocation
+                <span style="font-size:11px;font-weight:400;color:var(--muted)">(jus, sodas, etc.)</span>
+              </label>
+              <div style="font-size:11px;color:var(--muted);margin-top:5px;margin-left:26px">
+                Si coché, la boisson commandée est décomptée de la même enveloppe que le repas.
+                Si décoché, les boissons sont à la charge de l'employé.
               </div>
             </div>
             <div id="subsidyInfoBox" style="padding:10px 14px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;font-size:12.5px;color:#1D4ED8;margin-bottom:14px;line-height:1.6;display:none"></div>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn btn-primary" onclick="saveSubsidy()">💾 Enregistrer</button>
-            <button class="btn btn-outline" onclick="loadSubsidyStats()" id="subsidyStatsBtn" style="display:none">📊 Voir l'utilisation</button>
+            <button class="btn btn-outline" onclick="loadSubsidyStats()" id="subsidyStatsBtn" style="display:none">📊 Utilisation</button>
           </div>
           <div id="subsidyStatsPanel" style="margin-top:16px;display:none">
-            <div style="font-weight:600;font-size:13px;color:var(--brown);margin-bottom:8px">Utilisation de la période en cours</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+              <span style="font-weight:600;font-size:13px;color:var(--brown)">Utilisation</span>
+              <select class="form-control" id="subsidyPeriodFilter" style="width:160px;font-size:12px" onchange="loadSubsidyStats(this.value)">
+                <option value="">Période courante</option>
+              </select>
+            </div>
             <div id="subsidyStatsBody"></div>
           </div>
         </div>
@@ -1149,7 +1219,7 @@ window.restoreCoTrashItem = restoreCoTrashItem;
 window.purgeCoTrashItem = purgeCoTrashItem;
 window.emptyCoTrash = emptyCoTrash;
 
-// ── SUBVENTIONS ───────────────────────────────────────────────────────
+// ── SUBVENTIONS — enveloppe unique ───────────────────────────────
 let _subsidyActive = false;
 
 function toggleSubsidy() {
@@ -1161,77 +1231,99 @@ function updateSubsidyUI(active) {
   _subsidyActive = active;
   const bg  = document.getElementById('subsidyToggleBg');
   const dot = document.getElementById('subsidyToggleDot');
-  const fields = document.getElementById('subsidyFields');
-  const badge  = document.getElementById('subsidyActiveBadge');
+  const fields   = document.getElementById('subsidyFields');
+  const badge    = document.getElementById('subsidyActiveBadge');
   const statsBtn = document.getElementById('subsidyStatsBtn');
   if (bg)  bg.style.background  = active ? 'var(--orange)' : '#D1D5DB';
   if (dot) dot.style.transform  = active ? 'translateX(20px)' : 'none';
-  if (fields) fields.style.display = active ? '' : 'none';
-  if (badge)  badge.style.display  = active ? '' : 'none';
+  if (fields)   fields.style.display   = active ? '' : 'none';
+  if (badge)    badge.style.display    = active ? '' : 'none';
   if (statsBtn) statsBtn.style.display = active ? '' : 'none';
   updateSubsidyInfo();
 }
 
 function updateSubsidyInfo() {
-  const box = document.getElementById('subsidyInfoBox');
+  const box    = document.getElementById('subsidyInfoBox');
   if (!box) return;
-  const food   = parseFloat(document.getElementById('subsidyFood')?.value) || 0;
-  const drink  = parseFloat(document.getElementById('subsidyDrink')?.value) || 0;
-  const period = document.getElementById('subsidyPeriod')?.value;
-  if (!_subsidyActive || (!food && !drink)) { box.style.display = 'none'; return; }
-  const periodLabel = period === 'monthly' ? 'par mois' : 'par jour';
-  const parts = [];
-  if (food)  parts.push(`${fmtCFA(food)} FCFA nourriture`);
-  if (drink) parts.push(`${fmtCFA(drink)} FCFA boissons`);
-  box.innerHTML = `Chaque employé bénéficie de <strong>${parts.join(' + ')}</strong> ${periodLabel}. Au-delà de cette allocation, l'excédent reste à sa charge.`;
+  const amount  = parseFloat(document.getElementById('subsidyAmount')?.value) || 0;
+  const inclDrk = document.getElementById('subsidyIncludesDrink')?.checked;
+  const period  = document.getElementById('subsidyPeriod')?.value;
+  if (!_subsidyActive || !amount) { box.style.display = 'none'; return; }
+  const pLabel  = { daily:"par jour", weekly:"par semaine", monthly:"par mois" }[period] || "par jour";
+  const drinkTxt= inclDrk ? ' (boissons incluses 🥤)' : ' — boissons non incluses';
+  box.innerHTML = `Chaque employé bénéficie de <strong>${fmtCFA(amount)} FCFA ${pLabel}</strong>${drinkTxt}. Au-delà de cette enveloppe, le surplus reste à sa charge.`;
   box.style.display = '';
 }
 
 async function loadSubsidySettings() {
   try {
     const data = await apiFetch('/api/admin/subsidies', {}, token);
-    document.getElementById('subsidyFood').value = data.food_amount || 0;
-    document.getElementById('subsidyDrink').value = data.drink_amount || 0;
+    const amt = parseFloat(data.amount || data.food_amount || 0);
+    document.getElementById('subsidyAmount').value = amt;
     document.getElementById('subsidyPeriod').value = data.period_type || 'daily';
+    const cb = document.getElementById('subsidyIncludesDrink');
+    if (cb) cb.checked = data.includes_drink || false;
     updateSubsidyUI(data.active);
   } catch(e) {}
 }
 
 async function saveSubsidy() {
-  const food   = parseFloat(document.getElementById('subsidyFood').value) || 0;
-  const drink  = parseFloat(document.getElementById('subsidyDrink').value) || 0;
-  const period = document.getElementById('subsidyPeriod').value;
+  const amount    = parseFloat(document.getElementById('subsidyAmount').value) || 0;
+  const inclDrink = document.getElementById('subsidyIncludesDrink')?.checked || false;
+  const period    = document.getElementById('subsidyPeriod').value;
   try {
-    await apiFetch('/api/admin/subsidies', { method: 'PUT', body: { food_amount: food, drink_amount: drink, period_type: period, active: _subsidyActive } }, token);
-    toast('Subventions enregistrées', 'success');
+    await apiFetch('/api/admin/subsidies', { method: 'PUT', body: { amount, includes_drink: inclDrink, period_type: period, active: _subsidyActive } }, token);
+    toast('Allocation enregistrée', 'success');
     updateSubsidyInfo();
   } catch(e) { toast(e.message, 'error'); }
 }
 
-async function loadSubsidyStats() {
+async function loadSubsidyStats(periodKey) {
   const panel = document.getElementById('subsidyStatsPanel');
   const body  = document.getElementById('subsidyStatsBody');
   if (!panel || !body) return;
   try {
-    const data = await apiFetch('/api/admin/subsidy-stats', {}, token);
-    if (!data.active) { body.innerHTML = '<p style="color:var(--muted);font-size:13px">Subventions inactives.</p>'; panel.style.display = ''; return; }
-    const cfg = data.config;
+    const qs   = periodKey ? `?period_key=${periodKey}` : '';
+    const data = await apiFetch('/api/admin/subsidy-stats' + qs, {}, token);
+    // Peupler le filtre historique
+    const sel = document.getElementById('subsidyPeriodFilter');
+    if (sel && data.periods?.length) {
+      sel.innerHTML = `<option value="">Période courante (${data.current_key})</option>`
+        + data.periods.map(p => `<option value="${p}"${p === data.period_key?' selected':''}>${p}</option>`).join('');
+    }
+    if (!data.active && !data.usage?.length) {
+      body.innerHTML = '<p style="color:var(--muted);font-size:13px">Aucune subvention configurée.</p>';
+      panel.style.display = ''; return;
+    }
+    const cfg  = data.config;
     const fmtF = n => fmtCFA(n||0);
+    const isCurrentPeriod = !periodKey || periodKey === data.current_key;
     if (!data.usage.length) {
-      body.innerHTML = `<p style="color:var(--muted);font-size:13px">Aucune utilisation enregistrée pour la période <strong>${data.period_key}</strong>.</p>`;
+      body.innerHTML = `<p style="color:var(--muted);font-size:13px">Aucune utilisation pour <strong>${data.period_key}</strong>.</p>`;
     } else {
+      const envelope = parseFloat(cfg.amount || cfg.food_amount || 0);
       body.innerHTML = `
-        <div class="table-wrap" style="margin-top:8px">
+        <div class="table-wrap">
           <table>
-            <thead><tr><th>Employé</th><th>Nourriture utilisée</th><th>Boissons utilisées</th><th>Restant nourr.</th><th>Restant bois.</th></tr></thead>
-            <tbody>${data.usage.map(u => `
-              <tr>
+            <thead><tr><th>Employé</th><th>Utilisé</th><th>Restant</th><th>%</th>${isCurrentPeriod?'<th>Action</th>':''}</tr></thead>
+            <tbody>${data.usage.map(u => {
+              const used = parseFloat(u.used || u.used_food || 0);
+              const rem  = Math.max(0, envelope - used);
+              const pct  = envelope > 0 ? Math.min(100, Math.round(used / envelope * 100)) : 0;
+              const cls  = used >= envelope ? ' over' : rem < envelope * 0.2 ? ' warning' : '';
+              return `<tr>
                 <td>${u.last_name} ${u.first_name}</td>
-                <td>${fmtF(u.used_food)} FCFA</td>
-                <td>${fmtF(u.used_drink)} FCFA</td>
-                <td><span class="subsidy-badge${parseFloat(u.used_food)>=parseFloat(cfg.food_amount)?' over':parseFloat(cfg.food_amount)-parseFloat(u.used_food)<cfg.food_amount*0.2?' warning':''}">${fmtF(Math.max(0,parseFloat(cfg.food_amount)-parseFloat(u.used_food)))} FCFA</span></td>
-                <td><span class="subsidy-badge${parseFloat(u.used_drink)>=parseFloat(cfg.drink_amount)?' over':parseFloat(cfg.drink_amount)-parseFloat(u.used_drink)<cfg.drink_amount*0.2?' warning':''}">${fmtF(Math.max(0,parseFloat(cfg.drink_amount)-parseFloat(u.used_drink)))} FCFA</span></td>
-              </tr>`).join('')}
+                <td>${fmtF(used)} FCFA</td>
+                <td><span class="subsidy-badge${cls}">${fmtF(rem)} FCFA</span></td>
+                <td>
+                  <div style="background:#e5e7eb;border-radius:20px;height:6px;width:60px;overflow:hidden;display:inline-block;vertical-align:middle">
+                    <div style="height:6px;border-radius:20px;width:${pct}%;background:${pct>=100?'#dc2626':pct>=80?'#f59e0b':'var(--orange)'}"></div>
+                  </div>
+                  <span style="font-size:10px;color:var(--muted);margin-left:4px">${pct}%</span>
+                </td>
+                ${isCurrentPeriod?`<td><button class="btn btn-outline btn-sm" style="font-size:10px;padding:2px 8px;color:#dc2626;border-color:#fca5a5" onclick="resetSubsidyEmployee(${u.user_id},'${u.last_name} ${u.first_name}')">🔄 Reset</button></td>`:''}
+              </tr>`;
+            }).join('')}
             </tbody>
           </table>
         </div>`;
@@ -1240,10 +1332,20 @@ async function loadSubsidyStats() {
   } catch(e) { toast(e.message, 'error'); }
 }
 
+async function resetSubsidyEmployee(userId, name) {
+  if (!confirm(`Réinitialiser l'allocation de ${name} pour la période courante ?`)) return;
+  try {
+    await apiFetch(`/api/admin/subsidy-reset/${userId}`, { method: 'DELETE' }, token);
+    toast(`Allocation de ${name} réinitialisée`, 'success');
+    loadSubsidyStats();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
 window.toggleSubsidy = toggleSubsidy;
 window.saveSubsidy = saveSubsidy;
 window.loadSubsidyStats = loadSubsidyStats;
 window.updateSubsidyInfo = updateSubsidyInfo;
+window.resetSubsidyEmployee = resetSubsidyEmployee;
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -1858,41 +1960,185 @@ async function deleteEmployee(id, name) {
 }
 
 // ── Expenses ──────────────────────────────────────────
+let _expPeriod = 'week';
+
+function setExpPeriod(period) {
+  _expPeriod = period;
+  ['week','month','quarter'].forEach(p => {
+    const btn = document.getElementById('expBtn'+p.charAt(0).toUpperCase()+p.slice(1));
+    if (!btn) return;
+    btn.className   = p===period ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
+    btn.style.fontSize = '11px';
+  });
+  loadExpenses();
+}
+
+function _expFmtDate(str, period) {
+  if (!str) return '—';
+  const ds = String(str).replace(' ','T').split('T')[0];
+  const d  = new Date(ds + 'T12:00:00');
+  if (period === 'quarter') {
+    // Semaine du lundi
+    return 'Sem. ' + d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'});
+  }
+  // Afficher JJ MMM pour semaine/mois
+  return d.toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'short'});
+}
+
 async function loadExpenses() {
-  const period = document.getElementById('expPeriod').value || 'week';
   try {
-    const r = await apiFetch(`/api/admin/expenses?period=${period}`, {}, token);
-    // Week total quick calc
-    if (period === 'week') {
-      document.getElementById('expW').textContent = fmtCFA(r.totalMonth||0);
-    } else if (period === 'month') {
-      document.getElementById('expM').textContent = fmtCFA(r.totalMonth||0);
+    const r = await apiFetch(`/api/admin/expenses?period=${_expPeriod}`, {}, token);
+
+    // ── KPIs ──────────────────────────────────────
+    document.getElementById('expToday').textContent = fmtCFA(r.totalToday || 0);
+    document.getElementById('expW').textContent     = fmtCFA(r.totalWeek  || 0);
+    document.getElementById('expM').textContent     = fmtCFA(r.totalMonth || 0);
+
+    // ── Tableau pivot ─────────────────────────────
+    const rows = (r && r.pivot) ? r.pivot : [];
+    const wrap = document.getElementById('expPivotWrap');
+
+    if (!rows.length) {
+      wrap.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:60px">Aucune dépense sur cette période.</div>';
+      document.getElementById('expTotalCmds').textContent = '0';
+      document.getElementById('expAvg').textContent = '0';
+      document.getElementById('expNbRests').textContent = '0';
+      document.getElementById('expInsights').innerHTML = '';
+      return;
     }
-    // Chart
-    const series = r.series || [];
-    const chart = document.getElementById('expChart');
-    if (!series.length) { chart.innerHTML = '<div style="color:var(--muted);font-size:13px;width:100%;text-align:center">Aucune donnée</div>'; }
-    else {
-      const max = Math.max(...series.map(s=>parseFloat(s.total))) || 1;
-      chart.innerHTML = series.map(s=>`
-        <div class="bar-col" title="${fmtCFA(s.total)} FCFA">
-          <div class="bar-fill" style="height:${Math.max(4,(parseFloat(s.total)/max)*140)}px"></div>
-          <div class="bar-label">${s.period.slice(5)}</div>
-        </div>
-      `).join('');
-    }
-    // Table
-    document.getElementById('expTable').innerHTML = series.map(s=>`
-      <tr>
-        <td>${s.period}</td>
-        <td>${s.orders}</td>
-        <td style="font-weight:600;color:var(--orange)">${fmtCFA(s.total)} FCFA</td>
-      </tr>
-    `).join('') || '<tr><td colspan="3" class="empty-state">Aucune donnée</td></tr>';
-    // Also load other stats
-    apiFetch('/api/admin/expenses?period=week', {}, token).then(rW=>{ document.getElementById('expW').textContent = fmtCFA(rW.totalMonth||0); }).catch(()=>{});
-    apiFetch('/api/admin/expenses?period=month', {}, token).then(rM=>{ document.getElementById('expM').textContent = fmtCFA(rM.totalMonth||0); }).catch(()=>{});
-  } catch(e) { toast('Erreur dépenses','error'); }
+
+    // ── Construire la structure pivot ─────────────
+    const daysSet  = [...new Set(rows.map(r => r.day))].sort();
+    const restsSet = [...new Set(rows.map(r => r.restaurant))].sort();
+    const idx = {};
+    let grandTotal = 0, grandCmds = 0;
+    rows.forEach(row => {
+      if (!idx[row.day]) idx[row.day] = {};
+      idx[row.day][row.restaurant] = { total: parseFloat(row.total), orders: parseInt(row.orders) };
+      grandTotal += parseFloat(row.total);
+      grandCmds  += parseInt(row.orders);
+    });
+
+    // Totaux lignes / colonnes
+    const restTotals = {};
+    restsSet.forEach(rest => { restTotals[rest] = daysSet.reduce((s,d) => s+(idx[d]?.[rest]?.total||0),0); });
+    const dayTotals  = {};
+    daysSet.forEach(day => { dayTotals[day] = restsSet.reduce((s,rest) => s+(idx[day]?.[rest]?.total||0),0); });
+
+    // Valeur max toutes cellules → heatmap
+    const cellMax = Math.max(...rows.map(r => parseFloat(r.total)), 1);
+    const daysWithOrders = daysSet.filter(d => dayTotals[d] > 0).length || 1;
+
+    // Mise à jour KPIs
+    document.getElementById('expTotalCmds').textContent = grandCmds;
+    document.getElementById('expAvg').textContent       = fmtCFA(Math.round(grandTotal / daysWithOrders));
+    document.getElementById('expNbRests').textContent   = restsSet.length;
+
+    // ── Insights automatiques ──────────────────────
+    const topRest    = restsSet.reduce((a,b) => restTotals[a]>=restTotals[b]?a:b, restsSet[0]);
+    const topRestPct = grandTotal > 0 ? Math.round(restTotals[topRest]/grandTotal*100) : 0;
+    const peakDay    = daysSet.reduce((a,b) => dayTotals[a]>=dayTotals[b]?a:b, daysSet[0]);
+    const emptyDays  = daysSet.filter(d => dayTotals[d] === 0).length;
+    const fmtDShort  = ds => new Date(ds+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'short'});
+    const insights   = [];
+    if (topRestPct > 0) insights.push(`🏆 <strong>${topRest}</strong> représente <strong>${topRestPct}%</strong> des dépenses`);
+    if (peakDay) insights.push(`📈 Jour le plus chargé : <strong>${fmtDShort(peakDay)}</strong> — ${fmtCFA(dayTotals[peakDay])} FCFA`);
+    if (emptyDays > 0) insights.push(`⚠️ <strong>${emptyDays}</strong> jour${emptyDays>1?'s':''} sans commande`);
+    document.getElementById('expInsights').innerHTML = insights.length
+      ? insights.map(i=>`<span style="padding:3px 0">${i}</span>`).join('<span style="color:#FDDCBB">·</span>')
+      : '<span style="color:var(--muted)">Aucune donnée à analyser.</span>';
+
+    // ── Fonction couleur heatmap ──────────────────
+    const heatColor = (val) => {
+      if (!val) return 'transparent';
+      const pct = val / cellMax;
+      const r   = Math.round(232 + (255-232)*(1-pct));
+      const g   = Math.round(90  + (255-90 )*(1-pct));
+      const b   = Math.round(42  + (255-42 )*(1-pct));
+      return `rgba(${r},${g},${b},${0.15 + pct*0.75})`;
+    };
+
+    const fmtD = ds => {
+      const d = new Date(ds+'T12:00:00');
+      return `<div style="font-weight:700">${d.toLocaleDateString('fr-FR',{weekday:'short'}).toUpperCase()}</div>
+              <div style="font-weight:400;font-size:10px;color:var(--muted)">${d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})}</div>`;
+    };
+
+    // ── Rendu tableau ────────────────────────────
+    wrap.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;min-width:${140 + restsSet.length * 160}px">
+        <thead>
+          <tr style="background:var(--brown);position:sticky;top:0;z-index:2">
+            <th style="padding:12px 16px;text-align:left;color:#FFF8F3;font-size:11px;font-weight:700;letter-spacing:.5px;white-space:nowrap;min-width:120px">DATE</th>
+            ${restsSet.map(rest => `
+              <th style="padding:12px 16px;font-size:11px;font-weight:700;letter-spacing:.5px;color:#FFF8F3;white-space:nowrap;min-width:160px">
+                <div>${rest}</div>
+                <div style="font-size:10px;font-weight:400;color:rgba(255,248,243,.5);margin-top:2px">${fmtCFA(restTotals[rest])} FCFA total</div>
+              </th>`).join('')}
+            ${restsSet.length > 1 ? `<th style="padding:12px 16px;text-align:right;font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--orange);white-space:nowrap;background:#1a0d07;min-width:130px">TOTAL JOUR</th>` : ''}
+          </tr>
+        </thead>
+        <tbody>
+          ${daysSet.map((day, i) => {
+            const dayTotal = dayTotals[day];
+            const dayOrds  = restsSet.reduce((s,rest) => s+(idx[day]?.[rest]?.orders||0),0);
+            const isEmpty  = dayTotal === 0;
+            return `
+              <tr style="border-bottom:1px solid var(--border);${isEmpty?'opacity:.5':''}">
+                <td style="padding:12px 16px;white-space:nowrap;background:${i%2===0?'white':'#FFF8F3'}">
+                  ${fmtD(day)}
+                </td>
+                ${restsSet.map(rest => {
+                  const cell = idx[day]?.[rest];
+                  const val  = cell?.total || 0;
+                  const pct  = grandTotal > 0 ? Math.round(val/grandTotal*100) : 0;
+                  const barW = cellMax > 0 ? Math.round(val/cellMax*100) : 0;
+                  return `<td style="padding:10px 16px;background:${heatColor(val)}">
+                    ${cell ? `
+                      <div style="font-size:13px;font-weight:700;color:var(--brown)">${fmtCFA(val)} <span style="font-size:10px;font-weight:400;color:var(--muted)">FCFA</span></div>
+                      <div style="background:rgba(0,0,0,.08);border-radius:3px;height:3px;margin:5px 0;overflow:hidden">
+                        <div style="height:3px;border-radius:3px;background:var(--orange);width:${barW}%"></div>
+                      </div>
+                      <div style="font-size:10px;color:var(--muted)">${cell.orders} cmd · ${pct}% du total</div>`
+                    : `<div style="color:#d1d5db;font-size:13px;text-align:center">—</div>`}
+                  </td>`;
+                }).join('')}
+                ${restsSet.length > 1 ? `
+                  <td style="padding:12px 16px;text-align:right;background:${isEmpty?'#f9fafb':'#FFF0EA'}">
+                    ${isEmpty
+                      ? `<span style="color:#d1d5db;font-size:12px">—</span>`
+                      : `<div style="font-size:13px;font-weight:800;color:var(--brown)">${fmtCFA(dayTotal)}</div>
+                         <div style="font-size:10px;color:var(--muted)">${dayOrds} commande${dayOrds>1?'s':''}</div>`}
+                  </td>` : ''}
+              </tr>`;
+          }).join('')}
+        </tbody>
+        <tfoot>
+          <tr style="background:linear-gradient(135deg,#FFF0EA,#FFE4CC);border-top:2px solid var(--orange)">
+            <td style="padding:12px 16px">
+              <div style="font-size:12px;font-weight:800;color:var(--brown)">TOTAL</div>
+              <div style="font-size:10px;color:var(--muted)">${grandCmds} commandes</div>
+            </td>
+            ${restsSet.map(rest => {
+              const pct = grandTotal > 0 ? Math.round(restTotals[rest]/grandTotal*100) : 0;
+              return `<td style="padding:12px 16px">
+                <div style="font-size:14px;font-weight:800;color:var(--orange)">${fmtCFA(restTotals[rest])}</div>
+                <div style="background:rgba(0,0,0,.08);border-radius:3px;height:3px;margin:5px 0;overflow:hidden">
+                  <div style="height:3px;border-radius:3px;background:var(--orange);width:${pct}%"></div>
+                </div>
+                <div style="font-size:10px;color:var(--muted)">${pct}% du total</div>
+              </td>`;
+            }).join('')}
+            ${restsSet.length > 1 ? `
+              <td style="padding:12px 16px;text-align:right">
+                <div style="font-size:16px;font-weight:900;color:var(--orange)">${fmtCFA(grandTotal)}</div>
+                <div style="font-size:10px;color:var(--muted)">FCFA</div>
+              </td>` : ''}
+          </tr>
+        </tfoot>
+      </table>`;
+
+  } catch(e) { toast('Erreur dépenses : ' + e.message, 'error'); }
 }
 
 // ── History ───────────────────────────────────────────
@@ -2901,6 +3147,7 @@ window.confirmWeeklyInv = confirmWeeklyInv;
   window.deaffiliateRest = deaffiliateRest;
   window.autoGenerateId = autoGenerateId;
   window.loadExpenses = loadExpenses;
+  window.setExpPeriod = setExpPeriod;
   window.deleteEmployee = deleteEmployee;
   window.previewValidate = previewValidate;
   window.validateOrders = validateOrders;

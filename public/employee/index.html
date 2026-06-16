@@ -190,6 +190,24 @@
       </div>
     </div>
 
+    <!-- ── Carte allocation — enveloppe unique ── -->
+    <div id="subsidyCard" style="display:none;margin-bottom:14px;background:linear-gradient(135deg,#FFF8F3,#FFF0EA);border:1px solid #FDDCBB;border-radius:14px;padding:14px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:11px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.5px">
+          🎁 Mon allocation <span id="subPeriodLabel"></span>
+        </span>
+        <span id="subInclDrinkBadge" style="display:none;font-size:10px;background:#DBEAFE;color:#1e40af;padding:2px 8px;border-radius:10px;font-weight:600">🥤 boisson incluse</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+        <span style="color:var(--brown);font-weight:600">Utilisé / Enveloppe</span>
+        <span id="subAmountText" style="color:var(--brown);font-weight:700"></span>
+      </div>
+      <div style="background:#e5e7eb;border-radius:20px;height:10px;overflow:hidden">
+        <div id="subBar" style="height:10px;border-radius:20px;background:var(--orange);transition:width .4s;width:0%"></div>
+      </div>
+      <div id="subRemainingText" style="font-size:11px;color:var(--muted);margin-top:5px;text-align:right"></div>
+    </div>
+
     <!-- ── Bannière commande du jour ── -->
     <div id="todayBanner" style="display:none" class="order-banner">
       <div style="flex:1;min-width:0">
@@ -279,6 +297,17 @@
               <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">🥤 Boisson</div>
               <div style="font-size:14px;font-weight:700;color:#1e40af" id="previewDrinkName">—</div>
               <div style="font-size:12px;color:#3b82f6" id="previewDrinkPrice"></div>
+            </div>
+          </div>
+          <!-- Breakdown subvention (visible si allocation active) -->
+          <div id="subsidyBreakdown" style="display:none;background:#F0FDF4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="color:#166534;font-weight:600">🎁 Pris en charge par l'entreprise</span>
+              <span id="subsidyCovered" style="color:#16a34a;font-weight:700"></span>
+            </div>
+            <div id="surplusRow" style="display:none;display:flex;justify-content:space-between">
+              <span style="color:#dc2626;font-weight:600">⚠️ Votre part (surplus)</span>
+              <span id="subsidySurplus" style="color:#dc2626;font-weight:700"></span>
             </div>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
@@ -645,7 +674,38 @@ function goToRestaurantMenu(restId, restName, highlightMenuId) {
  * 2. Lance le chargement de la liste des restaurants.
  * Appel API : GET /api/employee/order
  */
+let _subsidyBalance = null; // Cache local de l'allocation
+
+async function loadSubsidyBalance() {
+  try {
+    const b = await apiFetch('/api/employee/subsidy-balance', {}, empToken);
+    _subsidyBalance = b.active ? b : null;
+    const card = document.getElementById('subsidyCard');
+    if (!b.active || !b.amount) { if (card) card.style.display = 'none'; return; }
+    if (card) card.style.display = '';
+    document.getElementById('subPeriodLabel').textContent = b.period_label || '';
+    // Badge boisson incluse
+    const badge = document.getElementById('subInclDrinkBadge');
+    if (badge) badge.style.display = b.includes_drink ? '' : 'none';
+    // Texte montants
+    document.getElementById('subAmountText').textContent =
+      `${fmtCFA(b.used)} / ${fmtCFA(b.amount)} FCFA`;
+    // Barre de progression
+    const pct = Math.min(100, b.pct || 0);
+    const bar = document.getElementById('subBar');
+    bar.style.width      = pct + '%';
+    bar.style.background = pct >= 100 ? '#dc2626' : pct >= 80 ? '#f59e0b' : 'var(--orange)';
+    // Restant
+    const remEl = document.getElementById('subRemainingText');
+    if (pct >= 100)
+      remEl.textContent = '⚠️ Allocation épuisée — surplus à votre charge';
+    else
+      remEl.textContent = `Il vous reste ${fmtCFA(b.remaining)} FCFA`;
+  } catch(e) { _subsidyBalance = null; }
+}
+
 async function initMealPage() {
+  await loadSubsidyBalance();
   try {
     const orders = await apiFetch('/api/employee/order', {}, empToken);
     const banner = document.getElementById('todayBanner');
@@ -838,9 +898,43 @@ function _refreshPreview() {
   const foodOK  = !showFood  || selectedMenuId;
   const drinkOK = !showDrink || selectedDrinkId;
   if (foodOK || drinkOK) document.getElementById('selectedMenuPreview').style.display = 'block';
-  const total = (selectedMenuData?.price||0) + (selectedDrinkData?.price||0);
+
+  const foodPrice  = selectedMenuData?.price  || 0;
+  const drinkPrice = selectedDrinkData?.price || 0;
+  const total      = foodPrice + drinkPrice;
+
   const tEl = document.getElementById('previewTotal');
   if (tEl && total > 0) tEl.textContent = `Total : ${fmtCFA(total)} FCFA`;
+
+  // ── Calcul subvention local (avec le cache _subsidyBalance) ──
+  const bd = document.getElementById('subsidyBreakdown');
+  if (bd && _subsidyBalance && total > 0) {
+    const remaining  = _subsidyBalance.remaining     || 0;
+    const inclDrink  = _subsidyBalance.includes_drink || false;
+    const eligible   = foodPrice + (inclDrink ? drinkPrice : 0);
+    const covered    = Math.min(eligible, remaining);
+    const surplus    = total - covered; // ce que l'employé paie
+
+    if (covered > 0 || surplus > 0) {
+      bd.style.display = '';
+      document.getElementById('subsidyCovered').textContent = `${fmtCFA(covered)} FCFA`;
+      const surplusRow = document.getElementById('surplusRow');
+      const surplusEl  = document.getElementById('subsidySurplus');
+      if (surplus > 0) {
+        surplusRow.style.display = 'flex';
+        surplusEl.textContent    = `${fmtCFA(surplus)} FCFA`;
+        if (tEl) tEl.innerHTML =
+          `Total : ${fmtCFA(total)} FCFA`
+          + ` <span style="font-size:12px;color:#dc2626;font-weight:600">(vous payez ${fmtCFA(surplus)} FCFA)</span>`;
+      } else {
+        surplusRow.style.display = 'none';
+        if (tEl) tEl.innerHTML =
+          `Total : ${fmtCFA(total)} FCFA`
+          + ` <span style="font-size:12px;color:#16a34a;font-weight:600">(entièrement couvert 🎁)</span>`;
+      }
+    } else { bd.style.display = 'none'; }
+  } else if (bd) { bd.style.display = 'none'; }
+
   const btn = document.getElementById('confirmOrderBtn');
   if (btn) btn.disabled = !(foodOK && drinkOK);
 }

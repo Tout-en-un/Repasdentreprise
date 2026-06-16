@@ -40,6 +40,7 @@
     <div class="nav-section">Principal</div>
     <div class="nav-item active" data-page="dashboard"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span><span>Tableau de bord</span></div>
     <div class="nav-item" data-page="orders"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><span>Commandes</span></div>
+    <div class="nav-item" data-page="clients"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span>Mes clients</span></div>
     <div class="nav-item" data-page="messages"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span>Messages</span><span class="nav-badge" id="msgBadge" style="display:none">0</span></div>
     <div class="nav-section">Gestion</div>
     <div class="nav-item" data-page="menus"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2c-1.67 0-5 .83-5 4v6c0 1.1.9 2 2 2v5a1 1 0 0 0 2 0v-5c1.1 0 2-.9 2-2z"/></svg></span><span>Mes menus</span></div>
@@ -403,7 +404,7 @@
       <div class="card reveal" style="grid-column:1/-1">
         <div class="card-body" style="padding-top:8px">
           <div class="tab-bar" style="margin-bottom:16px">
-            <button class="tab-btn active" id="wiTab1" onclick="switchWiTab('daily')">📅 Point du jour</button>
+            <button class="tab-btn active" id="wiTab1" onclick="switchWiTab('daily')">📅 Point par jour</button>
             <button class="tab-btn" id="wiTab2" onclick="switchWiTab('new')">📋 Nouvelle facture globale</button>
             <button class="tab-btn" id="wiTab3" onclick="switchWiTab('list')">📄 Factures</button>
           </div>
@@ -411,10 +412,10 @@
           <!-- ── TAB : POINT DU JOUR ── -->
           <div id="wiPanelDaily">
             <div style="background:#FFF8F3;border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--muted);line-height:1.6">
-              <strong style="color:var(--brown);display:block;margin-bottom:4px">📅 Point du jour</strong>
+              <strong style="color:var(--brown);display:block;margin-bottom:4px">📅 Point par jour</strong>
               Remplissez chaque jour la liste des plats livrés. À la fin de la semaine, compilez pour générer la facture globale envoyée à l'entreprise.
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
               <div class="form-group" style="margin-bottom:0">
                 <label>Entreprise</label>
                 <select class="form-control" id="pdjCompanySelect" onchange="onPdjCompanyChange()"></select>
@@ -422,6 +423,12 @@
               <div class="form-group" style="margin-bottom:0">
                 <label>Semaine (lundi)</label>
                 <input type="date" class="form-control" id="pdjWeekStart" oninput="onPdjWeekChange()">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label>Menu</label>
+                <div id="pdjMenuDisplay" style="min-height:38px;padding:6px 12px;background:#F9F9F9;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px">
+                  <span id="pdjMenuName" style="color:var(--brown)">—</span>
+                </div>
               </div>
             </div>
             <div id="pdjWeekLabel" style="font-size:13px;font-weight:600;color:var(--brown);margin-bottom:12px;padding:8px 12px;background:#FFF0EA;border-radius:8px;display:none"></div>
@@ -568,6 +575,46 @@
             <tbody id="ihBody"></tbody>
           </table>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MES CLIENTS ═══ -->
+  <div class="page" id="page-clients">
+    <div class="card reveal" style="margin-bottom:16px">
+      <div class="card-body" style="padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <input class="form-control" id="clientSearch" placeholder="🔍 Rechercher une entreprise…"
+          oninput="filterClients(this.value)" style="flex:1;min-width:180px">
+        <button class="btn btn-outline btn-sm" onclick="loadClients()">🔄</button>
+      </div>
+    </div>
+    <div id="clientsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px"></div>
+  </div>
+
+  <!-- Modal détail client -->
+  <div class="modal-overlay" id="clientDetailModal">
+    <div class="modal" style="max-width:680px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0">
+        <div>
+          <div class="modal-title" id="clientDetailName" style="margin-bottom:2px"></div>
+          <div id="clientDetailMeta" style="font-size:12px;color:var(--muted)"></div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="closeModal(document.getElementById('clientDetailModal'))">✕</button>
+      </div>
+      <!-- Onglets -->
+      <div class="tab-bar" style="margin:0;padding:0 20px;flex-shrink:0">
+        <button class="tab-btn active" id="cdTab1" onclick="switchClientTab('overview')">📊 Aperçu</button>
+        <button class="tab-btn" id="cdTab2" onclick="switchClientTab('orders')">📋 Commandes</button>
+        <button class="tab-btn" id="cdTab3" onclick="switchClientTab('invoices')">🧾 Factures</button>
+        <button class="tab-btn" id="cdTab4" onclick="switchClientTab('programme')">📅 Programme</button>
+        <button class="tab-btn" id="cdTab5" onclick="switchClientTab('employees')">👥 Employés</button>
+      </div>
+      <div style="overflow-y:auto;flex:1;padding:16px 20px">
+        <div id="cdPanelOverview"></div>
+        <div id="cdPanelOrders"    style="display:none"></div>
+        <div id="cdPanelInvoices"  style="display:none"></div>
+        <div id="cdPanelProgramme" style="display:none"></div>
+        <div id="cdPanelEmployees" style="display:none"></div>
       </div>
     </div>
   </div>
@@ -1043,6 +1090,266 @@ let activeBatchId = null;
 let pendingRestFile = null;
 let restVoiceRecorder = null, restVoiceChunks = [], restVoiceTimer = null, restIsRecording = false;
 
+// ════════════════════════════════════════════════════════════════
+//  MES CLIENTS — Vue d'ensemble des entreprises affiliées
+// ════════════════════════════════════════════════════════════════
+
+let _allClients   = [];
+let _clientDetail = null;
+
+async function loadClients() {
+  const grid = document.getElementById('clientsGrid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--muted)">Chargement…</div>';
+  try {
+    _allClients = await apiFetch('/api/restaurant/clients', {}, token);
+    renderClientCards(_allClients);
+  } catch(e) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px;color:#dc2626">${e.message}</div>`;
+  }
+}
+
+function filterClients(q) {
+  const filtered = q ? _allClients.filter(c => c.name.toLowerCase().includes(q.toLowerCase())) : _allClients;
+  renderClientCards(filtered);
+}
+
+function renderClientCards(clients) {
+  const grid = document.getElementById('clientsGrid');
+  if (!clients.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)"><div style="font-size:48px;margin-bottom:12px">🤝</div><div>Aucune entreprise affiliée</div></div>';
+    return;
+  }
+  const fmtD = d => {
+    if (!d) return '—';
+    // Extraire seulement la partie date (YYYY-MM-DD) avant d'ajouter le midi local
+    const ds = String(d).replace(' ','T').split('T')[0];
+    return new Date(ds + 'T12:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});
+  };
+  grid.innerHTML = clients.map(c => {
+    const hasOrders  = c.orders_this_month > 0;
+    const hasPending = c.pending_invoices > 0;
+    const lastOrder  = c.last_order_date ? fmtD(c.last_order_date) : 'Jamais';
+    const sinceDate  = fmtD(c.affiliated_since);
+    return `
+    <div class="card reveal" style="cursor:pointer;transition:box-shadow .15s" onclick="openClientDetail(${c.id},'${c.name.replace(/'/g,"\\'")}')">
+      <div class="card-body">
+        <!-- En-tête -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div style="width:46px;height:46px;border-radius:12px;background:#FFF0EA;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">
+            ${c.logo_url ? `<img src="${c.logo_url}" style="width:46px;height:46px;border-radius:12px;object-fit:cover">` : '🏢'}
+          </div>
+          <div style="min-width:0">
+            <div style="font-weight:700;font-size:14px;color:var(--brown);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</div>
+            <div style="font-size:11px;color:var(--muted)">${c.email || ''}</div>
+          </div>
+          ${hasPending ? `<span style="margin-left:auto;background:#FEF3C7;color:#92400E;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;flex-shrink:0">${c.pending_invoices} en attente</span>` : ''}
+        </div>
+        <!-- Métriques -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+          <div style="text-align:center;background:#F9F9F9;border-radius:10px;padding:8px 4px">
+            <div style="font-size:18px;font-weight:700;color:var(--orange)">${c.employee_count || 0}</div>
+            <div style="font-size:10px;color:var(--muted)">Employés</div>
+          </div>
+          <div style="text-align:center;background:#F9F9F9;border-radius:10px;padding:8px 4px">
+            <div style="font-size:18px;font-weight:700;color:var(--orange)">${c.orders_this_month || 0}</div>
+            <div style="font-size:10px;color:var(--muted)">Cmd ce mois</div>
+          </div>
+          <div style="text-align:center;background:#F9F9F9;border-radius:10px;padding:8px 4px">
+            <div style="font-size:13px;font-weight:700;color:var(--orange)">${fmtCFA(c.revenue_this_month || 0)}</div>
+            <div style="font-size:10px;color:var(--muted)">FCFA/mois</div>
+          </div>
+        </div>
+        <!-- Abonnement + dernière commande -->
+        <div style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:3px">
+          <div>${c.pack_name ? `📅 Abonnement : <strong style="color:var(--brown)">${c.pack_name}</strong> (${c.dish_qty || '?'} repas/j)` : '📅 Pas d\'abonnement actif'}</div>
+          <div>🕐 Dernière commande : <strong style="color:var(--brown)">${lastOrder}</strong></div>
+          <div>💰 CA total : <strong style="color:var(--orange)">${fmtCFA(c.revenue_total || 0)} FCFA</strong></div>
+          <div>📌 Affilié depuis : ${sinceDate}</div>
+        </div>
+        <!-- Actions -->
+        <div style="display:flex;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+          <button class="btn btn-outline btn-sm" style="flex:1;font-size:11px" onclick="event.stopPropagation();openChat(${c.id},'${c.name.replace(/'/g,"\\'")}',null);switchToPage('messages')">💬 Message</button>
+          <button class="btn btn-primary btn-sm" style="flex:1;font-size:11px" onclick="event.stopPropagation();openClientDetail(${c.id},'${c.name.replace(/'/g,"\\'")}')">👁 Détail</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openClientDetail(companyId, companyName) {
+  _clientDetail = null;
+  document.getElementById('clientDetailName').textContent = companyName;
+  document.getElementById('clientDetailMeta').textContent = 'Chargement…';
+  // Vider tous les panneaux
+  ['Overview','Orders','Invoices','Programme','Employees'].forEach(p => {
+    const el = document.getElementById('cdPanel'+p);
+    if (el) el.innerHTML = '';
+  });
+  document.getElementById('cdPanelOverview').innerHTML =
+    '<div style="text-align:center;padding:40px;color:var(--muted)">Chargement des données…</div>';
+  document.getElementById('clientDetailModal').classList.add('open');
+  // Activer l'onglet Aperçu directement sans passer par switchClientTab (data pas encore là)
+  ['Overview','Orders','Invoices','Programme','Employees'].forEach((p,i) => {
+    const panel = document.getElementById('cdPanel'+p);
+    const tab   = document.getElementById('cdTab'+(i+1));
+    if (panel) panel.style.display = p==='Overview'?'':'none';
+    if (tab)   tab.classList.toggle('active', p==='Overview');
+  });
+  try {
+    _clientDetail = await apiFetch(`/api/restaurant/clients/${companyId}`, {}, token);
+    const c = _clientDetail.company || {};
+    document.getElementById('clientDetailMeta').textContent =
+      [c.email, c.phone, c.address].filter(Boolean).join(' · ') || '';
+    renderClientOverview();
+  } catch(e) {
+    document.getElementById('cdPanelOverview').innerHTML =
+      `<div style="padding:20px;color:#dc2626;text-align:center">
+        <div style="font-size:32px;margin-bottom:8px">⚠️</div>
+        <div style="font-weight:600">${e.message}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Réessayez ou contactez le support</div>
+      </div>`;
+  }
+}
+
+function switchClientTab(tab) {
+  ['overview','orders','invoices','programme','employees'].forEach((t,i) => {
+    document.getElementById(`cdPanel${t.charAt(0).toUpperCase()+t.slice(1)}`).style.display = t===tab?'':'none';
+    document.getElementById(`cdTab${i+1}`).classList.toggle('active', t===tab);
+  });
+  if (tab === 'overview'   && _clientDetail) renderClientOverview();
+  if (tab === 'orders'     && _clientDetail) renderClientOrders();
+  if (tab === 'invoices'   && _clientDetail) renderClientInvoices();
+  if (tab === 'programme'  && _clientDetail) renderClientProgramme();
+  if (tab === 'employees'  && _clientDetail) renderClientEmployees();
+}
+
+function renderClientOverview() {
+  const d = _clientDetail;
+  if (!d) return;
+  const el = document.getElementById('cdPanelOverview');
+  if (!el) return;
+  const fmtD = dt => {
+    if (!dt) return '—';
+    const ds = String(dt).replace(' ','T').split('T')[0];
+    return new Date(ds+'T12:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  };
+  const invList   = [...(d.invoices||[]), ...(d.weekly_invoices||[])];
+  const totalInv  = invList.reduce((s,i)=>s+parseFloat(i.total_amount||0),0);
+  const pending   = invList.filter(i=>i.status==='pending').length;
+  const confirmed = invList.filter(i=>i.status==='confirmed').length;
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      ${[
+        ['👥 Employés',        d.employees.length,              ''],
+        ['📋 Commandes (30j)', d.recent_orders.length,          ''],
+        ['🧾 Factures total',  fmtCFA(totalInv)+' FCFA',        ''],
+        ['⏳ En attente',      pending,                          pending>0?' style="color:#dc2626"':''],
+      ].map(([label,val,style])=>`
+        <div style="background:#FFF8F3;border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${label}</div>
+          <div style="font-size:20px;font-weight:700;color:var(--orange)"${style}>${val}</div>
+        </div>`).join('')}
+    </div>
+    ${d.selections.length ? `
+    <div style="margin-bottom:14px">
+      <div style="font-weight:600;font-size:13px;color:var(--brown);margin-bottom:8px">📅 Abonnements récents</div>
+      ${d.selections.slice(0,3).map(s=>`
+        <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#F9F9F9;border-radius:8px;margin-bottom:4px;font-size:12px">
+          <span style="color:var(--brown);font-weight:600">${s.pack_name||'Sans pack'}</span>
+          <span style="color:var(--muted)">Sem. ${fmtD(s.week_start)} · ${s.dish_qty||0} repas/j</span>
+        </div>`).join('')}
+    </div>` : ''}
+    <div>
+      <div style="font-weight:600;font-size:13px;color:var(--brown);margin-bottom:8px">🕐 Dernières commandes</div>
+      ${d.recent_orders.slice(0,5).map(o=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">
+          <span>${fmtD(o.order_date)} — <strong>${o.employee_name||'—'}</strong></span>
+          <span style="color:var(--orange)">${o.menu_name||'—'}</span>
+        </div>`).join('') || '<p style="color:var(--muted);font-size:13px">Aucune commande récente.</p>'}
+    </div>`;
+}
+
+function renderClientOrders() {
+  const el = document.getElementById('cdPanelOrders');
+  const orders = _clientDetail?.recent_orders || [];
+  const fmtD = dt => dt ? new Date(String(dt).replace(' ','T')).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—';
+  if (!orders.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:20px;text-align:center">Aucune commande sur les 30 derniers jours.</p>'; return; }
+  el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Employé</th><th>Menu</th><th>Prix</th><th>Statut</th></tr></thead><tbody>
+    ${orders.map(o=>`<tr>
+      <td style="white-space:nowrap;font-size:12px">${fmtD(o.order_date)}</td>
+      <td style="font-size:12px">${o.employee_name||'—'}</td>
+      <td style="font-size:12px">${o.menu_name||'—'}</td>
+      <td style="font-size:12px;white-space:nowrap">${fmtCFA(o.price||0)} FCFA</td>
+      <td><span style="font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;background:${o.status==='confirmed'?'#dcfce7':'#fef3c7'};color:${o.status==='confirmed'?'#16a34a':'#92400E'}">${o.status}</span></td>
+    </tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+function renderClientInvoices() {
+  const el = document.getElementById('cdPanelInvoices');
+  const all = [
+    ...((_clientDetail?.invoices||[]).map(i=>({...i,_type:'classic'}))),
+    ...((_clientDetail?.weekly_invoices||[]).map(i=>({...i,_type:'weekly'}))),
+  ].sort((a,b)=>{
+    const da = new Date(String(a.created_at||a.from_date||'1970').replace(' ','T'));
+    const db = new Date(String(b.created_at||b.from_date||'1970').replace(' ','T'));
+    return db - da;
+  });
+  const fmtD = dt => dt ? new Date(String(dt).replace(' ','T')).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—';
+  if (!all.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:20px;text-align:center">Aucune facture.</p>'; return; }
+  el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Référence</th><th>Type</th><th>Période</th><th>Montant</th><th>Statut</th></tr></thead><tbody>
+    ${all.map(i=>{
+      const ref  = i.invoice_number || (i._type==='classic'?`FAC-${String(i.id).padStart(5,'0')}`:`HEB-${String(i.id).padStart(4,'0')}`);
+      const per  = i.from_date ? `${fmtD(i.from_date)} → ${fmtD(i.to_date)}` : fmtD(i.invoice_date||i.day_date);
+      const stBg = i.status==='confirmed'?'#dcfce7':i.status==='pending'?'#fef3c7':'#fee2e2';
+      const stCo = i.status==='confirmed'?'#16a34a':i.status==='pending'?'#92400E':'#dc2626';
+      return `<tr>
+        <td style="font-size:11px;white-space:nowrap">${ref}</td>
+        <td><span style="font-size:10px;background:${i._type==='classic'?'#FEF3C7':'#DBEAFE'};color:${i._type==='classic'?'#92400E':'#1E3A8A'};padding:2px 7px;border-radius:10px;font-weight:700">${i._type==='classic'?'Classique':'Hebdo'}</span></td>
+        <td style="font-size:11px">${per}</td>
+        <td style="font-weight:700;color:var(--orange);white-space:nowrap;font-size:12px">${fmtCFA(i.total_amount||0)} FCFA</td>
+        <td><span style="font-size:10px;font-weight:700;background:${stBg};color:${stCo};padding:2px 8px;border-radius:10px">${i.status==='confirmed'?'Confirmée':i.status==='pending'?'En attente':'Annulée'}</span></td>
+      </tr>`;
+    }).join('')}
+  </tbody></table></div>`;
+}
+
+function renderClientProgramme() {
+  const el = document.getElementById('cdPanelProgramme');
+  const sels = _clientDetail?.selections || [];
+  const fmtD = dt => dt ? new Date(String(dt).replace(' ','T')).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+  if (!sels.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:20px;text-align:center">Aucun abonnement hebdomadaire.</p>'; return; }
+  el.innerHTML = sels.map(s=>`
+    <div style="background:#F9F9F9;border-radius:12px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-weight:700;color:var(--brown);font-size:13px">${s.pack_name||'Sans pack'}</span>
+        <span style="font-size:12px;color:var(--muted)">Semaine du ${fmtD(s.week_start)}</span>
+      </div>
+      <div style="display:flex;gap:16px;font-size:12px">
+        <span>🍽 <strong>${s.dish_qty||0}</strong> repas/jour</span>
+        <span style="color:var(--orange)">💰 ${fmtCFA(s.pack_price||0)} FCFA/sem.</span>
+        <span style="color:${s.status==='active'?'#16a34a':'var(--muted)'}">● ${s.status||'—'}</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderClientEmployees() {
+  const el = document.getElementById('cdPanelEmployees');
+  const emps = _clientDetail?.employees || [];
+  const fmtD = dt => dt ? new Date(String(dt).replace(' ','T')).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—';
+  if (!emps.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:20px;text-align:center">Aucun employé enregistré.</p>'; return; }
+  el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Nom</th><th>ID</th><th>Email</th><th>Nb commandes</th><th>Dernière cmd</th></tr></thead><tbody>
+    ${emps.map(u=>`<tr>
+      <td style="font-size:12px;font-weight:600">${u.last_name} ${u.first_name}</td>
+      <td style="font-size:11px;color:var(--muted)">${u.employee_id||'—'}</td>
+      <td style="font-size:11px">${u.email||'—'}</td>
+      <td style="text-align:center;font-weight:700;color:var(--orange)">${u.total_orders||0}</td>
+      <td style="font-size:11px;white-space:nowrap">${fmtD(u.last_order)}</td>
+    </tr>`).join('')}
+  </tbody></table></div>`;
+}
+
 function initDateMask() {
   document.querySelectorAll('input.date-mask').forEach(inp => {
     if (inp._dateMaskInit) return;
@@ -1096,6 +1403,7 @@ function switchToPage(page) {
   else if (page === 'weekly') { loadWeeklyPacks(); }
   else if (page === 'weekly-invoices') { loadWeeklyInvoices(); }
   else if (page === 'invoices-history') { loadInvoicesHistory(); loadCompaniesForIhFilter(); }
+  else if (page === 'clients') { loadClients(); }
   else if (page === 'trash') { loadTrash(); }
   else if (page === 'help') { initDocSearch(); }
 }
@@ -1160,18 +1468,18 @@ function renderOrderChart(data) {
 }
 
 function exportPDF(type) {
-  window.open(`/api/restaurant/export-pdf?period=${type}`, '_blank');
+  if (!token) { toast('Non connecté', 'error'); return; }
+  window.open(`/api/restaurant/export-pdf?period=${type}&token=${token}`, '_blank');
 }
 
 function exportOrdersPDF() {
+  if (!token) { toast('Non connecté', 'error'); return; }
   const from = parseFrDate(document.getElementById('ordersFrom').value) || document.getElementById('ordersFrom').value;
-  const to = parseFrDate(document.getElementById('ordersTo').value) || document.getElementById('ordersTo').value;
-  let url = '/api/restaurant/orders/export-pdf';
-  const params = [];
+  const to   = parseFrDate(document.getElementById('ordersTo').value)   || document.getElementById('ordersTo').value;
+  const params = [`token=${token}`];
   if (from) params.push('from=' + from);
-  if (to) params.push('to=' + to);
-  if (params.length) url += '?' + params.join('&');
-  window.open(url, '_blank');
+  if (to)   params.push('to='   + to);
+  window.open('/api/restaurant/orders/export-pdf?' + params.join('&'), '_blank');
 }
 
 // ═══ MENUS ═══
@@ -2600,18 +2908,37 @@ let _pdjDishQty = 8;
 async function loadDailyEntries() {
   const companyId = document.getElementById('pdjCompanySelect')?.value;
   const weekStart = document.getElementById('pdjWeekStart')?.value;
+
+  // Réinitialiser l'affichage Menu si pas de sélection
+  const menuNameEl = document.getElementById('pdjMenuName');
   if (!companyId || !weekStart) {
     _pdjProgramDishes = {}; _pdjDishQty = 8;
+    if (menuNameEl) menuNameEl.innerHTML = '<span style="color:var(--muted)">—</span>';
     renderPdjGrid({}, weekStart);
     return;
   }
   try {
     const [entries, program] = await Promise.all([
       apiFetch(`/api/restaurant/daily-entries?week_start=${weekStart}&company_id=${companyId}`, {}, token),
-      apiFetch(`/api/restaurant/weekly-program-dishes?company_id=${companyId}&week_start=${weekStart}`, {}, token).catch(() => ({ dishes: {}, dish_qty: 8 }))
+      apiFetch(`/api/restaurant/weekly-program-dishes?company_id=${companyId}&week_start=${weekStart}`, {}, token)
+        .catch(() => ({ dishes: {}, dish_qty: 8, pack_name: null, menu_names: [] }))
     ]);
     _pdjProgramDishes = program.dishes || {};
     _pdjDishQty = program.dish_qty || 8;
+
+    // Afficher le nom du menu/pack
+    if (menuNameEl) {
+      if (program && program.pack_name) {
+        const menus = (program.menu_names || []).join(', ');
+        menuNameEl.innerHTML = `
+          <span style="color:var(--brown);font-weight:700">${program.pack_name}</span>
+          ${menus ? `<span style="color:var(--muted);font-size:11px">— ${menus}</span>` : ''}
+          <span style="background:#D1FAE5;color:#065F46;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:4px">${_pdjDishQty} repas/j</span>`;
+      } else {
+        menuNameEl.innerHTML = '<span style="color:var(--muted);font-style:italic;font-size:12px">Pas d\'abonnement pour cette semaine</span>';
+      }
+    }
+
     const byDate = {};
     entries.forEach(e => { byDate[e.day_date] = e; });
     renderPdjGrid(byDate, weekStart);
@@ -3604,6 +3931,10 @@ window.deleteIhInvoice = deleteIhInvoice;
 window.openIhNoteModal = openIhNoteModal;
 window.saveIhNote = saveIhNote;
 window.clearRestaurantHistory = clearRestaurantHistory;
+window.loadClients         = loadClients;
+window.filterClients       = filterClients;
+window.openClientDetail    = openClientDetail;
+window.switchClientTab     = switchClientTab;
 window.switchWiTab = switchWiTab;
 window.loadDailyEntries = loadDailyEntries;
 window.saveDailyEntry = saveDailyEntry;

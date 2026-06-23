@@ -56,13 +56,16 @@ if (!JWT_SECRET) { console.error('❌ JWT_SECRET non défini dans .env'); proces
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 
 // ── Rate limiting ────────────────────────────────────────────────────
+// Global: 2000 req/15min par IP — couvre les SPAs avec multiples appels par navigation
+// et les environnements NAT (plusieurs users derrière la même IP publique)
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, max: 400,
+  windowMs: 15 * 60 * 1000, max: 2000,
   standardHeaders: true, legacyHeaders: false,
   message: { error: 'Trop de requêtes, réessayez dans 15 minutes' }
 });
+// Auth: limite stricte pour éviter le brute-force des mots de passe
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, max: 20,
+  windowMs: 15 * 60 * 1000, max: 30,
   message: { error: 'Trop de tentatives, réessayez dans 15 minutes' }
 });
 app.use('/api/', globalLimiter);
@@ -99,7 +102,7 @@ app.get('/api/cron/test', (req, res) => {
 // Route de migration manuelle — utile pour forcer la création des tables en prod
 app.get('/api/migrate', async (req, res) => {
   const secret = req.query.secret;
-  if (secret !== process.env.JWT_SECRET && secret !== process.env.MIGRATE_SECRET) {
+  if (!process.env.MIGRATE_SECRET || secret !== process.env.MIGRATE_SECRET) {
     return res.status(403).json({ error: 'Forbidden' });
   }
   try {
@@ -128,12 +131,21 @@ app.get('/sw.js', (_req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, 'sw.js'));
 });
 
-app.use(express.static(PUBLIC_DIR));
+app.use(express.static(PUBLIC_DIR, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+    }
+  }
+}));
 
 // ─── DB ──────────────────────────────────────────────────────────
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
+  max: 10,                    // connexions simultanées max (limite plan Neon free = 10)
+  idleTimeoutMillis: 30000,   // libère les connexions idle après 30s (évite les connexions mortes si Neon scale à 0)
   connectionTimeoutMillis: 10000,
 });
 
@@ -316,7 +328,6 @@ async function initDB(retries = 5, delay = 3000) {
     ALTER TABLE weekly_packs ADD COLUMN IF NOT EXISTS min_order_qty INTEGER DEFAULT 8;
     ALTER TABLE weekly_packs ALTER COLUMN is_active SET DEFAULT true;
     UPDATE weekly_packs SET is_active = true WHERE is_active IS NULL OR is_active = false;
-    ALTER TABLE company_weekly_extras ADD COLUMN IF NOT EXISTS day_list TEXT DEFAULT '';
     ALTER TABLE restaurant_contracts ADD COLUMN IF NOT EXISTS offer_description TEXT DEFAULT '';
     ALTER TABLE restaurant_contracts ADD COLUMN IF NOT EXISTS service_days TEXT DEFAULT 'Lun,Mar,Mer,Jeu,Ven';
     ALTER TABLE restaurant_contracts ADD COLUMN IF NOT EXISTS delivery_zone TEXT DEFAULT '';
@@ -350,6 +361,7 @@ async function initDB(retries = 5, delay = 3000) {
       unit_price DECIMAL(10,2) DEFAULT 0,
       created_at TIMESTAMP DEFAULT NOW()
     );
+    ALTER TABLE company_weekly_extras ADD COLUMN IF NOT EXISTS day_list TEXT DEFAULT '';
     CREATE TABLE IF NOT EXISTS weekly_delivery_logs (
       id SERIAL PRIMARY KEY,
       selection_id INTEGER REFERENCES company_weekly_selections(id) ON DELETE CASCADE,
@@ -427,6 +439,73 @@ async function initDB(retries = 5, delay = 3000) {
     ALTER TABLE company_subsidies ADD COLUMN IF NOT EXISTS amount DECIMAL(10,2) DEFAULT 0;
     UPDATE company_subsidies SET amount = food_amount WHERE amount = 0 AND food_amount > 0;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS drink_price DECIMAL(10,2) DEFAULT 0;
+    CREATE TABLE IF NOT EXISTS custom_weekly_compositions (
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+      restaurant_id INTEGER REFERENCES restaurants(id) ON DELETE CASCADE,
+      name VARCHAR(255) NOT NULL DEFAULT 'Ma composition',
+      week_start DATE NOT NULL,
+      status VARCHAR(20) DEFAULT 'draft',
+      company_proposed_price DECIMAL(10,2),
+      restaurant_counter_price DECIMAL(10,2),
+      final_price DECIMAL(10,2),
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS custom_composition_dishes (
+      id SERIAL PRIMARY KEY,
+      composition_id INTEGER REFERENCES custom_weekly_compositions(id) ON DELETE CASCADE,
+      dish_id INTEGER REFERENCES weekly_day_dishes(id) ON DELETE CASCADE,
+      dish_name VARCHAR(255) NOT NULL,
+      pack_name VARCHAR(255),
+      day_of_week INTEGER NOT NULL,
+      quantity INTEGER DEFAULT 1,
+      unit_price DECIMAL(10,2) DEFAULT 0,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS price_negotiations (
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+      restaurant_id INTEGER REFERENCES restaurants(id) ON DELETE CASCADE,
+      entity_type VARCHAR(30) NOT NULL,
+      entity_id INTEGER NOT NULL,
+      entity_name VARCHAR(255),
+      status VARCHAR(20) DEFAULT 'pending',
+      original_price DECIMAL(10,2),
+      final_agreed_price DECIMAL(10,2),
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS negotiation_messages (
+      id SERIAL PRIMARY KEY,
+      negotiation_id INTEGER REFERENCES price_negotiations(id) ON DELETE CASCADE,
+      sent_by VARCHAR(20) NOT NULL,
+      sender_id INTEGER NOT NULL,
+      proposed_price DECIMAL(10,2),
+      message TEXT,
+      action VARCHAR(20) NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS restaurant_client_privacy (
+      id SERIAL PRIMARY KEY,
+      restaurant_id INTEGER REFERENCES restaurants(id) ON DELETE CASCADE,
+      company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+      is_confidential BOOLEAN DEFAULT false,
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW(),
+      UNIQUE(restaurant_id, company_id)
+    );
+    ALTER TABLE custom_weekly_compositions ADD COLUMN IF NOT EXISTS delivery_time TIME DEFAULT '12:00:00';
+    ALTER TABLE company_weekly_selections ADD COLUMN IF NOT EXISTS delivery_time TIME DEFAULT '12:00:00';
+    ALTER TABLE price_negotiations ADD COLUMN IF NOT EXISTS entity_type VARCHAR(30);
+    ALTER TABLE price_negotiations ADD COLUMN IF NOT EXISTS entity_id INTEGER;
+    ALTER TABLE price_negotiations ADD COLUMN IF NOT EXISTS entity_name VARCHAR(255);
+    ALTER TABLE price_negotiations ADD COLUMN IF NOT EXISTS original_price DECIMAL(10,2);
+    ALTER TABLE price_negotiations ADD COLUMN IF NOT EXISTS final_agreed_price DECIMAL(10,2);
+    ALTER TABLE price_negotiations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+    ALTER TABLE negotiation_messages ADD COLUMN IF NOT EXISTS sender_id INTEGER;
   `;
   try {
     await pool.query(sql);
@@ -450,6 +529,50 @@ async function seedAdmin() {
   } catch (e) { console.error('Seed admin error:', e.message); }
 }
 
+// Initialise les tables de négociation de prix indépendamment du batch principal.
+// Chaque requête est exécutée séparément : un échec ne bloque pas les autres.
+async function initNegotiationTables() {
+  const stmts = [
+    `CREATE TABLE IF NOT EXISTS price_negotiations (
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+      restaurant_id INTEGER REFERENCES restaurants(id) ON DELETE CASCADE,
+      entity_type VARCHAR(30),
+      entity_id INTEGER,
+      entity_name VARCHAR(255),
+      status VARCHAR(20) DEFAULT 'pending',
+      original_price DECIMAL(10,2),
+      final_agreed_price DECIMAL(10,2),
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS negotiation_messages (
+      id SERIAL PRIMARY KEY,
+      negotiation_id INTEGER REFERENCES price_negotiations(id) ON DELETE CASCADE,
+      sent_by VARCHAR(20) NOT NULL,
+      sender_id INTEGER,
+      proposed_price DECIMAL(10,2),
+      message TEXT,
+      action VARCHAR(20) NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    )`,
+    `ALTER TABLE price_negotiations ADD COLUMN IF NOT EXISTS entity_type VARCHAR(30)`,
+    `ALTER TABLE price_negotiations ADD COLUMN IF NOT EXISTS entity_id INTEGER`,
+    `ALTER TABLE price_negotiations ADD COLUMN IF NOT EXISTS entity_name VARCHAR(255)`,
+    `ALTER TABLE price_negotiations ADD COLUMN IF NOT EXISTS original_price DECIMAL(10,2)`,
+    `ALTER TABLE price_negotiations ADD COLUMN IF NOT EXISTS final_agreed_price DECIMAL(10,2)`,
+    `ALTER TABLE price_negotiations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()`,
+    `ALTER TABLE negotiation_messages ADD COLUMN IF NOT EXISTS sender_id INTEGER`,
+    `ALTER TABLE weekly_packs ADD COLUMN IF NOT EXISTS price DECIMAL(10,2) DEFAULT 0`,
+    `ALTER TABLE weekly_packs ADD COLUMN IF NOT EXISTS min_order_qty INTEGER DEFAULT 8`,
+    `ALTER TABLE company_weekly_selections ADD COLUMN IF NOT EXISTS custom_composition_id INTEGER REFERENCES custom_weekly_compositions(id) ON DELETE SET NULL`
+  ];
+  for (const stmt of stmts) {
+    await pool.query(stmt).catch(e => console.error('initNego:', e.message.slice(0, 120)));
+  }
+  console.log('✅ Tables négociations prêtes');
+}
+
 // Sur Vercel, initDB() est appelé à chaque cold start.
 // Le flag garantit qu'on ne lance pas plusieurs migrations en parallèle.
 let dbReady = false;
@@ -458,12 +581,12 @@ let dbInitPromise = null;
 function ensureDB() {
   if (dbReady) return Promise.resolve();
   if (!dbInitPromise) {
-    dbInitPromise = initDB().then(() => { dbReady = true; }).catch(() => {});
+    dbInitPromise = initDB().then(() => { dbReady = true; }).catch((e) => { console.error('DB init failed:', e.message); dbInitPromise = null; });
   }
   return dbInitPromise;
 }
 
-ensureDB();
+ensureDB().then(() => initNegotiationTables());
 
 // ─── Email ────────────────────────────────────────────────────────
 const cleanPassword = (process.env.SMTP_PASS || '').replace(/\s/g, '');
@@ -1025,9 +1148,11 @@ app.get('/api/restaurant/orders', restaurantAuth, async (req, res) => {
     }
   }
   
-  const q = `SELECT o.*,u.first_name,u.last_name,m.name AS menu_name,m.price,c.name AS company_name FROM orders o JOIN users u ON o.user_id=u.id JOIN menus m ON o.menu_id=m.id JOIN companies c ON o.company_id=c.id WHERE o.restaurant_id=$1 AND ${whereDate} ORDER BY o.order_date DESC, c.name`;
-  const r = await pool.query(q, params);
-  res.json(r.rows);
+  try {
+    const q = `SELECT o.*,u.first_name,u.last_name,m.name AS menu_name,m.price,c.name AS company_name FROM orders o JOIN users u ON o.user_id=u.id JOIN menus m ON o.menu_id=m.id JOIN companies c ON o.company_id=c.id WHERE o.restaurant_id=$1 AND ${whereDate} ORDER BY o.order_date DESC, c.name`;
+    const r = await pool.query(q, params);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // Get list of companies for restaurant to filter by
@@ -1105,10 +1230,12 @@ app.get('/api/restaurant/orders/export-pdf', async (req, res) => {
 });
 
 app.get('/api/restaurant/batches', restaurantAuth, async (req, res) => {
-  const r = await pool.query(
-    'SELECT ob.*,c.name AS company_name FROM order_batches ob JOIN companies c ON ob.company_id=c.id WHERE ob.restaurant_id=$1 ORDER BY ob.created_at DESC LIMIT 50',
-    [req.user.id]);
-  res.json(r.rows);
+  try {
+    const r = await pool.query(
+      'SELECT ob.*,c.name AS company_name FROM order_batches ob JOIN companies c ON ob.company_id=c.id WHERE ob.restaurant_id=$1 ORDER BY ob.created_at DESC LIMIT 50',
+      [req.user.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // Create a batch (group orders for a company on a date)
@@ -1223,14 +1350,6 @@ app.post('/api/restaurant/invoices/:id/send', restaurantAuth, async (req, res) =
       sendMail(invData.email, `🧾 Facture de ${invData.restaurant_name}`, `<p>Vous avez reçu une facture de <strong>${invData.restaurant_name}</strong> d'un montant de <strong>${fmtP(invData.total_amount)} FCFA</strong>.</p><p><a href="${req.protocol}://${req.get('host')}/api/restaurant/invoices/${invData.id}/pdf">Télécharger la facture PDF</a></p>`).catch(err => console.error('Email send error:', err));
     }
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// Get companies for restaurant
-app.get('/api/restaurant/companies', restaurantAuth, async (req, res) => {
-  try {
-    const companies = await pool.query('SELECT DISTINCT c.id, c.name FROM companies c JOIN affiliations a ON c.id = a.company_id WHERE a.restaurant_id=$1 ORDER BY c.name', [req.user.id]);
-    res.json(companies.rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2018,11 +2137,17 @@ app.get('/api/restaurant/weekly-invoices/:id', restaurantAuth, async (req, res) 
 app.put('/api/restaurant/weekly-invoices/:id', restaurantAuth, async (req, res) => {
   const { items, total_amount, status, billing_frequency, sent, notes } = req.body;
   try {
-    const notesClause = notes !== undefined ? ', notes=$8' : '';
-    const sentClause = sent !== undefined ? `, sent=$7, sent_at=CASE WHEN $7 THEN NOW() ELSE sent_at END` : '';
     const params = [items ? JSON.stringify(items) : null, total_amount !== undefined ? total_amount : null, status || null, billing_frequency || null, req.params.id, req.user.id];
-    if (sent !== undefined) params.push(sent);
-    if (notes !== undefined) params.push(notes);
+    let sentClause = '';
+    let notesClause = '';
+    if (sent !== undefined) {
+      params.push(sent);
+      sentClause = `, sent=$${params.length}, sent_at=CASE WHEN $${params.length} THEN NOW() ELSE sent_at END`;
+    }
+    if (notes !== undefined) {
+      params.push(notes);
+      notesClause = `, notes=$${params.length}`;
+    }
     const r = await pool.query(
       `UPDATE weekly_invoices SET items=COALESCE($1,items), total_amount=COALESCE($2,total_amount), status=COALESCE($3,status), billing_frequency=COALESCE($4,billing_frequency)${sentClause}${notesClause} WHERE id=$5 AND restaurant_id=$6 RETURNING *`,
       params
@@ -2283,7 +2408,7 @@ app.post('/api/restaurant/weekly-invoices/compile', restaurantAuth, async (req, 
     if (!company_id || !from_date || !to_date) return res.status(400).json({ error: 'Paramètres manquants' });
     const entries = await pool.query(
       `SELECT * FROM weekly_invoices WHERE restaurant_id=$1 AND company_id=$2 AND invoice_type='daily'
-       AND day_date >= $3 AND day_date <= $4 ORDER BY day_date`,
+       AND day_date >= $3 AND day_date <= $4 AND deleted_at IS NULL ORDER BY day_date`,
       [req.user.id, company_id, from_date, to_date]
     );
     if (!entries.rows.length) return res.status(400).json({ error: 'Aucune entrée quotidienne pour cette semaine' });
@@ -2415,6 +2540,7 @@ app.post('/api/push/subscribe', anyAuth, async (req, res) => {
 
 // Endpoint de test — envoie une push notification à l'utilisateur connecté
 app.post('/api/push/test', anyAuth, async (req, res) => {
+  try {
   const { role, id } = req.user;
   const targetType = role === 'restaurant' ? 'restaurant' : role === 'admin' || role === 'company' ? 'company' : 'employee';
   const subs = await pool.query(
@@ -2440,6 +2566,7 @@ app.post('/api/push/test', anyAuth, async (req, res) => {
     }
   }
   res.json({ ok: true, results });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ════════════════════════════════════════════════════════════════
@@ -2459,7 +2586,9 @@ app.put('/api/notifications/:id/read', anyAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
-    await pool.query('UPDATE notifications SET read=TRUE WHERE id=$1', [id]);
+    const { role, id: userId } = req.user;
+    const targetType = role === 'restaurant' ? 'restaurant' : role === 'admin' || role === 'company' ? 'company' : 'employee';
+    await pool.query('UPDATE notifications SET read=TRUE WHERE id=$1 AND target_type=$2 AND target_id=$3', [id, targetType, userId]);
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -2636,11 +2765,11 @@ app.post('/api/admin/employees', companyAuth, async (req, res) => {
   const { firstName, lastName, email, employeeId } = req.body;
   if (!firstName||!lastName||!email||!employeeId) return res.status(400).json({ error: 'Champs requis' });
   const companyId = req.user.id;
+  try {
   // Mot de passe = nom de l'entreprise sans espaces + "123" (ex: "Elimmeka123")
   const coRow = await pool.query('SELECT name FROM companies WHERE id=$1', [companyId]);
   const companyName = coRow.rows[0]?.name || 'Company';
   const defaultPwd = companyName.replace(/\s+/g, '') + '123';
-  try {
     const hash = await bcrypt.hash(defaultPwd, 10);
     const r = await pool.query(
       'INSERT INTO users (company_id,employee_id,first_name,last_name,email,password_hash) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id,employee_id,first_name,last_name,email',
@@ -2710,8 +2839,10 @@ app.get('/api/admin/orders', companyAuth, async (req, res) => {
     if (restaurantId) { q += ` AND o.restaurant_id=$3`; params.push(restaurantId); }
     q += ' ORDER BY r.name,u.last_name';
   }
-  const r = await pool.query(q, params);
-  res.json(r.rows);
+  try {
+    const r = await pool.query(q, params);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // Export orders PDF for company (with date range)
@@ -3000,13 +3131,13 @@ app.get('/api/admin/invoices-history', companyAuth, async (req, res) => {
       r.name AS restaurant_name, r.id AS restaurant_id,
       NULL AS invoice_number, NULL AS day_date, NULL AS invoice_type
       FROM invoices i LEFT JOIN restaurants r ON i.restaurant_id=r.id
-      WHERE i.company_id=$1`;
+      WHERE i.company_id=$1 AND i.deleted_at IS NULL`;
     let hebdoQ = `SELECT wi.id, 'hebdo' AS type, wi.created_at AS date, wi.total_amount, wi.status, wi.sent,
       wi.from_date, wi.to_date, wi.notes, wi.created_at,
       r.name AS restaurant_name, r.id AS restaurant_id,
       wi.invoice_number, wi.day_date, wi.invoice_type
       FROM weekly_invoices wi LEFT JOIN restaurants r ON wi.restaurant_id=r.id
-      WHERE wi.company_id=$1`;
+      WHERE wi.company_id=$1 AND wi.deleted_at IS NULL`;
     if (from) { classicQ += ` AND i.created_at>=$${params.length+1}`; hebdoQ += ` AND wi.created_at>=$${params.length+1}`; params.push(from); }
     if (to)   { classicQ += ` AND i.created_at<=$${params.length+1}::date+interval '1 day'`; hebdoQ += ` AND wi.created_at<=$${params.length+1}::date+interval '1 day'`; params.push(to); }
     const rid = restaurant_id && restaurant_id !== 'undefined' ? parseInt(restaurant_id, 10) : NaN;
@@ -3075,8 +3206,10 @@ app.get('/api/admin/history', companyAuth, async (req, res) => {
   if (to) { params.push(to); q += ` AND order_date<=$${params.length}`; }
   if (employeeId) { params.push(employeeId); q += ` AND employee_id=$${params.length}`; }
   q += ' ORDER BY action_timestamp DESC LIMIT 200';
-  const r = await pool.query(q, params);
-  res.json(r.rows);
+  try {
+    const r = await pool.query(q, params);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete('/api/admin/history', companyAuth, async (req, res) => {
@@ -3365,16 +3498,17 @@ app.get('/api/company/weekly-selections', companyAuth, async (req, res) => {
 
 // POST /api/company/weekly-selections — créer ou mettre à jour une sélection
 app.post('/api/company/weekly-selections', companyAuth, async (req, res) => {
-  const { restaurant_id, weekly_pack_id, week_start, dish_qty, notes, extras } = req.body;
+  const { restaurant_id, weekly_pack_id, week_start, dish_qty, notes, extras, delivery_time } = req.body;
+  const dTime = delivery_time || '12:00:00';
   try {
     // Upsert la sélection
     const r = await pool.query(`
-      INSERT INTO company_weekly_selections (company_id,restaurant_id,weekly_pack_id,week_start,dish_qty,notes)
-      VALUES ($1,$2,$3,$4,$5,$6)
+      INSERT INTO company_weekly_selections (company_id,restaurant_id,weekly_pack_id,week_start,dish_qty,notes,delivery_time)
+      VALUES ($1,$2,$3,$4,$5,$6,$7)
       ON CONFLICT (company_id,restaurant_id,week_start) DO UPDATE SET
-        weekly_pack_id=$3, dish_qty=$5, notes=$6, updated_at=NOW()
+        weekly_pack_id=$3, dish_qty=$5, notes=$6, delivery_time=$7, updated_at=NOW()
       RETURNING *
-    `, [req.user.id, restaurant_id, weekly_pack_id, week_start, Math.max(1, parseInt(dish_qty)||8), notes||null]);
+    `, [req.user.id, restaurant_id, weekly_pack_id, week_start, Math.max(1, parseInt(dish_qty)||8), notes||null, dTime]);
     const selId = r.rows[0].id;
     // Remplacer les extras
     await pool.query('DELETE FROM company_weekly_extras WHERE selection_id=$1', [selId]);
@@ -3397,11 +3531,11 @@ app.post('/api/company/weekly-selections', companyAuth, async (req, res) => {
 
 // PUT /api/company/weekly-selections/:id — modifier une sélection
 app.put('/api/company/weekly-selections/:id', companyAuth, async (req, res) => {
-  const { dish_qty, notes, status, extras } = req.body;
+  const { dish_qty, notes, status, extras, delivery_time } = req.body;
   try {
     const r = await pool.query(
-      'UPDATE company_weekly_selections SET dish_qty=COALESCE($1,dish_qty), notes=COALESCE($2,notes), status=COALESCE($3,status), updated_at=NOW() WHERE id=$4 AND company_id=$5 RETURNING *',
-      [dish_qty !== undefined ? parseInt(dish_qty) : null, notes !== undefined ? notes : null, status||null, req.params.id, req.user.id]
+      'UPDATE company_weekly_selections SET dish_qty=COALESCE($1,dish_qty), notes=COALESCE($2,notes), status=COALESCE($3,status), delivery_time=COALESCE($4,delivery_time), updated_at=NOW() WHERE id=$5 AND company_id=$6 RETURNING *',
+      [dish_qty !== undefined ? parseInt(dish_qty) : null, notes !== undefined ? notes : null, status||null, delivery_time||null, req.params.id, req.user.id]
     );
     if (!r.rows.length) return res.status(404).json({ error: 'Sélection introuvable' });
     if (Array.isArray(extras)) {
@@ -3579,32 +3713,36 @@ app.put('/api/company/delivery/:logId/acknowledge', companyAuth, async (req, res
 app.get('/api/employee/search', employeeAuth, async (req, res) => {
   const q = (req.query.q || '').trim();
   if (!q) return res.json([]);
-  const r = await pool.query(`
-    SELECT m.id, m.name, m.price, m.category, m.description,
-           r.id AS restaurant_id, r.name AS restaurant_name, r.photo_url
-    FROM menus m
-    JOIN restaurants r ON m.restaurant_id = r.id
-    JOIN affiliations a ON a.restaurant_id = r.id
-    WHERE a.company_id = $1 AND m.available = TRUE AND m.name ILIKE $2
-    ORDER BY m.name LIMIT 20
-  `, [req.user.companyId, `%${q}%`]);
-  res.json(r.rows);
+  try {
+    const r = await pool.query(`
+      SELECT m.id, m.name, m.price, m.category, m.description,
+             r.id AS restaurant_id, r.name AS restaurant_name, r.photo_url
+      FROM menus m
+      JOIN restaurants r ON m.restaurant_id = r.id
+      JOIN affiliations a ON a.restaurant_id = r.id
+      WHERE a.company_id = $1 AND m.available = TRUE AND m.name ILIKE $2
+      ORDER BY m.name LIMIT 20
+    `, [req.user.companyId, `%${q}%`]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/admin/search', companyAuth, async (req, res) => {
   const companyId = req.user.id;
   const q = (req.query.q || '').trim();
   if (!q) return res.json([]);
-  const r = await pool.query(`
-    SELECT m.id, m.name, m.price, m.category, m.description,
-           r.id AS restaurant_id, r.name AS restaurant_name, r.photo_url
-    FROM menus m
-    JOIN restaurants r ON m.restaurant_id = r.id
-    JOIN affiliations a ON a.restaurant_id = r.id
-    WHERE a.company_id = $1 AND m.available = TRUE AND m.name ILIKE $2
-    ORDER BY m.name LIMIT 20
-  `, [companyId, `%${q}%`]);
-  res.json(r.rows);
+  try {
+    const r = await pool.query(`
+      SELECT m.id, m.name, m.price, m.category, m.description,
+             r.id AS restaurant_id, r.name AS restaurant_name, r.photo_url
+      FROM menus m
+      JOIN restaurants r ON m.restaurant_id = r.id
+      JOIN affiliations a ON a.restaurant_id = r.id
+      WHERE a.company_id = $1 AND m.available = TRUE AND m.name ILIKE $2
+      ORDER BY m.name LIMIT 20
+    `, [companyId, `%${q}%`]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // GET /api/employee/weekly-programs
@@ -3683,18 +3821,22 @@ app.get('/api/employee/weekly-selections', employeeAuth, async (req, res) => {
 });
 
 app.get('/api/employee/restaurants', employeeAuth, async (req, res) => {
-  const r = await pool.query(`
-    SELECT r.id,r.name,r.address,r.specialties,r.photo_url,
-    (SELECT COUNT(*) FROM menus m WHERE m.restaurant_id=r.id AND m.available=TRUE) AS menu_count
-    FROM affiliations a JOIN restaurants r ON a.restaurant_id=r.id
-    WHERE a.company_id=$1 ORDER BY r.name
-  `, [req.user.companyId]);
-  res.json(r.rows);
+  try {
+    const r = await pool.query(`
+      SELECT r.id,r.name,r.address,r.specialties,r.photo_url,
+      (SELECT COUNT(*) FROM menus m WHERE m.restaurant_id=r.id AND m.available=TRUE) AS menu_count
+      FROM affiliations a JOIN restaurants r ON a.restaurant_id=r.id
+      WHERE a.company_id=$1 ORDER BY r.name
+    `, [req.user.companyId]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/employee/restaurants/:id/menus', employeeAuth, async (req, res) => {
-  const r = await pool.query('SELECT * FROM menus WHERE restaurant_id=$1 AND available=TRUE AND deleted_at IS NULL ORDER BY category,name', [req.params.id]);
-  res.json(r.rows);
+  try {
+    const r = await pool.query('SELECT * FROM menus WHERE restaurant_id=$1 AND available=TRUE AND deleted_at IS NULL ORDER BY category,name', [req.params.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/employee/order', employeeAuth, async (req, res) => {
@@ -3712,8 +3854,10 @@ app.get('/api/employee/order', employeeAuth, async (req, res) => {
   const params = [req.user.id, d];
   if (restaurantId) { q += ` AND o.restaurant_id=$3`; params.push(restaurantId); }
   q += ' ORDER BY o.created_at DESC';
-  const r = await pool.query(q, params);
-  res.json(restaurantId ? (r.rows[0]||null) : r.rows);
+  try {
+    const r = await pool.query(q, params);
+    res.json(restaurantId ? (r.rows[0]||null) : r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/employee/order', employeeAuth, async (req, res) => {
@@ -3904,23 +4048,31 @@ app.post('/api/employee/ratings', employeeAuth, async (req, res) => {
 });
 
 app.get('/api/employee/history', employeeAuth, async (req, res) => {
-  const r = await pool.query('SELECT * FROM order_history WHERE user_id=$1 ORDER BY action_timestamp DESC', [req.user.id]);
-  res.json(r.rows);
+  try {
+    const r = await pool.query('SELECT * FROM order_history WHERE user_id=$1 ORDER BY action_timestamp DESC', [req.user.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete('/api/employee/history', employeeAuth, async (req, res) => {
-  await pool.query('DELETE FROM order_history WHERE user_id=$1', [req.user.id]);
-  res.json({ message: 'Historique vidé' });
+  try {
+    await pool.query('DELETE FROM order_history WHERE user_id=$1', [req.user.id]);
+    res.json({ message: 'Historique vidé' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete('/api/employee/history/:id', employeeAuth, async (req, res) => {
-  await pool.query('DELETE FROM order_history WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
-  res.json({ message: 'Supprimé' });
+  try {
+    await pool.query('DELETE FROM order_history WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
+    res.json({ message: 'Supprimé' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/employee/profile', employeeAuth, async (req, res) => {
-  const r = await pool.query('SELECT id,employee_id,first_name,last_name,email,drink_preference,photo_url,created_at FROM users WHERE id=$1', [req.user.id]);
-  res.json(r.rows[0]);
+  try {
+    const r = await pool.query('SELECT id,employee_id,first_name,last_name,email,drink_preference,photo_url,created_at FROM users WHERE id=$1', [req.user.id]);
+    res.json(r.rows[0] || {});
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.put('/api/employee/profile', employeeAuth, async (req, res) => {
@@ -3953,9 +4105,10 @@ app.get('/api/restaurant/conversations', restaurantAuth, async (req, res) => {
 
 // ─── Company profile (logo)
 app.get('/api/admin/company-profile', companyAuth, async (req, res) => {
-  const companyId = req.user.id;
-  const r = await pool.query('SELECT id, name, email, logo_url FROM companies WHERE id=$1', [companyId]);
-  res.json(r.rows[0] || {});
+  try {
+    const r = await pool.query('SELECT id, name, email, logo_url FROM companies WHERE id=$1', [req.user.id]);
+    res.json(r.rows[0] || {});
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.put('/api/admin/company-profile', companyAuth, async (req, res) => {
@@ -3979,6 +4132,7 @@ app.put('/api/restaurant/password', restaurantAuth, async (req, res) => {
   if (newPassword.length < 6) return res.status(400).json({ error: 'Minimum 6 caractères' });
   try {
     const r = await pool.query('SELECT password_hash FROM restaurants WHERE id=$1', [req.user.id]);
+    if (!r.rows.length) return res.status(404).json({ error: 'Compte introuvable' });
     if (!await bcrypt.compare(currentPassword, r.rows[0].password_hash))
       return res.status(401).json({ error: 'Mot de passe actuel incorrect' });
     const hash = await bcrypt.hash(newPassword, 10);
@@ -3995,6 +4149,7 @@ app.put('/api/company/password', companyAuth, async (req, res) => {
     const companyId = req.user.id;
     // Vérification selon le rôle
     const r = await pool.query('SELECT password_hash FROM companies WHERE id=$1', [companyId]);
+    if (!r.rows.length) return res.status(404).json({ error: 'Compte introuvable' });
     if (!await bcrypt.compare(currentPassword, r.rows[0].password_hash))
       return res.status(401).json({ error: 'Mot de passe actuel incorrect' });
     const hash = await bcrypt.hash(newPassword, 10);
@@ -4625,6 +4780,511 @@ app.put('/api/super-admin/platform-terms', adminAuth, async (req, res) => {
     ]);
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ════════════════════════════════════════════════════════════════
+// COMPOSITIONS PERSONNALISÉES
+// ════════════════════════════════════════════════════════════════
+
+// GET /api/company/restaurant-dishes?restaurant_id=X — plats disponibles d'un restaurant (packs actifs)
+app.get('/api/company/restaurant-dishes', companyAuth, async (req, res) => {
+  const { restaurant_id } = req.query;
+  if (!restaurant_id) return res.status(400).json({ error: 'restaurant_id requis' });
+  try {
+    const aff = await pool.query('SELECT id FROM affiliations WHERE company_id=$1 AND restaurant_id=$2', [req.user.id, restaurant_id]);
+    if (!aff.rows.length) return res.status(403).json({ error: 'Non affilié à ce restaurant' });
+    const r = await pool.query(`
+      SELECT wdd.id, wdd.name, wdd.description, wdd.price, wdd.image_url,
+             wmd.day_of_week,
+             wm.name AS menu_name,
+             wp.id AS pack_id, wp.name AS pack_name
+      FROM weekly_day_dishes wdd
+      JOIN weekly_menu_days wmd ON wmd.id = wdd.weekly_menu_day_id
+      JOIN weekly_menus wm ON wm.id = wmd.weekly_menu_id
+      JOIN weekly_packs wp ON wp.id = wm.weekly_pack_id
+      WHERE wp.restaurant_id = $1 AND wp.is_active = true
+      ORDER BY wp.name, wm.name, wmd.day_of_week, wdd.sort_order
+    `, [restaurant_id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Convertit une composition acceptée en weekly_pack + company_weekly_selection
+async function createSelectionFromComposition(comp) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const dishesR = await client.query(
+      'SELECT * FROM custom_composition_dishes WHERE composition_id=$1 ORDER BY day_of_week, id',
+      [comp.id]
+    );
+    const dishes = dishesR.rows;
+
+    // dish_qty = nombre de portions commandées par jour (quantité de la composition)
+    const dishQty = dishes.length > 0 ? (parseInt(dishes[0].quantity) || 1) : 1;
+
+    // Numéro du menu = total menus existants du restaurant + 1
+    const menuCountR = await client.query(
+      'SELECT COUNT(*) AS cnt FROM weekly_menus WHERE restaurant_id=$1',
+      [comp.restaurant_id]
+    );
+    const menuN = parseInt(menuCountR.rows[0].cnt) + 1;
+    const packName = `Menu ${menuN}`;
+    const finalPrice = parseFloat(comp.final_price || comp.restaurant_counter_price || comp.company_proposed_price || 0);
+
+    const packR = await client.query(
+      'INSERT INTO weekly_packs (restaurant_id, name, description, price, is_active) VALUES ($1,$2,$3,$4,true) RETURNING id',
+      [comp.restaurant_id, packName, comp.name || 'Composition personnalisée', finalPrice]
+    );
+    const packId = packR.rows[0].id;
+
+    const menuR = await client.query(
+      'INSERT INTO weekly_menus (weekly_pack_id, restaurant_id, name, sort_order) VALUES ($1,$2,$3,1) RETURNING id',
+      [packId, comp.restaurant_id, comp.name || packName]
+    );
+    const menuId = menuR.rows[0].id;
+
+    const days = [...new Set(dishes.map(d => d.day_of_week))].sort((a, b) => a - b);
+    for (const dayNum of days) {
+      const dayR = await client.query(
+        'INSERT INTO weekly_menu_days (weekly_menu_id, day_of_week, is_optional) VALUES ($1,$2,false) RETURNING id',
+        [menuId, dayNum]
+      );
+      const dayId = dayR.rows[0].id;
+      const dayDishes = dishes.filter(d => d.day_of_week === dayNum);
+      let sort = 0;
+      for (const dish of dayDishes) {
+        await client.query(
+          'INSERT INTO weekly_day_dishes (weekly_menu_day_id, restaurant_id, name, price, sort_order) VALUES ($1,$2,$3,$4,$5)',
+          [dayId, comp.restaurant_id, dish.dish_name, parseFloat(dish.unit_price) || 0, ++sort]
+        );
+      }
+    }
+
+    await client.query(
+      `INSERT INTO company_weekly_selections
+       (company_id, restaurant_id, weekly_pack_id, week_start, dish_qty, status, notes, delivery_time, custom_composition_id)
+       VALUES ($1,$2,$3,$4,$5,'confirmed',$6,$7,$8)
+       ON CONFLICT (company_id, restaurant_id, week_start) DO UPDATE SET
+         weekly_pack_id=EXCLUDED.weekly_pack_id, status='confirmed',
+         notes=EXCLUDED.notes, delivery_time=EXCLUDED.delivery_time,
+         custom_composition_id=EXCLUDED.custom_composition_id, updated_at=NOW()`,
+      [comp.company_id, comp.restaurant_id, packId, comp.week_start,
+       dishQty, comp.notes || '', comp.delivery_time || '12:00:00', comp.id]
+    );
+
+    await client.query('COMMIT');
+    console.log(`✅ Composition ${comp.id} → Pack "${packName}" + abonnement confirmé`);
+  } catch(e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+// GET /api/company/custom-compositions — liste des compositions de l'entreprise
+app.get('/api/company/custom-compositions', companyAuth, async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT cwc.*, rest.name AS restaurant_name, rest.photo_url AS restaurant_photo,
+             COALESCE((
+               SELECT json_agg(json_build_object(
+                 'id',ccd.id,'dish_id',ccd.dish_id,'dish_name',ccd.dish_name,'pack_name',ccd.pack_name,
+                 'day_of_week',ccd.day_of_week,'quantity',ccd.quantity,'unit_price',ccd.unit_price
+               ) ORDER BY ccd.day_of_week, ccd.id)
+               FROM custom_composition_dishes ccd WHERE ccd.composition_id = cwc.id
+             ), '[]'::json) AS dishes
+      FROM custom_weekly_compositions cwc
+      JOIN restaurants rest ON rest.id = cwc.restaurant_id
+      WHERE cwc.company_id = $1
+      ORDER BY cwc.created_at DESC
+    `, [req.user.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/company/custom-compositions — créer une composition
+app.post('/api/company/custom-compositions', companyAuth, async (req, res) => {
+  const { restaurant_id, name, week_start, notes, dishes, company_proposed_price, delivery_time } = req.body;
+  if (!restaurant_id || !week_start) return res.status(400).json({ error: 'restaurant_id et week_start requis' });
+  try {
+    const aff = await pool.query('SELECT id FROM affiliations WHERE company_id=$1 AND restaurant_id=$2', [req.user.id, restaurant_id]);
+    if (!aff.rows.length) return res.status(403).json({ error: 'Non affilié à ce restaurant' });
+    const r = await pool.query(
+      'INSERT INTO custom_weekly_compositions (company_id, restaurant_id, name, week_start, notes, company_proposed_price, delivery_time) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
+      [req.user.id, restaurant_id, name || 'Ma composition', week_start, notes || null, company_proposed_price ? parseFloat(company_proposed_price) : null, delivery_time || '12:00:00']
+    );
+    const compId = r.rows[0].id;
+    if (Array.isArray(dishes) && dishes.length) {
+      for (const d of dishes) {
+        if (!d.dish_name || !d.day_of_week) continue;
+        await pool.query(
+          'INSERT INTO custom_composition_dishes (composition_id, dish_id, dish_name, pack_name, day_of_week, quantity, unit_price) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+          [compId, d.dish_id || null, d.dish_name, d.pack_name || null, parseInt(d.day_of_week), parseInt(d.quantity) || 1, parseFloat(d.unit_price) || 0]
+        );
+      }
+    }
+    res.status(201).json(r.rows[0]);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/company/custom-compositions/:id — modifier une composition
+app.put('/api/company/custom-compositions/:id', companyAuth, async (req, res) => {
+  const { name, week_start, notes, dishes, company_proposed_price, delivery_time } = req.body;
+  try {
+    const existing = await pool.query('SELECT * FROM custom_weekly_compositions WHERE id=$1 AND company_id=$2', [req.params.id, req.user.id]);
+    if (!existing.rows.length) return res.status(404).json({ error: 'Composition introuvable' });
+    if (!['draft', 'negotiating', 'submitted'].includes(existing.rows[0].status)) {
+      return res.status(400).json({ error: 'Cette composition ne peut plus être modifiée' });
+    }
+    const resetToDraft = existing.rows[0].status === 'submitted';
+    await pool.query(
+      `UPDATE custom_weekly_compositions SET name=COALESCE($1,name), week_start=COALESCE($2,week_start), notes=COALESCE($3,notes), company_proposed_price=COALESCE($4,company_proposed_price), delivery_time=COALESCE($5,delivery_time)${resetToDraft ? ", status='draft'" : ''}, updated_at=NOW() WHERE id=$6`,
+      [name || null, week_start || null, notes !== undefined ? notes : null, company_proposed_price !== undefined ? parseFloat(company_proposed_price) : null, delivery_time || null, req.params.id]
+    );
+    if (Array.isArray(dishes)) {
+      await pool.query('DELETE FROM custom_composition_dishes WHERE composition_id=$1', [req.params.id]);
+      for (const d of dishes) {
+        if (!d.dish_name || !d.day_of_week) continue;
+        await pool.query(
+          'INSERT INTO custom_composition_dishes (composition_id, dish_id, dish_name, pack_name, day_of_week, quantity, unit_price) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+          [req.params.id, d.dish_id || null, d.dish_name, d.pack_name || null, parseInt(d.day_of_week), parseInt(d.quantity) || 1, parseFloat(d.unit_price) || 0]
+        );
+      }
+    }
+    const updated = await pool.query('SELECT * FROM custom_weekly_compositions WHERE id=$1', [req.params.id]);
+    res.json(updated.rows[0]);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/company/custom-compositions/:id
+app.delete('/api/company/custom-compositions/:id', companyAuth, async (req, res) => {
+  try {
+    const r = await pool.query('DELETE FROM custom_weekly_compositions WHERE id=$1 AND company_id=$2 AND status IN (\'draft\',\'rejected\') RETURNING id', [req.params.id, req.user.id]);
+    if (!r.rows.length) return res.status(400).json({ error: 'Impossible de supprimer (statut invalide ou introuvable)' });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/company/custom-compositions/:id/submit — soumettre au restaurant avec prix proposé
+app.post('/api/company/custom-compositions/:id/submit', companyAuth, async (req, res) => {
+  const { company_proposed_price, notes } = req.body;
+  try {
+    const existing = await pool.query('SELECT * FROM custom_weekly_compositions WHERE id=$1 AND company_id=$2', [req.params.id, req.user.id]);
+    if (!existing.rows.length) return res.status(404).json({ error: 'Composition introuvable' });
+    if (!['draft', 'negotiating'].includes(existing.rows[0].status)) {
+      return res.status(400).json({ error: 'Composition déjà soumise' });
+    }
+    const dishes = await pool.query('SELECT COUNT(*) AS cnt FROM custom_composition_dishes WHERE composition_id=$1', [req.params.id]);
+    if (parseInt(dishes.rows[0].cnt) === 0) return res.status(400).json({ error: 'Ajoutez au moins un plat avant de soumettre' });
+    const price = company_proposed_price !== undefined ? parseFloat(company_proposed_price) : null;
+    const r = await pool.query(
+      'UPDATE custom_weekly_compositions SET status=\'submitted\', company_proposed_price=$1, notes=COALESCE($2,notes), updated_at=NOW() WHERE id=$3 RETURNING *',
+      [price, notes || null, req.params.id]
+    );
+    const comp = r.rows[0];
+    const companyInfo = await pool.query('SELECT name FROM companies WHERE id=$1', [req.user.id]);
+    const companyName = companyInfo.rows[0]?.name || 'Une entreprise';
+    await createNotification('restaurant', comp.restaurant_id,
+      '🆕 Composition personnalisée reçue',
+      `${companyName} a soumis une composition pour la semaine du ${comp.week_start}${price ? ` (prix proposé : ${price.toLocaleString('fr')} FCFA)` : ''}`,
+      'custom_composition', { composition_id: comp.id, company_id: req.user.id }
+    );
+    res.json(comp);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/company/custom-compositions/:id/respond — entreprise répond à la contre-proposition du restaurant
+app.post('/api/company/custom-compositions/:id/respond', companyAuth, async (req, res) => {
+  const { action, company_proposed_price, notes } = req.body;
+  if (!['accept', 'reject', 'counter'].includes(action)) return res.status(400).json({ error: 'action invalide' });
+  try {
+    const r = await pool.query('SELECT * FROM custom_weekly_compositions WHERE id=$1 AND company_id=$2', [req.params.id, req.user.id]);
+    if (!r.rows.length) return res.status(404).json({ error: 'Composition introuvable' });
+    const comp = r.rows[0];
+    if (comp.status !== 'negotiating') return res.status(400).json({ error: 'Composition non en cours de négociation' });
+    let newStatus;
+    if (action === 'accept') {
+      newStatus = 'accepted';
+      const acceptedPrice = comp.restaurant_counter_price || comp.company_proposed_price;
+      await pool.query('UPDATE custom_weekly_compositions SET status=$1, final_price=$2, updated_at=NOW() WHERE id=$3', [newStatus, acceptedPrice, req.params.id]);
+      await createSelectionFromComposition({ ...comp, final_price: acceptedPrice }).catch(e => console.error('createSelectionFromComposition (company accept):', e.message));
+    } else if (action === 'reject') {
+      newStatus = 'rejected';
+      await pool.query('UPDATE custom_weekly_compositions SET status=$1, updated_at=NOW() WHERE id=$2', [newStatus, req.params.id]);
+    } else {
+      const newPrice = parseFloat(company_proposed_price) || 0;
+      if (!newPrice) return res.status(400).json({ error: 'Prix requis pour une contre-proposition' });
+      newStatus = 'submitted';
+      await pool.query('UPDATE custom_weekly_compositions SET status=$1, company_proposed_price=$2, updated_at=NOW() WHERE id=$3', [newStatus, newPrice, req.params.id]);
+    }
+    const companyInfo = await pool.query('SELECT name FROM companies WHERE id=$1', [req.user.id]);
+    const companyName = companyInfo.rows[0]?.name || 'L\'entreprise';
+    const notifMsg = action === 'accept'
+      ? `${companyName} a accepté votre contre-proposition`
+      : action === 'reject'
+      ? `${companyName} a refusé la négociation`
+      : `${companyName} a fait une nouvelle proposition de ${(parseFloat(company_proposed_price) || 0).toLocaleString('fr')} FCFA`;
+    await createNotification('restaurant', comp.restaurant_id,
+      action === 'accept' ? '✅ Contre-proposition acceptée' : action === 'reject' ? '❌ Négociation refusée' : '🔄 Nouvelle proposition',
+      notifMsg + (notes ? ` — "${notes}"` : ''), 'custom_composition',
+      { composition_id: comp.id, company_id: req.user.id, action }
+    );
+    res.json({ ok: true, status: newStatus });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/restaurant/composition-requests — compositions soumises au restaurant
+app.get('/api/restaurant/composition-requests', restaurantAuth, async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT cwc.*, c.name AS company_name, c.logo_url AS company_logo,
+             COALESCE((
+               SELECT json_agg(json_build_object(
+                 'id',ccd.id,'dish_id',ccd.dish_id,'dish_name',ccd.dish_name,'pack_name',ccd.pack_name,
+                 'day_of_week',ccd.day_of_week,'quantity',ccd.quantity,'unit_price',ccd.unit_price
+               ) ORDER BY ccd.day_of_week, ccd.id)
+               FROM custom_composition_dishes ccd WHERE ccd.composition_id = cwc.id
+             ), '[]'::json) AS dishes
+      FROM custom_weekly_compositions cwc
+      JOIN companies c ON c.id = cwc.company_id
+      WHERE cwc.restaurant_id = $1 AND cwc.status NOT IN ('draft')
+      ORDER BY cwc.created_at DESC
+    `, [req.user.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/restaurant/composition-requests/:id/respond — accepter/refuser/contre-proposer
+app.put('/api/restaurant/composition-requests/:id/respond', restaurantAuth, async (req, res) => {
+  const { action, counter_price, message } = req.body;
+  if (!['accept', 'reject', 'counter'].includes(action)) return res.status(400).json({ error: 'action invalide' });
+  try {
+    const r = await pool.query('SELECT * FROM custom_weekly_compositions WHERE id=$1 AND restaurant_id=$2', [req.params.id, req.user.id]);
+    if (!r.rows.length) return res.status(404).json({ error: 'Composition introuvable' });
+    const comp = r.rows[0];
+    if (!['submitted', 'negotiating'].includes(comp.status))
+      return res.status(400).json({ error: 'Cette composition ne peut plus être modifiée' });
+    let newStatus, updateFields;
+    if (action === 'accept') {
+      newStatus = 'accepted';
+      const finalPrice = comp.company_proposed_price;
+      await pool.query('UPDATE custom_weekly_compositions SET status=$1, final_price=$2, updated_at=NOW() WHERE id=$3', [newStatus, finalPrice, req.params.id]);
+      await createSelectionFromComposition({ ...comp, final_price: finalPrice }).catch(e => console.error('createSelectionFromComposition (restaurant accept):', e.message));
+    } else if (action === 'reject') {
+      newStatus = 'rejected';
+      await pool.query('UPDATE custom_weekly_compositions SET status=$1, updated_at=NOW() WHERE id=$2', [newStatus, req.params.id]);
+    } else {
+      const cPrice = parseFloat(counter_price);
+      if (!cPrice || cPrice <= 0) return res.status(400).json({ error: 'Prix requis pour la contre-proposition' });
+      newStatus = 'negotiating';
+      await pool.query('UPDATE custom_weekly_compositions SET status=$1, restaurant_counter_price=$2, updated_at=NOW() WHERE id=$3', [newStatus, cPrice, req.params.id]);
+    }
+    const restInfo = await pool.query('SELECT name FROM restaurants WHERE id=$1', [req.user.id]);
+    const restName = restInfo.rows[0]?.name || 'Le restaurant';
+    const notifMsg = action === 'accept'
+      ? `${restName} a accepté votre composition pour la semaine du ${comp.week_start}`
+      : action === 'reject'
+      ? `${restName} a refusé votre composition pour la semaine du ${comp.week_start}`
+      : `${restName} a fait une contre-proposition (${(parseFloat(counter_price) || 0).toLocaleString('fr')} FCFA) pour votre composition`;
+    await createNotification('company', comp.company_id,
+      action === 'accept' ? '✅ Composition acceptée' : action === 'reject' ? '❌ Composition refusée' : '🔄 Contre-proposition reçue',
+      notifMsg + (message ? ` — "${message}"` : ''), 'custom_composition',
+      { composition_id: comp.id, restaurant_id: req.user.id, action }
+    );
+    res.json({ ok: true, status: newStatus });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ════════════════════════════════════════════════════════════════
+// NÉGOCIATIONS DE PRIX
+// ════════════════════════════════════════════════════════════════
+
+// POST /api/company/negotiations — démarrer une négociation
+app.post('/api/company/negotiations', companyAuth, async (req, res) => {
+  const { restaurant_id, entity_type, entity_id, entity_name, proposed_price, message } = req.body;
+  if (!restaurant_id || !entity_type || !entity_id || proposed_price === undefined) {
+    return res.status(400).json({ error: 'Champs requis manquants' });
+  }
+  try {
+    const aff = await pool.query('SELECT id FROM affiliations WHERE company_id=$1 AND restaurant_id=$2', [req.user.id, restaurant_id]);
+    if (!aff.rows.length) return res.status(403).json({ error: 'Non affilié à ce restaurant' });
+    let originalPrice = 0;
+    if (entity_type === 'weekly_pack') {
+      const p = await pool.query('SELECT price FROM weekly_packs WHERE id=$1 AND restaurant_id=$2', [entity_id, restaurant_id]);
+      originalPrice = parseFloat(p.rows[0]?.price) || 0;
+    } else if (entity_type === 'dish') {
+      const d = await pool.query('SELECT price FROM weekly_day_dishes WHERE id=$1', [entity_id]);
+      originalPrice = parseFloat(d.rows[0]?.price) || 0;
+    }
+    const existing = await pool.query(
+      'SELECT id FROM price_negotiations WHERE company_id=$1 AND restaurant_id=$2 AND entity_type=$3 AND entity_id=$4 AND status NOT IN (\'accepted\',\'rejected\')',
+      [req.user.id, restaurant_id, entity_type, entity_id]
+    );
+    if (existing.rows.length) return res.status(409).json({ error: 'Une négociation est déjà en cours pour cet élément' });
+    const neg = await pool.query(
+      'INSERT INTO price_negotiations (company_id, restaurant_id, entity_type, entity_id, entity_name, status, original_price) VALUES ($1,$2,$3,$4,$5,\'company_proposed\',$6) RETURNING *',
+      [req.user.id, restaurant_id, entity_type, entity_id, entity_name || null, originalPrice]
+    );
+    await pool.query(
+      'INSERT INTO negotiation_messages (negotiation_id, sent_by, sender_id, proposed_price, message, action) VALUES ($1,\'company\',$2,$3,$4,\'propose\')',
+      [neg.rows[0].id, req.user.id, parseFloat(proposed_price), message || null]
+    );
+    const companyInfo = await pool.query('SELECT name FROM companies WHERE id=$1', [req.user.id]);
+    await createNotification('restaurant', restaurant_id,
+      '💬 Nouvelle proposition de prix',
+      `${companyInfo.rows[0]?.name} propose ${parseFloat(proposed_price).toLocaleString('fr')} FCFA pour "${entity_name || entity_type}"`,
+      'negotiation', { negotiation_id: neg.rows[0].id, company_id: req.user.id }
+    );
+    res.status(201).json(neg.rows[0]);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/company/negotiations — liste des négociations de l'entreprise
+app.get('/api/company/negotiations', companyAuth, async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT pn.*, rest.name AS restaurant_name, rest.photo_url AS restaurant_photo,
+             COALESCE((
+               SELECT json_agg(json_build_object(
+                 'id',nm.id,'sent_by',nm.sent_by,'proposed_price',nm.proposed_price,
+                 'message',nm.message,'action',nm.action,'created_at',nm.created_at
+               ) ORDER BY nm.created_at)
+               FROM negotiation_messages nm WHERE nm.negotiation_id = pn.id
+             ), '[]'::json) AS messages
+      FROM price_negotiations pn
+      JOIN restaurants rest ON rest.id = pn.restaurant_id
+      WHERE pn.company_id = $1
+      ORDER BY pn.id DESC
+    `, [req.user.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/company/negotiations/:id/respond — entreprise répond à une contre-proposition
+app.post('/api/company/negotiations/:id/respond', companyAuth, async (req, res) => {
+  const { action, proposed_price, message } = req.body;
+  if (!['accept', 'reject', 'counter'].includes(action)) return res.status(400).json({ error: 'action invalide' });
+  try {
+    const neg = await pool.query('SELECT * FROM price_negotiations WHERE id=$1 AND company_id=$2', [req.params.id, req.user.id]);
+    if (!neg.rows.length) return res.status(404).json({ error: 'Négociation introuvable' });
+    if (['accepted', 'rejected'].includes(neg.rows[0].status)) return res.status(400).json({ error: 'Négociation déjà clôturée' });
+    let newStatus;
+    if (action === 'accept') {
+      const lastMsg = await pool.query('SELECT proposed_price FROM negotiation_messages WHERE negotiation_id=$1 ORDER BY created_at DESC LIMIT 1', [req.params.id]);
+      const agreedPrice = parseFloat(lastMsg.rows[0]?.proposed_price) || 0;
+      newStatus = 'accepted';
+      await pool.query('UPDATE price_negotiations SET status=$1, final_agreed_price=$2 WHERE id=$3', [newStatus, agreedPrice, req.params.id]);
+    } else if (action === 'reject') {
+      newStatus = 'rejected';
+      await pool.query('UPDATE price_negotiations SET status=$1 WHERE id=$2', [newStatus, req.params.id]);
+    } else {
+      newStatus = 'company_proposed';
+      await pool.query('UPDATE price_negotiations SET status=$1 WHERE id=$2', [newStatus, req.params.id]);
+    }
+    await pool.query(
+      'INSERT INTO negotiation_messages (negotiation_id, sent_by, sender_id, proposed_price, message, action) VALUES ($1,\'company\',$2,$3,$4,$5)',
+      [req.params.id, req.user.id, proposed_price ? parseFloat(proposed_price) : null, message || null, action]
+    );
+    const companyInfo = await pool.query('SELECT name FROM companies WHERE id=$1', [req.user.id]);
+    await createNotification('restaurant', neg.rows[0].restaurant_id,
+      action === 'accept' ? '✅ Proposition acceptée' : action === 'reject' ? '❌ Proposition refusée' : '🔄 Contre-proposition',
+      `${companyInfo.rows[0]?.name} a ${action === 'accept' ? 'accepté votre proposition' : action === 'reject' ? 'refusé' : 'fait une contre-proposition'}` + (message ? ` : "${message}"` : ''),
+      'negotiation', { negotiation_id: parseInt(req.params.id) }
+    );
+    res.json({ ok: true, status: newStatus });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/restaurant/negotiations — liste des négociations du restaurant
+app.get('/api/restaurant/negotiations', restaurantAuth, async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT pn.*, c.name AS company_name, c.logo_url AS company_logo,
+             COALESCE((
+               SELECT json_agg(json_build_object(
+                 'id',nm.id,'sent_by',nm.sent_by,'proposed_price',nm.proposed_price,
+                 'message',nm.message,'action',nm.action,'created_at',nm.created_at
+               ) ORDER BY nm.created_at)
+               FROM negotiation_messages nm WHERE nm.negotiation_id = pn.id
+             ), '[]'::json) AS messages
+      FROM price_negotiations pn
+      JOIN companies c ON c.id = pn.company_id
+      WHERE pn.restaurant_id = $1
+      ORDER BY pn.id DESC
+    `, [req.user.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/restaurant/negotiations/:id/respond — restaurant répond à une proposition
+app.post('/api/restaurant/negotiations/:id/respond', restaurantAuth, async (req, res) => {
+  const { action, proposed_price, message } = req.body;
+  if (!['accept', 'reject', 'counter'].includes(action)) return res.status(400).json({ error: 'action invalide' });
+  try {
+    const neg = await pool.query('SELECT * FROM price_negotiations WHERE id=$1 AND restaurant_id=$2', [req.params.id, req.user.id]);
+    if (!neg.rows.length) return res.status(404).json({ error: 'Négociation introuvable' });
+    if (['accepted', 'rejected'].includes(neg.rows[0].status)) return res.status(400).json({ error: 'Négociation déjà clôturée' });
+    let newStatus;
+    if (action === 'accept') {
+      const lastMsg = await pool.query('SELECT proposed_price FROM negotiation_messages WHERE negotiation_id=$1 ORDER BY created_at DESC LIMIT 1', [req.params.id]);
+      const agreedPrice = parseFloat(lastMsg.rows[0]?.proposed_price) || 0;
+      newStatus = 'accepted';
+      await pool.query('UPDATE price_negotiations SET status=$1, final_agreed_price=$2 WHERE id=$3', [newStatus, agreedPrice, req.params.id]);
+    } else if (action === 'reject') {
+      newStatus = 'rejected';
+      await pool.query('UPDATE price_negotiations SET status=$1 WHERE id=$2', [newStatus, req.params.id]);
+    } else {
+      newStatus = 'restaurant_counter';
+      await pool.query('UPDATE price_negotiations SET status=$1 WHERE id=$2', [newStatus, req.params.id]);
+    }
+    await pool.query(
+      'INSERT INTO negotiation_messages (negotiation_id, sent_by, sender_id, proposed_price, message, action) VALUES ($1,\'restaurant\',$2,$3,$4,$5)',
+      [req.params.id, req.user.id, proposed_price ? parseFloat(proposed_price) : null, message || null, action]
+    );
+    const restInfo = await pool.query('SELECT name FROM restaurants WHERE id=$1', [req.user.id]);
+    await createNotification('company', neg.rows[0].company_id,
+      action === 'accept' ? '✅ Prix accepté' : action === 'reject' ? '❌ Proposition refusée' : '🔄 Contre-proposition reçue',
+      `${restInfo.rows[0]?.name} a ${action === 'accept' ? 'accepté votre proposition de prix' : action === 'reject' ? 'refusé votre proposition' : `fait une contre-proposition de ${(parseFloat(proposed_price) || 0).toLocaleString('fr')} FCFA`}` + (message ? ` : "${message}"` : ''),
+      'negotiation', { negotiation_id: parseInt(req.params.id) }
+    );
+    res.json({ ok: true, status: newStatus });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ════════════════════════════════════════════════════════════════
+// CONFIDENTIALITÉ DES CLIENTS (RESTAURANT)
+// ════════════════════════════════════════════════════════════════
+
+// PUT /api/restaurant/clients/:companyId/privacy — basculer la confidentialité d'un client
+app.put('/api/restaurant/clients/:companyId/privacy', restaurantAuth, async (req, res) => {
+  const { is_confidential, notes } = req.body;
+  try {
+    const aff = await pool.query('SELECT id FROM affiliations WHERE restaurant_id=$1 AND company_id=$2', [req.user.id, req.params.companyId]);
+    if (!aff.rows.length) return res.status(403).json({ error: 'Ce client n\'est pas affilié' });
+    await pool.query(`
+      INSERT INTO restaurant_client_privacy (restaurant_id, company_id, is_confidential, notes)
+      VALUES ($1,$2,$3,$4)
+      ON CONFLICT (restaurant_id, company_id) DO UPDATE SET
+        is_confidential=$3, notes=COALESCE($4,restaurant_client_privacy.notes), updated_at=NOW()
+    `, [req.user.id, req.params.companyId, is_confidential === true || is_confidential === 'true', notes || null]);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/restaurant/clients-privacy — liste des paramètres de confidentialité
+app.get('/api/restaurant/clients-privacy', restaurantAuth, async (req, res) => {
+  try {
+    const r = await pool.query(
+      'SELECT company_id, is_confidential, notes FROM restaurant_client_privacy WHERE restaurant_id=$1',
+      [req.user.id]
+    );
+    const map = {};
+    r.rows.forEach(row => { map[row.company_id] = { is_confidential: row.is_confidential, notes: row.notes }; });
+    res.json(map);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ════════════════════════════════════════════════════════════════

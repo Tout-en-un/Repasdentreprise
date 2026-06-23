@@ -44,6 +44,8 @@
     <div class="nav-item" data-page="allrestaurants"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2c-1.67 0-5 .83-5 4v6c0 1.1.9 2 2 2v5a1 1 0 0 0 2 0v-5c1.1 0 2-.9 2-2z"/></svg></span><span>Tous les restaurants</span></div>
     <div class="nav-item" data-page="affiliations"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span><span>Mes affiliations</span><span class="nav-badge" id="affContractBadge" style="display:none">0</span></div>
     <div class="nav-item" data-page="weeklymenu"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg></span><span>Menus Hebdo</span></div>
+    <div class="nav-item" data-page="compositions"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></span><span>Mes compositions</span><span class="nav-badge" id="coCompoBadge" style="display:none">0</span></div>
+    <div class="nav-item" data-page="negotiations-co"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="13" y2="14"/></svg></span><span>Négociations</span><span class="nav-badge" id="negoBadgeCo" style="display:none">0</span></div>
     <div class="nav-section">Commandes</div>
     <div class="nav-item" data-page="orders"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><span>Commandes du jour</span></div>
     <div class="nav-item" data-page="validate"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span>Valider &amp; Exporter</span></div>
@@ -171,6 +173,183 @@
     </div>
   </div>
 
+  <!-- ═══ COMPOSITIONS PERSONNALISÉES ═══ -->
+  <div class="page" id="page-compositions">
+    <div class="card reveal">
+      <div class="card-header">
+        <span class="card-title">🧩 Mes compositions personnalisées</span>
+        <button class="btn btn-primary btn-sm" onclick="openNewCompositionModal()">+ Nouvelle composition</button>
+      </div>
+      <div class="card-body">
+        <div class="tab-bar">
+          <button class="tab-btn active" id="tabCompoList" onclick="switchCompoTab('list')">Mes compositions</button>
+          <button class="tab-btn" id="tabCompoBuilder" onclick="switchCompoTab('builder')">🛠 Composer</button>
+        </div>
+        <div id="compoListPanel">
+          <div id="compoListGrid">
+            <div class="empty-state"><span class="icon">🧩</span>Aucune composition créée</div>
+          </div>
+        </div>
+        <div id="compoBuilderPanel" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end;margin-bottom:14px;flex-wrap:wrap">
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Restaurant</label>
+              <select class="form-control" id="compoRestaurant" style="font-size:13px" onchange="loadRestaurantDishesForCompo()">
+                <option value="">Choisir un restaurant...</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Semaine du (Lundi)</label>
+              <input type="date" class="form-control" id="compoWeekStart" style="font-size:13px">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">🕐 Heure de livraison</label>
+              <input type="time" class="form-control" id="compoDeliveryTime" value="12:00" style="font-size:13px">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Nom</label>
+              <input class="form-control" id="compoName" placeholder="Ma composition" style="font-size:13px">
+            </div>
+          </div>
+          <!-- Plats disponibles -->
+          <div id="compoDishBrowser" style="display:none">
+            <div style="font-weight:600;font-size:13px;color:var(--brown);margin-bottom:8px">📋 Plats disponibles (cliquez pour ajouter)</div>
+            <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap" id="compoPackFilter"></div>
+            <div id="compoDishList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;max-height:260px;overflow-y:auto;margin-bottom:16px"></div>
+          </div>
+          <!-- Planning hebdomadaire -->
+          <div style="font-weight:600;font-size:13px;color:var(--brown);margin-bottom:8px">📅 Composition de la semaine</div>
+          <div id="compoPlanningGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px"></div>
+          <!-- Prix et soumission -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Prix proposé (FCFA) <span style="color:var(--muted)">(optionnel)</span></label>
+              <input class="form-control" id="compoPropPrice" type="number" min="0" placeholder="ex : 150000" style="font-size:13px">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Notes</label>
+              <input class="form-control" id="compoNotes" placeholder="Remarques..." style="font-size:13px">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-outline" onclick="saveCompositionDraftUI()">💾 Sauvegarder brouillon</button>
+            <button class="btn btn-primary" onclick="submitCompositionToRestaurant()">📤 Soumettre au restaurant</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ NÉGOCIATIONS ENTREPRISE ═══ -->
+  <div class="page" id="page-negotiations-co">
+    <div class="card reveal">
+      <div class="card-header">
+        <span class="card-title">💬 Négociations de prix</span>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select class="form-control" id="negoCoFilterRestaurant" style="font-size:12px;width:160px" onchange="loadCompanyNegotiations()">
+            <option value="">Tous les restaurants</option>
+          </select>
+          <select class="form-control" id="negoCoFilterStatus" style="font-size:12px;width:180px" onchange="loadCompanyNegotiations()">
+            <option value="">Tous les statuts</option>
+            <option value="company_proposed">En attente</option>
+            <option value="restaurant_counter">Contre-proposition reçue</option>
+            <option value="accepted">Acceptées</option>
+            <option value="rejected">Refusées</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="loadCompanyNegotiations()">🔄</button>
+        </div>
+      </div>
+      <div id="negoCoSummaryBar" style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 16px 4px"></div>
+      <div class="card-body" id="negosCoGrid">
+        <div class="empty-state"><span class="icon">💬</span>Aucune négociation en cours</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal choisir le jour lors de l'ajout d'un plat à la composition -->
+  <div class="modal-overlay" id="compoDayPickerModal">
+    <div class="modal" style="max-width:440px">
+      <div class="modal-title" id="compoDayPickerTitle">📅 Quel jour pour ce plat ?</div>
+      <div id="compoDayPickerInfo" style="background:#FFF0EA;border-radius:8px;padding:10px 14px;margin-bottom:18px;font-size:13px"></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;text-align:center">Sélectionnez le jour de la semaine :</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:6px" id="compoDayBtns"></div>
+      <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:14px">Le badge indique le nombre de plats déjà choisis pour ce jour</div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal(document.getElementById('compoDayPickerModal'))">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal répondre à contre-proposition de COMPOSITION (entreprise) -->
+  <div class="modal-overlay" id="compoCoRespondModal">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-title" id="compoCoRespondTitle">Répondre à la contre-proposition</div>
+      <input type="hidden" id="compoCoRespondId">
+      <div id="compoCoRespondInfo" style="background:#f8f9fa;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px"></div>
+      <div class="form-group">
+        <label>Nouveau prix proposé (FCFA) <span style="color:var(--muted);font-size:11px">(seulement si contre-proposition)</span></label>
+        <input class="form-control" id="compoCoCounterPrice" type="number" min="0" placeholder="ex : 145000">
+      </div>
+      <div class="form-group">
+        <label>Message (optionnel)</label>
+        <textarea class="form-control" id="compoCoMsg" rows="3" placeholder="Justification..."></textarea>
+      </div>
+      <div class="modal-footer" style="flex-wrap:wrap;gap:8px">
+        <button class="btn btn-outline" onclick="closeModal(document.getElementById('compoCoRespondModal'))">Annuler</button>
+        <button class="btn btn-danger" onclick="respondCompositionCompany('reject')">❌ Refuser</button>
+        <button class="btn btn-outline" onclick="respondCompositionCompany('counter')">🔄 Contre-proposer</button>
+        <button class="btn btn-success" onclick="respondCompositionCompany('accept')">✅ Accepter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal répondre à contre-proposition de NÉGOCIATION DE PRIX (entreprise) -->
+  <div class="modal-overlay" id="negoCoRespondModal">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-title" id="negoCoRespondTitle">Répondre à la contre-proposition</div>
+      <input type="hidden" id="negoCoRespondId">
+      <div id="negoCoRespondInfo" style="background:#f8f9fa;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px"></div>
+      <div id="negoCoPriceHistory" style="max-height:180px;overflow-y:auto;margin-bottom:14px"></div>
+      <div class="form-group">
+        <label>Nouveau prix proposé (FCFA)</label>
+        <input class="form-control" id="negoCoCounterPrice" type="number" min="0" placeholder="ex : 12000">
+      </div>
+      <div class="form-group">
+        <label>Message (optionnel)</label>
+        <textarea class="form-control" id="negoCoMsg" rows="3" placeholder="Justification..."></textarea>
+      </div>
+      <div class="modal-footer" style="flex-wrap:wrap;gap:8px">
+        <button class="btn btn-outline" onclick="closeModal(document.getElementById('negoCoRespondModal'))">Annuler</button>
+        <button class="btn btn-danger" onclick="respondNegoCompany('reject')">❌ Refuser</button>
+        <button class="btn btn-outline" onclick="respondNegoCompany('counter')">🔄 Contre-proposer</button>
+        <button class="btn btn-success" onclick="respondNegoCompany('accept')">✅ Accepter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal démarrer une négociation -->
+  <div class="modal-overlay" id="startNegoModal">
+    <div class="modal" style="max-width:480px">
+      <div class="modal-title">💬 Proposer un prix</div>
+      <input type="hidden" id="startNegoRestaurantId">
+      <input type="hidden" id="startNegoEntityType">
+      <input type="hidden" id="startNegoEntityId">
+      <div id="startNegoInfo" style="background:#f8f9fa;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px"></div>
+      <div class="form-group">
+        <label>Votre prix proposé (FCFA)</label>
+        <input class="form-control" id="startNegoPrice" type="number" min="0" placeholder="ex : 120000">
+      </div>
+      <div class="form-group">
+        <label>Message (optionnel)</label>
+        <textarea class="form-control" id="startNegoMsg" rows="3" placeholder="Expliquez votre proposition..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal(document.getElementById('startNegoModal'))">Annuler</button>
+        <button class="btn btn-primary" onclick="submitNegotiation()">📤 Envoyer la proposition</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL ABONNEMENT HEBDO -->
   <div class="modal-overlay" id="weeklyOrderModal">
     <div class="modal" style="max-width:520px">
@@ -181,6 +360,10 @@
       <div class="form-group">
         <label>Semaine du (Lundi)</label>
         <input class="form-control" id="woWeekStart" type="date">
+      </div>
+      <div class="form-group">
+        <label>🕐 Heure de livraison souhaitée <span style="color:var(--muted);font-size:11px">(heure à laquelle vous souhaitez recevoir les repas)</span></label>
+        <input class="form-control" id="woDeliveryTime" type="time" value="12:00" style="font-size:15px;max-width:160px">
       </div>
       <div class="form-group">
         <label>Nombre de plats par jour <span style="color:var(--muted);font-size:11px" id="woMinHint"></span></label>
@@ -1011,7 +1194,7 @@ async function loadRestaurantsForIhFilter() {
     const sel = document.getElementById('coIhRestaurant');
     if (!sel) return;
     const cur = sel.value;
-    sel.innerHTML = '<option value="">Tous</option>' + affiliations.map(a => `<option value="${a.restaurant_id}"${a.restaurant_id==cur?' selected':''}>${a.restaurant_name}</option>`).join('');
+    sel.innerHTML = '<option value="">Tous</option>' + affiliations.map(a => `<option value="${a.id}"${a.id==cur?' selected':''}>${a.name}</option>`).join('');
   } catch(_) {}
 }
 
@@ -1412,7 +1595,7 @@ function switchToPage(page) {
   if (navItem) navItem.classList.add('active');
   const pg = document.getElementById(`page-${page}`);
   if (pg) pg.classList.add('active');
-  const titles = { dashboard:'Vue d\'ensemble', allrestaurants:'Tous les restaurants', affiliations:'Mes affiliations', weeklymenu:'Menus Hebdomadaires', orders:'Commandes du jour', validate:'Valider & Exporter', invoices:'Factures', employees:'Employés', expenses:'Dépenses', history:'Historique', messages:'Messages', settings:'Paramètres', help:'Documentation' };
+  const titles = { dashboard:'Vue d\'ensemble', allrestaurants:'Tous les restaurants', affiliations:'Mes affiliations', weeklymenu:'Menus Hebdomadaires', compositions:'Mes compositions', 'negotiations-co':'Négociations de prix', orders:'Commandes du jour', validate:'Valider & Exporter', invoices:'Factures', employees:'Employés', expenses:'Dépenses', history:'Historique', messages:'Messages', settings:'Paramètres', help:'Documentation' };
   document.getElementById('pageTitle').textContent = titles[page] || page;
   if (page === 'dashboard') loadDashboard();
   else if (page === 'allrestaurants') loadAllRestaurants();
@@ -1430,6 +1613,8 @@ function switchToPage(page) {
     document.getElementById('adminChatSidebar')?.classList.add('show-mobile');
   }
   else if (page === 'weeklymenu') loadWeeklyMenus();
+  else if (page === 'compositions') { loadCompanyCompositions(); initCompoAffiliations(); }
+  else if (page === 'negotiations-co') loadCompanyNegotiations();
   else if (page === 'settings') loadSettings();
   else if (page === 'invoices-history') { loadCoInvoicesHistory(); loadRestaurantsForIhFilter(); }
   else if (page === 'trash') { loadCoTrash(); }
@@ -1888,7 +2073,8 @@ function downloadInvoice(id) {
 }
 function printInvoice(id) {
   fetch(`/api/admin/invoices/${id}/pdf`, { headers: { Authorization: `Bearer ${token}` } })
-    .then(r=>r.blob()).then(blob=>{ const url=URL.createObjectURL(blob); const w=window.open(url); if(w) w.onload=()=>w.print(); });
+    .then(r=>r.blob()).then(blob=>{ const url=URL.createObjectURL(blob); const w=window.open(url); if(w) w.onload=()=>w.print(); })
+    .catch(()=>toast('Erreur impression', 'error'));
 }
 
 // ── Employees ─────────────────────────────────────────
@@ -1901,7 +2087,7 @@ async function loadEmployees() {
     tb.innerHTML = emps.map(e=>`<tr>
       <td><span style="background:#F0E6DE;color:var(--brown);padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600">${e.employee_id}</span></td>
       <td><div style="display:flex;align-items:center;gap:8px">
-        ${e.photo_url?`<img src="${e.photo_url}" style="width:28px;height:28px;border-radius:50%;object-fit:cover">`:`<div style="width:28px;height:28px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:700">${e.first_name[0]||'?'}</div>`}
+        ${e.photo_url?`<img src="${e.photo_url}" style="width:28px;height:28px;border-radius:50%;object-fit:cover">`:`<div style="width:28px;height:28px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:700">${e.first_name?.[0]||'?'}</div>`}
         <strong>${e.first_name} ${e.last_name}</strong></div></td>
       <td style="font-size:12px;color:var(--muted)">${e.email}</td>
       <td style="font-size:12px;color:var(--muted)">${formatDate(e.created_at)}</td>
@@ -2592,7 +2778,8 @@ async function loadWeeklyMenus() {
                       ${totalMenus > 0 ? `<span style="font-size:11px;color:var(--muted)">${totalMenus} menu${totalMenus>1?'s':''} · ${totalDishes} plat${totalDishes>1?'s':''}</span>` : ''}
                     </div>
                   </div>
-                  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                  <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
+                    ${parseFloat(price) > 0 ? `<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openStartNegotiation(${restId},'weekly_pack',${packId},'${packName}',${price})" style="font-size:11px;white-space:nowrap">💬 Négocier</button>` : ''}
                     <button class="btn btn-primary" onclick="event.stopPropagation();openWeeklyOrderModal(${packId},${restId},'${packName}',${price},${minQty},'${restName}')" style="font-size:13px;white-space:nowrap">
                       ${alreadySub ? 'Abonner encore' : "S'abonner"}
                     </button>
@@ -2724,6 +2911,7 @@ function renderWeeklyOrders(selections) {
             <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:3px">
               <span style="font-size:11px;color:var(--muted)">🍽 ${s.restaurant_name||'—'}</span>
               <span style="font-size:11px;color:var(--muted)">🍽 ${s.dish_qty} plats/jour</span>
+              ${s.delivery_time ? `<span style="font-size:11px;font-weight:700;color:var(--brown);background:#FFF0EA;padding:1px 7px;border-radius:8px">🕐 Livraison ${s.delivery_time.slice(0,5)}</span>` : ''}
               ${parseFloat(s.pack_price||0) > 0
                 ? `<span style="font-size:11px;font-weight:600;color:var(--orange)">💰 ${fmtCFA(s.pack_price)} FCFA</span>`
                 : ''}
@@ -2770,6 +2958,11 @@ async function acknowledgeDelivery(logId) {
 // ─── Modal abonnement
 let _woExtras = [];
 let _woMinQty = 8;
+
+function closeAcDropdown(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = 'none';
+}
 
 // Helpers exposés globalement pour les handlers inline des extras
 function woSetType(i, v) {
@@ -2910,14 +3103,16 @@ async function submitWeeklyOrder() {
   const weekStart = document.getElementById('woWeekStart').value;
   const dishQty = parseInt(document.getElementById('woDishQty').value);
   const notes = document.getElementById('woNotes').value.trim();
+  const deliveryTime = document.getElementById('woDeliveryTime').value || '12:00';
   if (!weekStart) return toast('Choisissez une semaine', 'error');
+  if (!deliveryTime) return toast('Indiquez l\'heure de livraison souhaitée', 'error');
   if (dishQty < _woMinQty) return toast(`Minimum ${_woMinQty} plats requis`, 'error');
   const invalidExtras = _woExtras.filter(e => !e.item_name.trim());
   if (invalidExtras.length) return toast('Nommez tous les extras', 'error');
   try {
     await apiFetch('/api/company/weekly-selections', { method: 'POST', body: {
       restaurant_id: restaurantId, weekly_pack_id: packId, week_start: weekStart,
-      dish_qty: dishQty, notes: notes || null, extras: _woExtras
+      dish_qty: dishQty, notes: notes || null, extras: _woExtras, delivery_time: deliveryTime
     }}, token);
     toast('Abonnement confirmé !', 'success');
     closeModal(document.getElementById('weeklyOrderModal'));
@@ -2942,15 +3137,17 @@ async function editWeeklyOrder(id) {
   document.getElementById('woDishQty').value = sel.dish_qty;
   document.getElementById('woNotes').value = sel.notes || '';
   document.getElementById('woWeekStart').value = sel.week_start ? sel.week_start.slice(0,10) : '';
+  document.getElementById('woDeliveryTime').value = sel.delivery_time ? sel.delivery_time.slice(0,5) : '12:00';
   renderWoExtras();
   const btn = document.getElementById('woSubmitBtn');
   btn.textContent = '💾 Enregistrer les modifications';
   btn.onclick = async () => {
     const dishQty = parseInt(document.getElementById('woDishQty').value);
+    const deliveryTime = document.getElementById('woDeliveryTime').value || '12:00';
     if (dishQty < _woMinQty) return toast(`Minimum ${_woMinQty} plats requis`, 'error');
     try {
       await apiFetch(`/api/company/weekly-selections/${id}`, { method: 'PUT', body: {
-        dish_qty: dishQty, notes: document.getElementById('woNotes').value.trim()||null, extras: _woExtras
+        dish_qty: dishQty, notes: document.getElementById('woNotes').value.trim()||null, extras: _woExtras, delivery_time: deliveryTime
       }}, token);
       toast('Abonnement modifié !', 'success');
       closeModal(document.getElementById('weeklyOrderModal'));
@@ -3175,6 +3372,7 @@ window.confirmWeeklyInv = confirmWeeklyInv;
   window.removeWoExtra = removeWoExtra;
   window.renderWoExtras = renderWoExtras;
   window.changeWoDishQty = changeWoDishQty;
+  window.closeAcDropdown = closeAcDropdown;
   window.woSetType = woSetType;
   window.woSetName = woSetName;
   window.woIncQty = woIncQty;
@@ -3206,6 +3404,617 @@ window.confirmWeeklyInv = confirmWeeklyInv;
     if (inp) inp.value = '';
     document.querySelectorAll('#coDocAccordion .doc-section').forEach(s => s.style.display = '');
   };
+
+// ═══════════════════════════════════════════════════
+// COMPOSITIONS PERSONNALISÉES (ENTREPRISE)
+// ═══════════════════════════════════════════════════
+
+const CO_DAY_NAMES = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+const CO_DAY_COLORS = ['','#E85A2A','#3B82F6','#10B981','#8B5CF6','#F59E0B'];
+let _allRestaurantDishes = [];
+let _compoPlanning = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+let _editingCompoId = null;
+let _pendingDish = null;
+let _negsData = [];
+
+async function initCompoAffiliations() {
+  try {
+    const aff = await apiFetch('/api/admin/affiliations', {}, token);
+    const sel = document.getElementById('compoRestaurant');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Choisir un restaurant...</option>';
+    (aff || []).forEach(a => {
+      sel.innerHTML += `<option value="${a.id}">${a.name}</option>`;
+    });
+  } catch(e) { console.error('initCompoAffiliations:', e.message); }
+}
+
+async function loadRestaurantDishesForCompo() {
+  const restaurantId = document.getElementById('compoRestaurant')?.value;
+  if (!restaurantId) return;
+  try {
+    const data = await apiFetch(`/api/company/restaurant-dishes?restaurant_id=${restaurantId}`, {}, token);
+    _allRestaurantDishes = Array.isArray(data) ? data : [];
+    renderDishBrowser();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function renderDishBrowser() {
+  const browser = document.getElementById('compoDishBrowser');
+  const list = document.getElementById('compoDishList');
+  const packFilter = document.getElementById('compoPackFilter');
+  if (!browser || !list) return;
+  browser.style.display = '';
+  const packs = [...new Set(_allRestaurantDishes.map(d => d.pack_name))];
+  packFilter.innerHTML = '<span style="font-size:12px;color:var(--muted);align-self:center">Filtrer:</span>' +
+    packs.map(p => `<button class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px" onclick="filterDishBrowser('${p.replace(/'/g,"\\'")}')">📦 ${p}</button>`).join('') +
+    '<button class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px" onclick="filterDishBrowser(\'\')">Tous</button>';
+  renderDishList('');
+}
+
+function filterDishBrowser(packName) {
+  renderDishList(packName);
+}
+
+function renderDishList(packFilter) {
+  const list = document.getElementById('compoDishList');
+  const dishes = packFilter ? _allRestaurantDishes.filter(d => d.pack_name === packFilter) : _allRestaurantDishes;
+  if (!dishes.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:20px;grid-column:1/-1">Aucun plat disponible</div>';
+    return;
+  }
+  list.innerHTML = dishes.map(d => `
+    <div style="border:1px solid var(--border);border-radius:8px;padding:8px;cursor:pointer;background:#fff;transition:all .15s;position:relative" onclick="pickDayForDish(${d.id},'${d.name.replace(/'/g,"\\'")}','${(d.pack_name||'').replace(/'/g,"\\'")}',${d.price||0})" onmouseover="this.style.borderColor='var(--orange)';this.style.boxShadow='0 2px 8px rgba(232,90,42,.15)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'" title="Cliquer pour choisir le jour et ajouter">
+      ${d.image_url ? `<img src="${d.image_url}" style="width:100%;height:60px;object-fit:cover;border-radius:6px;margin-bottom:4px">` : ''}
+      <div style="font-size:12px;font-weight:600;color:var(--brown)">${d.name}</div>
+      <div style="font-size:10px;color:var(--muted)">${d.pack_name}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+        <span style="font-size:11px;color:var(--orange);font-weight:700">${fmtCFA(d.price)} FCFA</span>
+        <span style="font-size:9px;background:#FFF0EA;color:var(--orange);border-radius:4px;padding:1px 5px">+ Ajouter</span>
+      </div>
+    </div>`).join('');
+}
+
+function pickDayForDish(dishId, dishName, packName, unitPrice) {
+  _pendingDish = { dishId, dishName, packName, unitPrice };
+  document.getElementById('compoDayPickerTitle').textContent = `📅 Quel jour pour ce plat ?`;
+  document.getElementById('compoDayPickerInfo').innerHTML =
+    `<strong style="font-size:14px;color:var(--brown)">${dishName}</strong><br>
+     <span style="color:var(--muted);font-size:11px">${packName}</span>&nbsp;•&nbsp;
+     <span style="color:var(--orange);font-weight:700">${fmtCFA(unitPrice)} FCFA</span>`;
+  const btns = document.getElementById('compoDayBtns');
+  btns.innerHTML = [1,2,3,4,5].map(day => {
+    const count = (_compoPlanning[day]||[]).length;
+    const c = CO_DAY_COLORS[day] || '#E85A2A';
+    return `<button onclick="addDishToCompoOnDay(${day})" style="background:${c}12;color:${c};border:2px solid ${c};border-radius:10px;padding:12px 4px;font-size:12px;font-weight:700;cursor:pointer;text-align:center;position:relative;width:100%">
+      ${CO_DAY_NAMES[day].slice(0,3)}
+      ${count > 0 ? `<span style="position:absolute;top:-8px;right:-4px;background:${c};color:white;border-radius:50%;width:18px;height:18px;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:800">${count}</span>` : ''}
+    </button>`;
+  }).join('');
+  document.getElementById('compoDayPickerModal').classList.add('open');
+}
+
+function addDishToCompoOnDay(day) {
+  if (!_pendingDish) return;
+  const { dishId, dishName, packName, unitPrice } = _pendingDish;
+  if (!_compoPlanning[day]) _compoPlanning[day] = [];
+  _compoPlanning[day].push({ dish_id: dishId, dish_name: dishName, pack_name: packName, day_of_week: day, quantity: 1, unit_price: unitPrice });
+  renderCompoPlanningGrid();
+  closeModal(document.getElementById('compoDayPickerModal'));
+  toast(`${dishName} → ${CO_DAY_NAMES[day]} ✓`, 'success');
+  _pendingDish = null;
+}
+
+function addDishToCompo(dishId, dishName, packName, unitPrice, defaultDay) {
+  pickDayForDish(dishId, dishName, packName, unitPrice);
+}
+
+function renderCompoPlanningGrid() {
+  const grid = document.getElementById('compoPlanningGrid');
+  if (!grid) return;
+  grid.innerHTML = [1,2,3,4,5].map(day => {
+    const dishes = _compoPlanning[day] || [];
+    const c = CO_DAY_COLORS[day] || '#E85A2A';
+    const dayTotal = dishes.reduce((s, d) => s + (d.unit_price||0)*(d.quantity||1), 0);
+    return `
+    <div style="border:2px solid ${dishes.length ? c : 'var(--border)'};border-radius:10px;padding:8px;min-height:90px;background:${dishes.length ? c+'08' : '#fafafa'};transition:border-color .2s">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-weight:700;font-size:11px;color:${c}">${CO_DAY_NAMES[day]}</span>
+        ${dishes.length ? `<span style="font-size:9px;font-weight:700;color:${c};opacity:.85">${fmtCFA(dayTotal)}</span>` : ''}
+      </div>
+      ${dishes.length === 0
+        ? `<div style="text-align:center;color:var(--muted);font-size:10px;padding:8px 0;border:1px dashed var(--border);border-radius:6px;cursor:pointer" onclick="document.getElementById('compoDishBrowser').scrollIntoView({behavior:'smooth'})">
+            <div>+ Ajouter un plat</div>
+          </div>`
+        : dishes.map((d, i) => `
+          <div style="background:#fff;border:1px solid ${c}30;border-radius:6px;padding:4px 6px;margin-bottom:4px;font-size:11px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:4px">
+              <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--brown)">${d.dish_name}</span>
+              <button onclick="removeCompoDish(${day},${i})" style="background:none;border:none;color:#dc2626;font-size:13px;cursor:pointer;padding:0 2px;flex-shrink:0;line-height:1">✕</button>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px">
+              <span style="font-size:9px;color:var(--muted)">${fmtCFA(d.unit_price||0)} × </span>
+              <input type="number" min="1" value="${d.quantity}" style="width:34px;font-size:10px;border:1px solid #d1d5db;border-radius:4px;text-align:center;padding:1px" onchange="updateCompoDishQty(${day},${i},this.value)">
+            </div>
+          </div>`).join('')
+      }
+    </div>`;
+  }).join('');
+}
+
+async function loadCompanyCompositions() {
+  const grid = document.getElementById('compoListGrid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">Chargement…</div>';
+  try {
+    const comps = await apiFetch('/api/company/custom-compositions', {}, token);
+    const pendingCount = comps.filter(c => c.status === 'negotiating').length;
+    const badge = document.getElementById('coCompoBadge');
+    if (badge) { badge.textContent = pendingCount; badge.style.display = pendingCount ? '' : 'none'; }
+    if (!comps.length) { grid.innerHTML = '<div class="empty-state"><span class="icon">🧩</span>Aucune composition créée. Cliquez sur "+ Nouvelle composition" pour commencer.</div>'; return; }
+    const statusLabel = { draft:'Brouillon', submitted:'Soumise', negotiating:'En négociation', accepted:'Acceptée', rejected:'Refusée' };
+    const statusColor = { draft:'#9ca3af', submitted:'#2563EB', negotiating:'#D97706', accepted:'#16a34a', rejected:'#dc2626' };
+    const shortDay = ['','Lun','Mar','Mer','Jeu','Ven'];
+    grid.innerHTML = comps.map(c => {
+      const totalDishes = (c.dishes || []).reduce((s, d) => s + (d.quantity || 1), 0);
+      const sc = statusColor[c.status] || '#9ca3af';
+      // Organiser les plats par jour
+      const byDay = {};
+      (c.dishes||[]).forEach(d => { if (!byDay[d.day_of_week]) byDay[d.day_of_week] = []; byDay[d.day_of_week].push(d); });
+      const weekGrid = [1,2,3,4,5].map(day => {
+        const cc = CO_DAY_COLORS[day] || '#E85A2A';
+        const dayDishes = byDay[day] || [];
+        return `<div style="text-align:center;min-width:0">
+          <div style="font-size:9px;font-weight:800;color:${cc};margin-bottom:2px">${shortDay[day]}</div>
+          ${dayDishes.length
+            ? dayDishes.map(d => `<div style="font-size:10px;color:var(--brown);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${d.dish_name}">${d.dish_name}${d.quantity>1?` ×${d.quantity}`:''}</div>`).join('')
+            : `<div style="font-size:10px;color:#ccc">—</div>`}
+        </div>`;
+      }).join('');
+      return `
+      <div style="border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid ${sc}">
+        <!-- En-tête -->
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+          <div style="min-width:0;flex:1">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="font-weight:700;font-size:14px;color:var(--brown)">${c.name}</span>
+              <span style="background:${sc}18;color:${sc};font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px">${statusLabel[c.status]||c.status}</span>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">🏪 ${c.restaurant_name} &nbsp;•&nbsp; 📅 Sem. du ${c.week_start} &nbsp;•&nbsp; ${totalDishes} plat(s)${c.delivery_time ? ` &nbsp;•&nbsp; 🕐 <strong>${c.delivery_time.slice(0,5)}</strong>` : ''}</div>
+            ${c.company_proposed_price || c.restaurant_counter_price || c.final_price ? `
+            <div style="font-size:11px;margin-top:4px;display:flex;gap:10px;flex-wrap:wrap">
+              ${c.company_proposed_price ? `<span>💰 Proposé : <strong>${fmtCFA(c.company_proposed_price)} FCFA</strong></span>` : ''}
+              ${c.restaurant_counter_price ? `<span>🔄 Contre : <strong style="color:var(--orange)">${fmtCFA(c.restaurant_counter_price)} FCFA</strong></span>` : ''}
+              ${c.final_price ? `<span style="color:#16a34a">✅ Accordé : <strong>${fmtCFA(c.final_price)} FCFA</strong></span>` : ''}
+            </div>` : ''}
+          </div>
+          <!-- Boutons d'action -->
+          <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;min-width:130px">
+            ${['draft','negotiating','submitted'].includes(c.status) ? `<button class="btn btn-outline btn-sm" onclick="editComposition(${c.id})">✏️ Modifier</button>` : ''}
+            ${c.status === 'draft' ? `<button class="btn btn-primary btn-sm" onclick="quickSubmitCompo(${c.id})">📤 Soumettre</button>` : ''}
+            ${c.status === 'negotiating' ? `<button class="btn btn-warning btn-sm" style="background:#D97706;color:#fff;border:none" onclick="openCoReplyNego(${c.id},'${(c.name||'').replace(/'/g,"\\'")}',${c.restaurant_counter_price||0})">💬 Répondre</button>` : ''}
+            ${['draft','rejected'].includes(c.status) ? `<button class="btn btn-danger btn-sm" onclick="deleteComposition(${c.id})">🗑 Supprimer</button>` : ''}
+          </div>
+        </div>
+        <!-- Vue hebdomadaire des plats -->
+        ${totalDishes > 0 ? `
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:8px 10px;background:#f8f9fa;border-radius:8px;margin-top:4px">
+          ${weekGrid}
+        </div>` : `<div style="font-size:11px;color:var(--muted);background:#f8f9fa;border-radius:8px;padding:8px 12px;margin-top:4px">Aucun plat dans cette composition</div>`}
+      </div>`;
+    }).join('');
+  } catch(e) { grid.innerHTML = `<div style="text-align:center;color:#dc2626;padding:20px">${e.message}</div>`; }
+}
+
+function openNewCompositionModal() {
+  _editingCompoId = null;
+  _compoPlanning = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+  document.getElementById('compoName').value = '';
+  document.getElementById('compoWeekStart').value = '';
+  document.getElementById('compoDeliveryTime').value = '12:00';
+  document.getElementById('compoPropPrice').value = '';
+  document.getElementById('compoNotes').value = '';
+  document.getElementById('compoDishBrowser').style.display = 'none';
+  renderCompoPlanningGrid();
+  switchCompoTab('builder');
+}
+
+function switchCompoTab(tab) {
+  document.getElementById('compoListPanel').style.display = tab === 'list' ? '' : 'none';
+  document.getElementById('compoBuilderPanel').style.display = tab === 'builder' ? '' : 'none';
+  document.getElementById('tabCompoList').classList.toggle('active', tab === 'list');
+  document.getElementById('tabCompoBuilder').classList.toggle('active', tab === 'builder');
+  if (tab === 'list') loadCompanyCompositions();
+}
+
+async function saveCompositionDraft() {
+  const restaurantId = document.getElementById('compoRestaurant')?.value;
+  const weekStart = document.getElementById('compoWeekStart')?.value;
+  const name = document.getElementById('compoName')?.value || 'Ma composition';
+  const notes = document.getElementById('compoNotes')?.value;
+  const price = document.getElementById('compoPropPrice')?.value;
+  const deliveryTime = document.getElementById('compoDeliveryTime')?.value || '12:00';
+  if (!restaurantId || !weekStart) { toast('Choisissez un restaurant et une semaine', 'error'); throw new Error('restaurant_semaine_requis'); }
+  if (!deliveryTime) { toast('Indiquez l\'heure de livraison souhaitée', 'error'); throw new Error('heure_requise'); }
+  const allDishes = [1,2,3,4,5].flatMap(d => _compoPlanning[d] || []);
+  const body = { restaurant_id: restaurantId, name, week_start: weekStart, notes, company_proposed_price: price ? parseFloat(price) : undefined, dishes: allDishes, delivery_time: deliveryTime };
+  if (_editingCompoId) {
+    await apiFetch(`/api/company/custom-compositions/${_editingCompoId}`, { method: 'PUT', body }, token);
+    toast('Composition mise à jour', 'success');
+  } else {
+    const r = await apiFetch('/api/company/custom-compositions', { method: 'POST', body }, token);
+    _editingCompoId = r.id;
+    toast('Brouillon sauvegardé', 'success');
+  }
+  loadCompanyCompositions();
+}
+
+async function saveCompositionDraftUI() {
+  try { await saveCompositionDraft(); } catch(e) { if (e.message !== 'restaurant_semaine_requis') toast(e.message, 'error'); }
+}
+
+async function submitCompositionToRestaurant() {
+  const allDishes = [1,2,3,4,5].flatMap(d => _compoPlanning[d] || []);
+  if (!allDishes.length) { toast('Ajoutez au moins un plat avant de soumettre', 'error'); return; }
+  try { await saveCompositionDraft(); } catch(e) { if (e.message !== 'restaurant_semaine_requis') toast(e.message, 'error'); return; }
+  if (!_editingCompoId) return;
+  const price = document.getElementById('compoPropPrice')?.value;
+  try {
+    await apiFetch(`/api/company/custom-compositions/${_editingCompoId}/submit`, {
+      method: 'POST', body: { company_proposed_price: price ? parseFloat(price) : undefined }
+    }, token);
+    toast('✅ Composition soumise au restaurant !', 'success');
+    _editingCompoId = null;
+    _compoPlanning = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+    switchCompoTab('list');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function quickSubmitCompo(id) {
+  if (!confirm('Soumettre cette composition au restaurant ?')) return;
+  try {
+    await apiFetch(`/api/company/custom-compositions/${id}/submit`, { method: 'POST', body: {} }, token);
+    toast('✅ Composition soumise', 'success');
+    loadCompanyCompositions();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteComposition(id) {
+  if (!confirm('Supprimer cette composition ?')) return;
+  try {
+    await apiFetch(`/api/company/custom-compositions/${id}`, { method: 'DELETE' }, token);
+    toast('Composition supprimée', 'success');
+    loadCompanyCompositions();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function editComposition(id) {
+  try {
+    const comps = await apiFetch('/api/company/custom-compositions', {}, token);
+    const comp = comps.find(c => c.id === id);
+    if (!comp) return;
+    if (comp.status === 'submitted') {
+      if (!confirm('Modifier cette composition la repassera en brouillon.\nVous devrez la soumettre à nouveau au restaurant.\n\nContinuer ?')) return;
+    }
+    _editingCompoId = id;
+    document.getElementById('compoRestaurant').value = comp.restaurant_id;
+    await loadRestaurantDishesForCompo();
+    document.getElementById('compoWeekStart').value = comp.week_start ? comp.week_start.slice(0,10) : '';
+    document.getElementById('compoDeliveryTime').value = comp.delivery_time ? comp.delivery_time.slice(0,5) : '12:00';
+    document.getElementById('compoName').value = comp.name;
+    document.getElementById('compoNotes').value = comp.notes || '';
+    document.getElementById('compoPropPrice').value = comp.company_proposed_price || '';
+    _compoPlanning = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+    (comp.dishes || []).forEach(d => { (_compoPlanning[d.day_of_week] = _compoPlanning[d.day_of_week] || []).push(d); });
+    renderCompoPlanningGrid();
+    switchCompoTab('builder');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function duplicateComposition(id) {
+  try {
+    const comps = await apiFetch('/api/company/custom-compositions', {}, token);
+    const comp = comps.find(c => c.id === id);
+    if (!comp) { toast('Composition introuvable', 'error'); return; }
+    _editingCompoId = null;
+    document.getElementById('compoRestaurant').value = comp.restaurant_id;
+    await loadRestaurantDishesForCompo();
+    document.getElementById('compoWeekStart').value = '';
+    document.getElementById('compoDeliveryTime').value = comp.delivery_time ? comp.delivery_time.slice(0,5) : '12:00';
+    document.getElementById('compoName').value = comp.name + ' (copie)';
+    document.getElementById('compoNotes').value = comp.notes || '';
+    document.getElementById('compoPropPrice').value = comp.company_proposed_price || '';
+    _compoPlanning = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+    (comp.dishes || []).forEach(d => {
+      const day = d.day_of_week;
+      if (!_compoPlanning[day]) _compoPlanning[day] = [];
+      _compoPlanning[day].push({ dish_id: d.dish_id, dish_name: d.dish_name, pack_name: d.pack_name, day_of_week: day, quantity: d.quantity || 1, unit_price: d.unit_price || 0 });
+    });
+    renderCompoPlanningGrid();
+    switchCompoTab('builder');
+    toast('📋 Composition dupliquée — choisissez la semaine souhaitée', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function openCoReplyNego(compositionId, compName, counterPrice) {
+  document.getElementById('compoCoRespondId').value = compositionId;
+  document.getElementById('compoCoRespondTitle').textContent = `Répondre — ${compName}`;
+  document.getElementById('compoCoRespondInfo').innerHTML = `Contre-proposition du restaurant : <strong>${fmtCFA(counterPrice)} FCFA</strong>`;
+  document.getElementById('compoCoCounterPrice').value = '';
+  document.getElementById('compoCoMsg').value = '';
+  document.getElementById('compoCoRespondModal').classList.add('open');
+}
+
+async function respondCompositionCompany(action) {
+  const id = document.getElementById('compoCoRespondId').value;
+  const company_proposed_price = document.getElementById('compoCoCounterPrice').value;
+  const notes = document.getElementById('compoCoMsg').value;
+  if (action === 'counter' && !company_proposed_price) { toast('Entrez un prix pour la contre-proposition', 'error'); return; }
+  try {
+    await apiFetch(`/api/company/custom-compositions/${id}/respond`, {
+      method: 'POST', body: { action, company_proposed_price: company_proposed_price ? parseFloat(company_proposed_price) : undefined, notes }
+    }, token);
+    closeModal(document.getElementById('compoCoRespondModal'));
+    toast(action === 'accept' ? '✅ Contre-proposition acceptée' : action === 'reject' ? 'Négociation clôturée' : '🔄 Nouvelle proposition envoyée', 'success');
+    loadCompanyCompositions();
+    loadCompanyNegotiations();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+window.loadCompanyCompositions = loadCompanyCompositions;
+window.initCompoAffiliations = initCompoAffiliations;
+window.loadRestaurantDishesForCompo = loadRestaurantDishesForCompo;
+window.filterDishBrowser = filterDishBrowser;
+window.addDishToCompo = addDishToCompo;
+window.pickDayForDish = pickDayForDish;
+window.addDishToCompoOnDay = addDishToCompoOnDay;
+window.renderCompoPlanningGrid = renderCompoPlanningGrid;
+window.removeCompoDish = function(day, i) { (_compoPlanning[day] || []).splice(i, 1); renderCompoPlanningGrid(); };
+window.updateCompoDishQty = function(day, i, val) { if (_compoPlanning[day] && _compoPlanning[day][i]) { _compoPlanning[day][i].quantity = parseInt(val) || 1; renderCompoPlanningGrid(); } };
+window.saveCompositionDraft = saveCompositionDraft;
+window.saveCompositionDraftUI = saveCompositionDraftUI;
+window.submitCompositionToRestaurant = submitCompositionToRestaurant;
+window.quickSubmitCompo = quickSubmitCompo;
+window.deleteComposition = deleteComposition;
+window.editComposition = editComposition;
+window.duplicateComposition = duplicateComposition;
+window.openNewCompositionModal = openNewCompositionModal;
+window.switchCompoTab = switchCompoTab;
+
+// ═══════════════════════════════════════════════════
+// NÉGOCIATIONS (ENTREPRISE)
+// ═══════════════════════════════════════════════════
+
+async function loadCompanyNegotiations() {
+  const grid = document.getElementById('negosCoGrid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">Chargement…</div>';
+
+  // Populate restaurant filter independently — must not depend on the negotiations call
+  const restSel = document.getElementById('negoCoFilterRestaurant');
+  if (restSel && restSel.options.length <= 1) {
+    try {
+      const affs = await apiFetch('/api/admin/affiliations', {}, token);
+      const prevVal = restSel.value;
+      restSel.innerHTML = '<option value="">Tous les restaurants</option>' + (affs || []).map(a => `<option value="${a.id}" ${a.id==prevVal?'selected':''}>${a.name}</option>`).join('');
+    } catch(_) {}
+  }
+
+  try {
+    const statusFilter = document.getElementById('negoCoFilterStatus')?.value || '';
+    const restFilter = restSel?.value || '';
+
+    const [priceNegs, compos] = await Promise.all([
+      apiFetch('/api/company/negotiations', {}, token),
+      apiFetch('/api/company/custom-compositions', {}, token).catch(() => [])
+    ]);
+    const compStatusMap = { submitted:'company_proposed', negotiating:'restaurant_counter', accepted:'accepted', rejected:'rejected' };
+    const compoNegs = (compos || []).filter(c => c.status !== 'draft').map(c => ({
+      id: c.id, _source: 'composition',
+      restaurant_id: c.restaurant_id, restaurant_name: c.restaurant_name,
+      entity_name: c.name, entity_type: 'custom_composition',
+      original_price: c.company_proposed_price, final_agreed_price: c.final_price,
+      status: compStatusMap[c.status] || c.status,
+      messages: [
+        ...(c.company_proposed_price ? [{sent_by:'company', action:'propose', proposed_price: c.company_proposed_price, message: c.notes || ''}] : []),
+        ...(c.restaurant_counter_price ? [{sent_by:'restaurant', action:'counter', proposed_price: c.restaurant_counter_price, message: ''}] : [])
+      ]
+    }));
+    let allNegs = [...compoNegs, ...(priceNegs || [])];
+    _negsData = allNegs;
+
+    const pendingCount = allNegs.filter(n => n.status === 'restaurant_counter').length;
+    const badge = document.getElementById('negoBadgeCo');
+    if (badge) { badge.textContent = pendingCount; badge.style.display = pendingCount ? '' : 'none'; }
+
+    // Summary bar
+    const bar = document.getElementById('negoCoSummaryBar');
+    if (bar) {
+      const counts = { company_proposed: 0, restaurant_counter: 0, accepted: 0, rejected: 0 };
+      allNegs.forEach(n => { if (counts[n.status] !== undefined) counts[n.status]++; });
+      const labels = { company_proposed:['En attente','#2563EB'], restaurant_counter:['À répondre','#D97706'], accepted:['Accordées','#16a34a'], rejected:['Refusées','#dc2626'] };
+      bar.innerHTML = Object.entries(counts).filter(([,v])=>v>0).map(([k,v]) =>
+        `<span style="background:${labels[k][1]}15;color:${labels[k][1]};font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;cursor:pointer" onclick="document.getElementById('negoCoFilterStatus').value='${k}';loadCompanyNegotiations()">
+          ${labels[k][0]} <strong>${v}</strong>
+        </span>`
+      ).join('');
+    }
+
+    if (statusFilter) allNegs = allNegs.filter(n => n.status === statusFilter);
+    if (restFilter) allNegs = allNegs.filter(n => n.restaurant_id == restFilter);
+
+    if (!allNegs.length) { grid.innerHTML = '<div class="empty-state"><span class="icon">💬</span>Aucune négociation pour ces filtres.<br><small style="color:var(--muted)">Utilisez "💬 Négocier le prix" sur un pack ou un plat.</small></div>'; return; }
+
+    const statusLabel = { pending:'En attente', company_proposed:'Proposition envoyée', restaurant_counter:'Contre-proposition reçue ⬅', accepted:'✅ Accordé', rejected:'❌ Refusé' };
+    const statusColor = { pending:'#9ca3af', company_proposed:'#2563EB', restaurant_counter:'#D97706', accepted:'#16a34a', rejected:'#dc2626' };
+    const entityLabel = { weekly_pack:'Pack hebdo', custom_composition:'Composition', dish:'Plat' };
+
+    grid.innerHTML = allNegs.map(n => {
+      const lastMsg = (n.messages || []).slice(-1)[0];
+      const isMyTurn = n.status === 'restaurant_counter';
+      const isClosed = n.status === 'accepted' || n.status === 'rejected';
+      return `
+      <div style="border:2px solid ${isMyTurn ? '#D97706' : 'var(--border)'};border-radius:12px;padding:14px;margin-bottom:12px;background:${isMyTurn?'#fffbf0':'#fff'}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px">
+          <div style="min-width:0">
+            <div style="font-weight:700;font-size:14px;color:var(--brown);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n.entity_name || entityLabel[n.entity_type] || n.entity_type}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">🏪 ${n.restaurant_name} &nbsp;•&nbsp; ${entityLabel[n.entity_type]||n.entity_type}${n._source==='composition'?' 📋':''}</div>
+          </div>
+          <span style="background:${statusColor[n.status]||'#9ca3af'}18;color:${statusColor[n.status]||'#9ca3af'};font-size:11px;font-weight:700;padding:4px 10px;border-radius:10px;white-space:nowrap;flex-shrink:0">${statusLabel[n.status]||n.status}</span>
+        </div>
+
+        <!-- Prix résumé -->
+        <div style="display:flex;gap:12px;font-size:12px;flex-wrap:wrap;padding:8px 10px;background:#f9fafb;border-radius:8px;margin-bottom:10px">
+          <span>📋 Catalogue : <strong>${fmtCFA(n.original_price||0)} FCFA</strong></span>
+          ${lastMsg ? `<span>💬 Dernière offre : <strong style="color:var(--orange)">${fmtCFA(lastMsg.proposed_price||0)} FCFA</strong> <span style="color:var(--muted);font-size:10px">(${lastMsg.sent_by==='company'?'Vous':n.restaurant_name})</span></span>` : ''}
+          ${n.final_agreed_price ? `<span style="color:#16a34a;font-weight:700">✅ Accordé : ${fmtCFA(n.final_agreed_price)} FCFA</span>` : ''}
+        </div>
+
+        <!-- Historique fil de discussion -->
+        ${(n.messages||[]).length > 0 ? `
+        <div style="margin-bottom:10px;max-height:180px;overflow-y:auto;padding:4px 0">
+          ${(n.messages||[]).map(m => {
+            const isMe = m.sent_by === 'company';
+            const actionText = (m.action==='propose'||m.action==='counter') ? `💰 <strong>${fmtCFA(m.proposed_price||0)} FCFA</strong>` : m.action==='accept' ? '✅ <strong>Accepté</strong>' : '❌ <strong>Refusé</strong>';
+            return `<div style="display:flex;${isMe?'justify-content:flex-end':'justify-content:flex-start'};margin-bottom:6px">
+              <div style="max-width:75%;background:${isMe?'#2563EB':'#F3F4F6'};color:${isMe?'#fff':'#374151'};border-radius:${isMe?'12px 12px 4px 12px':'12px 12px 12px 4px'};padding:8px 12px;font-size:12px">
+                <div style="font-size:10px;opacity:.75;margin-bottom:3px;font-weight:600">${isMe?'Vous':n.restaurant_name}</div>
+                <div>${actionText}</div>
+                ${m.message ? `<div style="font-style:italic;font-size:11px;margin-top:4px;opacity:.85">"${m.message}"</div>` : ''}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>` : ''}
+
+        <!-- Actions -->
+        ${isMyTurn ? `
+        <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid #f0e8d5">
+          <span style="font-size:11px;color:#D97706;font-weight:600;align-self:center">👆 C'est votre tour :</span>
+          ${n._source==='composition' ? `
+            <button class="btn btn-success btn-sm" onclick="respondCompositionFromNegoCompany(${n.id},'accept')">✅ Accepter</button>
+            <button class="btn btn-outline btn-sm" onclick="openCoReplyNego(${n.id},'${(n.entity_name||'').replace(/'/g,"\\'")}',${lastMsg ? lastMsg.proposed_price||0 : n.original_price||0})">🔄 Contre-proposer</button>
+            <button class="btn btn-danger btn-sm" onclick="respondCompositionFromNegoCompany(${n.id},'reject')">❌ Refuser</button>
+          ` : `
+            <button class="btn btn-success btn-sm" onclick="respondNegoCompanyDirect(${n.id},'accept')">✅ Accepter</button>
+            <button class="btn btn-outline btn-sm" onclick="openNegoCoRespond(${n.id})">🔄 Contre-proposer</button>
+            <button class="btn btn-danger btn-sm" onclick="respondNegoCompanyDirect(${n.id},'reject')">❌ Refuser</button>
+          `}
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) { console.error('loadCompanyNegotiations:', e); grid.innerHTML = `<div style="text-align:center;color:#dc2626;padding:20px">${e.message}</div>`; }
+}
+
+function openNegoCoRespond(id) {
+  const n = _negsData.find(x => x.id == id && !x._source);
+  document.getElementById('negoCoRespondId').value = id;
+  document.getElementById('negoCoRespondTitle').textContent = `💬 ${n ? n.entity_name : 'Négociation'}`;
+  const lastMsg = n ? (n.messages||[]).slice(-1)[0] : null;
+  document.getElementById('negoCoRespondInfo').innerHTML = n ? `
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div><span style="color:var(--muted);font-size:11px">Restaurant</span><br><strong>${n.restaurant_name}</strong></div>
+      <div><span style="color:var(--muted);font-size:11px">Prix catalogue</span><br><strong>${fmtCFA(n.original_price||0)} FCFA</strong></div>
+      ${lastMsg ? `<div><span style="color:var(--muted);font-size:11px">Offre reçue</span><br><strong style="color:var(--orange)">${fmtCFA(lastMsg.proposed_price||0)} FCFA</strong></div>` : ''}
+    </div>` : '';
+  const hist = document.getElementById('negoCoPriceHistory');
+  if (hist && n) {
+    hist.innerHTML = (n.messages||[]).length ? `
+      <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px">Historique :</div>
+      ${(n.messages||[]).map(m => {
+        const isMe = m.sent_by === 'company';
+        const actionText = (m.action==='propose'||m.action==='counter') ? `💰 ${fmtCFA(m.proposed_price||0)} FCFA` : m.action==='accept' ? '✅ Accepté' : '❌ Refusé';
+        return `<div style="display:flex;${isMe?'justify-content:flex-end':'justify-content:flex-start'};margin-bottom:5px">
+          <div style="max-width:80%;background:${isMe?'#2563EB':'#F3F4F6'};color:${isMe?'#fff':'#374151'};border-radius:${isMe?'10px 10px 2px 10px':'10px 10px 10px 2px'};padding:6px 10px;font-size:11px">
+            <div style="font-size:9px;opacity:.7;margin-bottom:2px">${isMe?'Vous':n.restaurant_name}</div>
+            <div style="font-weight:600">${actionText}</div>
+            ${m.message?`<div style="font-style:italic;opacity:.8;font-size:10px;margin-top:2px">"${m.message}"</div>`:''}
+          </div>
+        </div>`;
+      }).join('')}` : '';
+  }
+  document.getElementById('negoCoCounterPrice').value = '';
+  document.getElementById('negoCoMsg').value = '';
+  document.getElementById('negoCoRespondModal').classList.add('open');
+}
+
+async function respondNegoCompanyDirect(id, action) {
+  const n = _negsData.find(x => x.id == id);
+  if (!n) return;
+  const lastMsg = (n.messages||[]).slice(-1)[0];
+  if (action === 'accept') {
+    if (!confirm(`Accepter l'offre de ${fmtCFA(lastMsg?.proposed_price||0)} FCFA de ${n.restaurant_name} ?`)) return;
+  } else if (action === 'reject') {
+    if (!confirm('Refuser et clôturer cette négociation ?')) return;
+  }
+  try {
+    await apiFetch(`/api/company/negotiations/${id}/respond`, { method:'POST', body:{ action } }, token);
+    toast(action === 'accept' ? '✅ Prix accepté' : '❌ Négociation clôturée', 'success');
+    loadCompanyNegotiations();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function respondNegoCompany(action) {
+  const id = parseInt(document.getElementById('negoCoRespondId').value);
+  if (!id) { toast('Identifiant de négociation invalide', 'error'); return; }
+  const proposed_price = document.getElementById('negoCoCounterPrice').value;
+  const message = document.getElementById('negoCoMsg').value;
+  if (action === 'counter' && !proposed_price) { toast('Entrez un prix pour la contre-proposition', 'error'); return; }
+  try {
+    await apiFetch(`/api/company/negotiations/${id}/respond`, {
+      method: 'POST', body: { action, proposed_price: proposed_price ? parseFloat(proposed_price) : undefined, message }
+    }, token);
+    closeModal(document.getElementById('negoCoRespondModal'));
+    toast(action === 'accept' ? '✅ Prix accepté' : action === 'reject' ? 'Négociation clôturée' : '🔄 Contre-proposition envoyée', 'success');
+    loadCompanyNegotiations();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function openStartNegotiation(restaurantId, entityType, entityId, entityName, originalPrice) {
+  document.getElementById('startNegoRestaurantId').value = restaurantId;
+  document.getElementById('startNegoEntityType').value = entityType;
+  document.getElementById('startNegoEntityId').value = entityId;
+  document.getElementById('startNegoInfo').innerHTML = `<strong>${entityName}</strong><br>Prix actuel : <strong>${fmtCFA(originalPrice)} FCFA</strong>`;
+  document.getElementById('startNegoPrice').value = '';
+  document.getElementById('startNegoMsg').value = '';
+  document.getElementById('startNegoModal').classList.add('open');
+}
+
+async function submitNegotiation() {
+  const restaurant_id = document.getElementById('startNegoRestaurantId').value;
+  const entity_type = document.getElementById('startNegoEntityType').value;
+  const entity_id = document.getElementById('startNegoEntityId').value;
+  const entity_name = document.getElementById('startNegoInfo').querySelector('strong')?.textContent;
+  const proposed_price = document.getElementById('startNegoPrice').value;
+  const message = document.getElementById('startNegoMsg').value;
+  if (!proposed_price) { toast('Entrez un prix à proposer', 'error'); return; }
+  try {
+    await apiFetch('/api/company/negotiations', {
+      method: 'POST', body: { restaurant_id, entity_type, entity_id, entity_name, proposed_price: parseFloat(proposed_price), message }
+    }, token);
+    closeModal(document.getElementById('startNegoModal'));
+    toast('💬 Proposition envoyée au restaurant', 'success');
+    switchToPage('negotiations-co');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function respondCompositionFromNegoCompany(id, action) {
+  try {
+    await apiFetch(`/api/company/custom-compositions/${id}/respond`, { method: 'POST', body: { action } }, token);
+    toast(action === 'accept' ? '✅ Composition acceptée' : '❌ Composition refusée', 'success');
+    loadCompanyNegotiations();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+window.loadCompanyNegotiations = loadCompanyNegotiations;
+window.openNegoCoRespond = openNegoCoRespond;
+window.respondNegoCompany = respondNegoCompany;
+window.respondNegoCompanyDirect = respondNegoCompanyDirect;
+window.openStartNegotiation = openStartNegotiation;
+window.submitNegotiation = submitNegotiation;
+window.openCoReplyNego = openCoReplyNego;
+window.respondCompositionCompany = respondCompositionCompany;
+window.respondCompositionFromNegoCompany = respondCompositionFromNegoCompany;
+
 }); // end DOMContentLoaded
 </script>
 <script>(function(){

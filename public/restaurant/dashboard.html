@@ -46,6 +46,8 @@
     <div class="nav-item" data-page="menus"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2c-1.67 0-5 .83-5 4v6c0 1.1.9 2 2 2v5a1 1 0 0 0 2 0v-5c1.1 0 2-.9 2-2z"/></svg></span><span>Mes menus</span></div>
     <div class="nav-item" data-page="ratings"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span><span>Avis clients</span></div>
     <div class="nav-item" data-page="weekly"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Programme hebdo</span></div>
+    <div class="nav-item" data-page="compositions"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></span><span>Compositions</span><span class="nav-badge" id="compositionsBadge" style="display:none">0</span></div>
+    <div class="nav-item" data-page="negotiations"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="13" y2="14"/></svg></span><span>Négociations</span><span class="nav-badge" id="negoBadgeRest" style="display:none">0</span></div>
     <div class="nav-section">Compte</div>
     <div class="nav-item" data-page="profile"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg></span><span>Mon profil</span></div>
     <div class="nav-item" data-page="invoices"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><span>Factures</span></div>
@@ -367,6 +369,13 @@
               <button class="btn btn-primary" onclick="createWeeklyPack()">➕ Créer</button>
             </div>
             <div id="packsList"></div>
+            <div id="compositionProposalsSection" style="margin-top:18px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                <span style="font-size:12px;font-weight:700;color:var(--brown)">📝 Propositions de menus par les entreprises</span>
+                <span id="compositionProposalsBadge" style="display:none;background:#D97706;color:white;font-size:10px;padding:1px 8px;border-radius:10px;font-weight:700">0</span>
+              </div>
+              <div id="compositionProposalsList"></div>
+            </div>
           </div>
           <div id="rWeeklySubsPanel" style="display:none">
             <div id="rSubsGrid"></div>
@@ -586,9 +595,104 @@
         <input class="form-control" id="clientSearch" placeholder="🔍 Rechercher une entreprise…"
           oninput="filterClients(this.value)" style="flex:1;min-width:180px">
         <button class="btn btn-outline btn-sm" onclick="loadClients()">🔄</button>
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" id="showConfidentialFilter" onchange="filterClients(document.getElementById('clientSearch').value)">
+          Afficher confidentiels seulement
+        </label>
       </div>
     </div>
     <div id="clientsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px"></div>
+  </div>
+
+  <!-- ═══ COMPOSITIONS PERSONNALISÉES ═══ -->
+  <div class="page" id="page-compositions">
+    <div class="card reveal">
+      <div class="card-header">
+        <span class="card-title">🧩 Compositions personnalisées</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="form-control" id="compFilterStatus" style="font-size:12px;width:160px" onchange="loadCompositionRequests()">
+            <option value="">Tous les statuts</option>
+            <option value="submitted">Soumises</option>
+            <option value="negotiating">En négociation</option>
+            <option value="accepted">Acceptées</option>
+            <option value="rejected">Refusées</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="loadCompositionRequests()">🔄</button>
+        </div>
+      </div>
+      <div class="card-body" id="compositionsGrid">
+        <div class="empty-state"><span class="icon">🧩</span>Aucune composition reçue</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal réponse composition -->
+  <div class="modal-overlay" id="compRespondModal">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-title" id="compRespondTitle">Répondre à la composition</div>
+      <input type="hidden" id="compRespondId">
+      <div id="compRespondInfo" style="background:#f8f9fa;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px"></div>
+      <div class="form-group" id="compCounterPriceGroup">
+        <label>Prix contre-proposé (FCFA)</label>
+        <input class="form-control" id="compCounterPrice" type="number" min="0" placeholder="ex : 150000">
+      </div>
+      <div class="form-group">
+        <label>Message (optionnel)</label>
+        <textarea class="form-control" id="compRespondMessage" rows="3" placeholder="Explication de votre décision…"></textarea>
+      </div>
+      <div class="modal-footer" style="flex-wrap:wrap;gap:8px">
+        <button class="btn btn-outline" onclick="closeModal(document.getElementById('compRespondModal'))">Annuler</button>
+        <button class="btn btn-danger" onclick="respondComposition('reject')">❌ Refuser</button>
+        <button class="btn btn-outline" onclick="respondComposition('counter')">🔄 Contre-proposer</button>
+        <button class="btn btn-success" onclick="respondComposition('accept')">✅ Accepter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ NÉGOCIATIONS ═══ -->
+  <div class="page" id="page-negotiations">
+    <div class="card reveal">
+      <div class="card-header">
+        <span class="card-title">💬 Négociations de prix</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="form-control" id="negoFilterStatus" style="font-size:12px;width:160px" onchange="loadRestaurantNegotiations()">
+            <option value="">Tous les statuts</option>
+            <option value="company_proposed">En attente de réponse</option>
+            <option value="restaurant_counter">Contre-proposition envoyée</option>
+            <option value="accepted">Acceptées</option>
+            <option value="rejected">Refusées</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="loadRestaurantNegotiations()">🔄</button>
+        </div>
+      </div>
+      <div class="card-body" id="negosGrid">
+        <div class="empty-state"><span class="icon">💬</span>Aucune négociation en cours</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal réponse négociation (restaurant) -->
+  <div class="modal-overlay" id="negoRespondModalRest">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-title" id="negoRespondTitleRest">Répondre à la proposition</div>
+      <input type="hidden" id="negoRespondIdRest">
+      <div id="negoRespondInfoRest" style="background:#f8f9fa;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px"></div>
+      <div id="negoPriceHistoryRest" style="max-height:180px;overflow-y:auto;margin-bottom:14px"></div>
+      <div class="form-group" id="negoCounterPriceGroupRest">
+        <label>Prix contre-proposé (FCFA)</label>
+        <input class="form-control" id="negoCounterPriceRest" type="number" min="0" placeholder="ex : 12000">
+      </div>
+      <div class="form-group">
+        <label>Message (optionnel)</label>
+        <textarea class="form-control" id="negoRespondMsgRest" rows="3" placeholder="Justification de votre décision…"></textarea>
+      </div>
+      <div class="modal-footer" style="flex-wrap:wrap;gap:8px">
+        <button class="btn btn-outline" onclick="closeModal(document.getElementById('negoRespondModalRest'))">Annuler</button>
+        <button class="btn btn-danger" onclick="respondNegoRest('reject')">❌ Refuser</button>
+        <button class="btn btn-outline" onclick="respondNegoRest('counter')">🔄 Contre-proposer</button>
+        <button class="btn btn-success" onclick="respondNegoRest('accept')">✅ Accepter</button>
+      </div>
+    </div>
   </div>
 
   <!-- Modal détail client -->
@@ -1060,7 +1164,7 @@ async function createInvoiceForCompany(companyName, companyId, orderDate) {
   try {
     const orders = await apiFetch(`/api/restaurant/orders?companyId=${companyId}&from=${orderDate}&to=${orderDate}`, {}, token);
     if (!orders.length) return toast('Aucune commande', 'error');
-    const items = orders.map(o => ({ name: o.menu_name, qty: 1, price: parseFloat(o.price) }));
+    const items = orders.map(o => ({ name: o.menu_name, qty: 1, price: parseFloat(o.price) || 0 }));
     const totalAmount = items.reduce((s, i) => s + (i.qty * i.price), 0);
     await apiFetch('/api/restaurant/invoices', { method: 'POST', body: { company_id: companyId, items, total_amount: totalAmount, batch_date: orderDate } }, token);
     toast('Facture créée!', 'success');
@@ -1096,6 +1200,13 @@ let restVoiceRecorder = null, restVoiceChunks = [], restVoiceTimer = null, restI
 
 let _allClients   = [];
 let _clientDetail = null;
+let _clientsPrivacy = {};
+
+async function loadClientsPrivacy() {
+  try {
+    _clientsPrivacy = await apiFetch('/api/restaurant/clients-privacy', {}, token);
+  } catch(e) { _clientsPrivacy = {}; }
+}
 
 async function loadClients() {
   const grid = document.getElementById('clientsGrid');
@@ -1110,8 +1221,20 @@ async function loadClients() {
 }
 
 function filterClients(q) {
-  const filtered = q ? _allClients.filter(c => c.name.toLowerCase().includes(q.toLowerCase())) : _allClients;
+  const onlyConf = document.getElementById('showConfidentialFilter')?.checked;
+  let filtered = q ? _allClients.filter(c => c.name.toLowerCase().includes(q.toLowerCase())) : _allClients;
+  if (onlyConf) filtered = filtered.filter(c => _clientsPrivacy[c.id]?.is_confidential);
   renderClientCards(filtered);
+}
+
+async function toggleClientPrivacy(companyId, currentState) {
+  const newState = !currentState;
+  try {
+    await apiFetch(`/api/restaurant/clients/${companyId}/privacy`, { method: 'PUT', body: { is_confidential: newState } }, token);
+    _clientsPrivacy[companyId] = { ..._clientsPrivacy[companyId], is_confidential: newState };
+    filterClients(document.getElementById('clientSearch')?.value || '');
+    toast(newState ? '🔒 Client marqué confidentiel' : '🔓 Confidentialité retirée', 'success');
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 function renderClientCards(clients) {
@@ -1167,8 +1290,13 @@ function renderClientCards(clients) {
           <div>💰 CA total : <strong style="color:var(--orange)">${fmtCFA(c.revenue_total || 0)} FCFA</strong></div>
           <div>📌 Affilié depuis : ${sinceDate}</div>
         </div>
+        <!-- Confidentialité -->
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--muted)">
+          ${_clientsPrivacy[c.id]?.is_confidential ? '<span style="background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700">🔒 CONFIDENTIEL</span>' : '<span style="color:#9ca3af;font-size:11px">Client visible</span>'}
+          <button class="btn btn-outline btn-sm" style="margin-left:auto;font-size:10px;padding:2px 8px" onclick="event.stopPropagation();toggleClientPrivacy(${c.id},${!!_clientsPrivacy[c.id]?.is_confidential})">${_clientsPrivacy[c.id]?.is_confidential ? '🔓 Rendre public' : '🔒 Confidentialiser'}</button>
+        </div>
         <!-- Actions -->
-        <div style="display:flex;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <div style="display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
           <button class="btn btn-outline btn-sm" style="flex:1;font-size:11px" onclick="event.stopPropagation();openChat(${c.id},'${c.name.replace(/'/g,"\\'")}',null);switchToPage('messages')">💬 Message</button>
           <button class="btn btn-primary btn-sm" style="flex:1;font-size:11px" onclick="event.stopPropagation();openClientDetail(${c.id},'${c.name.replace(/'/g,"\\'")}')">👁 Détail</button>
         </div>
@@ -1241,7 +1369,7 @@ function renderClientOverview() {
   el.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
       ${[
-        ['👥 Employés',        d.employees.length,              ''],
+        ['👥 Employés',        (d.employees||[]).length,              ''],
         ['📋 Commandes (30j)', d.recent_orders.length,          ''],
         ['🧾 Factures total',  fmtCFA(totalInv)+' FCFA',        ''],
         ['⏳ En attente',      pending,                          pending>0?' style="color:#dc2626"':''],
@@ -1403,7 +1531,9 @@ function switchToPage(page) {
   else if (page === 'weekly') { loadWeeklyPacks(); }
   else if (page === 'weekly-invoices') { loadWeeklyInvoices(); }
   else if (page === 'invoices-history') { loadInvoicesHistory(); loadCompaniesForIhFilter(); }
-  else if (page === 'clients') { loadClients(); }
+  else if (page === 'clients') { loadClientsPrivacy().then(() => loadClients()); }
+  else if (page === 'compositions') { loadCompositionRequests(); }
+  else if (page === 'negotiations') { loadRestaurantNegotiations(); }
   else if (page === 'trash') { loadTrash(); }
   else if (page === 'help') { initDocSearch(); }
 }
@@ -1426,7 +1556,7 @@ function loadCompaniesForFilter() {
     companies.forEach(function(c) {
       sel.innerHTML += '<option value="'+c.id+'">'+c.name+'</option>';
     });
-  });
+  }).catch(function(e) { console.error('loadCompaniesForFilter:', e.message); });
 }
 
 // ═══ DASHBOARD ═══
@@ -1755,7 +1885,7 @@ async function generateInvoice() {
     const items = orders.map(o => ({
       name: o.menu_name,
       qty: 1,
-      price: parseFloat(o.price),
+      price: parseFloat(o.price) || 0,
       order_date: o.order_date,
       employee_name: `${o.first_name||''} ${o.last_name||''}`.trim(),
       restaurant_name: o.restaurant_name || ''
@@ -2162,13 +2292,15 @@ function loadOrders(from, to, companyId) {
       }
       el.innerHTML += '<div style="background:#F9F1EB;padding:16px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:12px"><div>🏢 '+co+' <span style="font-size:12px;color:var(--muted)">'+ords.length+' cmd</span></div><div style="display:flex;gap:8px;align-items:center">'+buttons+'</div></div></div>';
     });
-  });
+  }).catch(function(e) { toast(e.message || 'Erreur chargement commandes', 'error'); });
 }
 
 async function confirmBatch(batchId) {
-  await apiFetch('/api/restaurant/batches/'+batchId+'/confirm', { method: 'PUT' }, token);
-  toast('Commande confirmée!', 'success');
-  loadOrders();
+  try {
+    await apiFetch('/api/restaurant/batches/'+batchId+'/confirm', { method: 'PUT' }, token);
+    toast('Commande confirmée!', 'success');
+    loadOrders();
+  } catch(e) { toast(e.message || 'Erreur confirmation', 'error'); }
 }
 
 // Attach nav click handlers
@@ -2189,6 +2321,7 @@ let currentPackData = null;
 let wiItemIndex = 0;
 
 async function loadWeeklyPacks() {
+  loadCompositionProposals();
   try {
     const packs = await apiFetch('/api/restaurant/weekly-packs', {}, token);
     const el = document.getElementById('packsList');
@@ -2230,6 +2363,73 @@ async function loadWeeklyPacks() {
         ${p.description ? `<div style="padding:0 14px 10px;font-size:12px;color:var(--muted);font-style:italic;border-top:1px solid var(--border);padding-top:8px">${p.description}</div>` : ''}
       </div>`;
     }).join('');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function loadCompositionProposals() {
+  const listEl = document.getElementById('compositionProposalsList');
+  const badge = document.getElementById('compositionProposalsBadge');
+  const section = document.getElementById('compositionProposalsSection');
+  if (!listEl) return;
+  try {
+    const compos = await apiFetch('/api/restaurant/composition-requests', {}, token);
+    const pending = compos.filter(c => c.status === 'submitted' || c.status === 'negotiating');
+    if (badge) { badge.textContent = pending.length; badge.style.display = pending.length ? '' : 'none'; }
+    if (!pending.length) {
+      listEl.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px 0">Aucune proposition en cours</div>';
+      return;
+    }
+    const dayNames = {1:'Lun',2:'Mar',3:'Mer',4:'Jeu',5:'Ven',6:'Sam',7:'Dim'};
+    listEl.innerHTML = pending.map(c => {
+      const byDay = {};
+      (c.dishes || []).forEach(d => { if (!byDay[d.day_of_week]) byDay[d.day_of_week] = []; byDay[d.day_of_week].push(d); });
+      const weekStart = c.week_start ? new Date(c.week_start + 'T12:00:00').toLocaleDateString('fr-FR') : '';
+      const isNegotiating = c.status === 'negotiating';
+      return `
+      <div style="border:${isNegotiating ? '2px solid #D97706' : '1px solid var(--border)'};border-radius:12px;padding:14px;margin-bottom:10px;background:${isNegotiating ? '#fffbf0' : '#fafafa'}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+          <div>
+            <div style="font-weight:700;font-size:14px;color:var(--brown)">${c.name || 'Composition'}</div>
+            <div style="font-size:12px;color:var(--muted)">🏢 ${c.company_name} · Semaine du ${weekStart}</div>
+            ${isNegotiating ? `<div style="font-size:11px;color:#D97706;font-weight:600;margin-top:2px">🔄 En négociation</div>` : ''}
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            ${c.company_proposed_price ? `<div style="font-size:13px;font-weight:700;color:var(--orange)">${fmtCFA(c.company_proposed_price)} FCFA</div>` : ''}
+            ${c.restaurant_counter_price ? `<div style="font-size:11px;color:var(--muted)">Votre contre-prop : ${fmtCFA(c.restaurant_counter_price)} FCFA</div>` : ''}
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+          ${Object.entries(byDay).sort(([a],[b]) => a - b).map(([day, dishes]) => `
+            <div style="background:white;border:1px solid var(--border);border-radius:8px;padding:5px 9px;min-width:64px">
+              <div style="font-size:10px;font-weight:700;color:var(--brown);margin-bottom:2px">${dayNames[day] || day}</div>
+              ${dishes.map(d => `<div style="font-size:11px;color:#374151">${d.dish_name}${d.quantity > 1 ? ' ×' + d.quantity : ''}</div>`).join('')}
+            </div>`).join('')}
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border)">
+          <button class="btn btn-success btn-sm" onclick="acceptCompositionProposal(${c.id})">✅ Accepter → créer Menu</button>
+          <button class="btn btn-outline btn-sm" onclick="openCompositionRespond(${c.id},'${(c.name||'Composition').replace(/'/g,"\\'")}','${(c.company_name||'').replace(/'/g,"\\'")}',${c.company_proposed_price||0})">🔄 Contre-proposer</button>
+          <button class="btn btn-danger btn-sm" onclick="rejectCompositionProposal(${c.id})">❌ Refuser</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { console.error('loadCompositionProposals:', e); listEl.innerHTML = `<div style="color:#dc2626;font-size:12px">${e.message}</div>`; }
+}
+
+async function acceptCompositionProposal(id) {
+  try {
+    await apiFetch(`/api/restaurant/composition-requests/${id}/respond`, { method: 'PUT', body: { action: 'accept' } }, token);
+    toast('✅ Composition acceptée — nouveau menu créé dans Mes packs', 'success');
+    loadWeeklyPacks();
+    loadCompositionRequests();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function rejectCompositionProposal(id) {
+  try {
+    await apiFetch(`/api/restaurant/composition-requests/${id}/respond`, { method: 'PUT', body: { action: 'reject' } }, token);
+    toast('Composition refusée', 'success');
+    loadCompositionProposals();
+    loadCompositionRequests();
   } catch(e) { toast(e.message, 'error'); }
 }
 
@@ -3995,6 +4195,225 @@ window.filterDocSections = filterDocSections;
 window.toggleFaq = toggleFaq;
 window.initDocSearch = initDocSearch;
 
+// ═══════════════════════════════════════════════════
+// COMPOSITIONS PERSONNALISÉES
+// ═══════════════════════════════════════════════════
+
+const DAY_NAMES = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+
+async function loadCompositionRequests() {
+  const grid = document.getElementById('compositionsGrid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">Chargement…</div>';
+  try {
+    const statusFilter = document.getElementById('compFilterStatus')?.value || '';
+    let comps = await apiFetch('/api/restaurant/composition-requests', {}, token);
+    if (statusFilter) comps = comps.filter(c => c.status === statusFilter);
+    const pendingCount = comps.filter(c => c.status === 'submitted').length;
+    const badge = document.getElementById('compositionsBadge');
+    if (badge) { badge.textContent = pendingCount; badge.style.display = pendingCount ? '' : 'none'; }
+    if (!comps.length) { grid.innerHTML = '<div class="empty-state"><span class="icon">🧩</span>Aucune composition reçue</div>'; return; }
+    const statusLabel = { draft:'Brouillon', submitted:'Soumise', negotiating:'En négociation', accepted:'Acceptée', rejected:'Refusée' };
+    const statusColor = { draft:'#9ca3af', submitted:'#2563EB', negotiating:'#D97706', accepted:'#16a34a', rejected:'#dc2626' };
+    grid.innerHTML = comps.map(c => {
+      const dishesByDay = {};
+      (c.dishes || []).forEach(d => { (dishesByDay[d.day_of_week] = dishesByDay[d.day_of_week] || []).push(d); });
+      const daysHtml = [1,2,3,4,5].map(d => {
+        const items = dishesByDay[d] || [];
+        if (!items.length) return '';
+        return `<div style="margin-bottom:6px"><strong style="font-size:11px;color:var(--brown)">${DAY_NAMES[d]} :</strong> ${items.map(i=>`<span style="background:#f3f4f6;padding:1px 6px;border-radius:6px;font-size:11px">${i.dish_name} ×${i.quantity}</span>`).join(' ')}</div>`;
+      }).join('');
+      const totalDishes = (c.dishes || []).reduce((s,d) => s + (d.quantity||1), 0);
+      return `
+      <div style="border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px">
+          <div>
+            <div style="font-weight:700;font-size:14px;color:var(--brown)">${c.name || 'Composition sans nom'}</div>
+            <div style="font-size:12px;color:var(--muted)">${c.company_name} • Semaine du ${c.week_start} • ${totalDishes} plat(s)</div>
+          </div>
+          <span style="background:${statusColor[c.status] || '#9ca3af'}20;color:${statusColor[c.status] || '#9ca3af'};font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;white-space:nowrap">${statusLabel[c.status] || c.status}</span>
+        </div>
+        <div style="background:#f9fafb;border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px">${daysHtml || '<span style="color:var(--muted)">Aucun plat</span>'}</div>
+        <div style="display:flex;gap:12px;font-size:12px;margin-bottom:12px">
+          ${c.company_proposed_price ? `<span>💰 Proposé : <strong style="color:var(--orange)">${fmtCFA(c.company_proposed_price)} FCFA</strong></span>` : ''}
+          ${c.restaurant_counter_price ? `<span>🔄 Contre-proposition : <strong>${fmtCFA(c.restaurant_counter_price)} FCFA</strong></span>` : ''}
+          ${c.final_price ? `<span>✅ Prix final : <strong style="color:#16a34a">${fmtCFA(c.final_price)} FCFA</strong></span>` : ''}
+          ${c.notes ? `<span>📝 ${c.notes}</span>` : ''}
+        </div>
+        ${['submitted','negotiating'].includes(c.status) ? `
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-danger btn-sm" onclick="openCompositionRespond(${c.id},'${(c.name||'').replace(/'/g,"\\'")}','${(c.company_name||'').replace(/'/g,"\\'")}',${c.company_proposed_price||0})">❌ Refuser</button>
+          <button class="btn btn-outline btn-sm" onclick="openCompositionRespond(${c.id},'${(c.name||'').replace(/'/g,"\\'")}','${(c.company_name||'').replace(/'/g,"\\'")}',${c.company_proposed_price||0})">🔄 Contre-proposer</button>
+          <button class="btn btn-success btn-sm" onclick="openCompositionRespond(${c.id},'${(c.name||'').replace(/'/g,"\\'")}','${(c.company_name||'').replace(/'/g,"\\'")}',${c.company_proposed_price||0})">✅ Accepter</button>
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    grid.innerHTML = `<div style="text-align:center;padding:30px;color:#dc2626">${e.message}</div>`;
+  }
+}
+
+function openCompositionRespond(id, name, companyName, proposedPrice) {
+  document.getElementById('compRespondId').value = id;
+  document.getElementById('compRespondTitle').textContent = `Répondre à la composition — ${name}`;
+  document.getElementById('compRespondInfo').innerHTML = `
+    <strong>Entreprise :</strong> ${companyName}<br>
+    <strong>Prix proposé :</strong> ${proposedPrice ? fmtCFA(proposedPrice) + ' FCFA' : 'Non spécifié'}`;
+  document.getElementById('compCounterPrice').value = proposedPrice || '';
+  document.getElementById('compRespondMessage').value = '';
+  document.getElementById('compRespondModal').classList.add('open');
+}
+
+async function respondComposition(action) {
+  const id = document.getElementById('compRespondId').value;
+  const counter_price = document.getElementById('compCounterPrice').value;
+  const message = document.getElementById('compRespondMessage').value;
+  if (action === 'counter' && !counter_price) { toast('Entrez un prix pour votre contre-proposition', 'error'); return; }
+  try {
+    await apiFetch(`/api/restaurant/composition-requests/${id}/respond`, {
+      method: 'PUT', body: { action, counter_price: counter_price ? parseFloat(counter_price) : undefined, message }
+    }, token);
+    closeModal(document.getElementById('compRespondModal'));
+    toast(action === 'accept' ? '✅ Composition acceptée — nouveau menu créé' : action === 'reject' ? 'Composition refusée' : 'Contre-proposition envoyée', 'success');
+    loadCompositionRequests();
+    if (action === 'accept') { loadWeeklyPacks(); }
+    else { loadCompositionProposals(); }
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+window.loadCompositionRequests = loadCompositionRequests;
+window.openCompositionRespond = openCompositionRespond;
+window.respondComposition = respondComposition;
+window.respondCompositionRest = respondCompositionRest;
+window.loadCompositionProposals = loadCompositionProposals;
+window.acceptCompositionProposal = acceptCompositionProposal;
+window.rejectCompositionProposal = rejectCompositionProposal;
+
+// ═══════════════════════════════════════════════════
+// NÉGOCIATIONS (RESTAURANT)
+// ═══════════════════════════════════════════════════
+
+async function loadRestaurantNegotiations() {
+  const grid = document.getElementById('negosGrid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">Chargement…</div>';
+  try {
+    const statusFilter = document.getElementById('negoFilterStatus')?.value || '';
+
+    const [priceNegs, compositions] = await Promise.all([
+      apiFetch('/api/restaurant/negotiations', {}, token).catch(() => []),
+      apiFetch('/api/restaurant/composition-requests', {}, token).catch(() => [])
+    ]);
+
+    const compStatusMap = { submitted:'company_proposed', negotiating:'restaurant_counter', accepted:'accepted', rejected:'rejected' };
+    const compoNegs = (compositions || []).filter(c => c.status !== 'draft').map(c => ({
+      id: c.id, _source: 'composition',
+      entity_name: c.name, entity_type: 'custom_composition',
+      company_name: c.company_name,
+      original_price: c.company_proposed_price, final_agreed_price: c.final_price,
+      status: compStatusMap[c.status] || c.status,
+      messages: [
+        ...(c.company_proposed_price ? [{sent_by:'company', action:'propose', proposed_price: c.company_proposed_price, message: c.notes || ''}] : []),
+        ...(c.restaurant_counter_price ? [{sent_by:'restaurant', action:'counter', proposed_price: c.restaurant_counter_price, message: ''}] : [])
+      ]
+    }));
+
+    let allNegs = [...compoNegs, ...(priceNegs || [])];
+    const pendingCount = allNegs.filter(n => n.status === 'company_proposed').length;
+    const badge = document.getElementById('negoBadgeRest');
+    if (badge) { badge.textContent = pendingCount; badge.style.display = pendingCount ? '' : 'none'; }
+
+    if (statusFilter) allNegs = allNegs.filter(n => n.status === statusFilter);
+    if (!allNegs.length) { grid.innerHTML = '<div class="empty-state"><span class="icon">💬</span>Aucune négociation en cours</div>'; return; }
+
+    const statusLabel = { pending:'En attente', company_proposed:'Proposition reçue ⬅', restaurant_counter:'Contre-proposition envoyée', accepted:'✅ Accordée', rejected:'❌ Refusée' };
+    const statusColor = { pending:'#9ca3af', company_proposed:'#2563EB', restaurant_counter:'#D97706', accepted:'#16a34a', rejected:'#dc2626' };
+    const entityLabel = { weekly_pack:'Pack hebdo', custom_composition:'Composition', dish:'Plat' };
+
+    grid.innerHTML = allNegs.map(n => {
+      const lastMsg = (n.messages || []).slice(-1)[0];
+      const isMyTurn = n.status === 'company_proposed';
+      return `
+      <div style="border:${isMyTurn ? '2px solid #2563EB' : '1px solid var(--border)'};border-radius:12px;padding:16px;margin-bottom:12px;background:${isMyTurn ? '#eff6ff' : ''}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">
+          <div style="min-width:0">
+            <div style="font-weight:700;font-size:14px;color:var(--brown)">${n.entity_name || entityLabel[n.entity_type] || n.entity_type}</div>
+            <div style="font-size:12px;color:var(--muted)">${n.company_name} · ${entityLabel[n.entity_type] || n.entity_type}${n._source === 'composition' ? ' 📋' : ''}</div>
+          </div>
+          <span style="background:${statusColor[n.status]||'#9ca3af'}20;color:${statusColor[n.status]||'#9ca3af'};font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;white-space:nowrap">${statusLabel[n.status]||n.status}</span>
+        </div>
+        <div style="display:flex;gap:12px;font-size:12px;margin-bottom:10px;flex-wrap:wrap;padding:6px 10px;background:#f9fafb;border-radius:8px">
+          <span>Prix proposé : <strong>${fmtCFA(n.original_price||0)} FCFA</strong></span>
+          ${lastMsg && lastMsg.proposed_price !== n.original_price ? `<span>Dernière offre : <strong style="color:var(--orange)">${fmtCFA(lastMsg.proposed_price||0)} FCFA</strong> (${lastMsg.sent_by === 'company' ? n.company_name : 'Vous'})</span>` : ''}
+          ${n.final_agreed_price ? `<span style="color:#16a34a;font-weight:700">✅ Accordé : ${fmtCFA(n.final_agreed_price)} FCFA</span>` : ''}
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;max-height:120px;overflow-y:auto">
+          ${(n.messages||[]).map(m => `<div style="padding:3px 0;border-bottom:1px solid #f3f4f6">
+            <span style="font-weight:600;color:${m.sent_by==='company'?'#2563EB':'var(--orange)'}">${m.sent_by === 'company' ? n.company_name : 'Vous'}</span>
+            ${m.action === 'propose' || m.action === 'counter' ? '💰 ' + fmtCFA(m.proposed_price||0) + ' FCFA' : m.action === 'accept' ? '✅ Accepté' : '❌ Refusé'}
+            ${m.message ? `— "${m.message}"` : ''}
+          </div>`).join('')}
+        </div>
+        ${isMyTurn ? `
+        <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid #dde4f0">
+          <span style="font-size:11px;color:#2563EB;font-weight:600;align-self:center">👆 C'est votre tour :</span>
+          ${n._source === 'composition' ? `
+            <button class="btn btn-danger btn-sm" onclick="respondCompositionRest(${n.id},'reject')">❌ Refuser</button>
+            <button class="btn btn-outline btn-sm" onclick="openCompositionRespond(${n.id},'${(n.entity_name||'').replace(/'/g,"\\'")}','${(n.company_name||'').replace(/'/g,"\\'")}',${n.original_price||0})">🔄 Contre-proposer</button>
+            <button class="btn btn-success btn-sm" onclick="respondCompositionRest(${n.id},'accept')">✅ Accepter</button>
+          ` : `
+            <button class="btn btn-danger btn-sm" onclick="openNegoRespondRest(${n.id},'${(n.entity_name||'').replace(/'/g,"\\'")}','${(n.company_name||'').replace(/'/g,"\\'")}',${n.original_price||0})">❌ Refuser</button>
+            <button class="btn btn-outline btn-sm" onclick="openNegoRespondRest(${n.id},'${(n.entity_name||'').replace(/'/g,"\\'")}','${(n.company_name||'').replace(/'/g,"\\'")}',${n.original_price||0})">🔄 Contre-proposer</button>
+            <button class="btn btn-success btn-sm" onclick="openNegoRespondRest(${n.id},'${(n.entity_name||'').replace(/'/g,"\\'")}','${(n.company_name||'').replace(/'/g,"\\'")}',${n.original_price||0})">✅ Accepter</button>
+          `}
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    console.error('loadRestaurantNegotiations:', e);
+    grid.innerHTML = `<div style="text-align:center;padding:30px;color:#dc2626">${e.message}</div>`;
+  }
+}
+
+async function respondCompositionRest(id, action) {
+  try {
+    await apiFetch(`/api/restaurant/composition-requests/${id}/respond`, { method: 'PUT', body: { action } }, token);
+    toast(action === 'accept' ? '✅ Composition acceptée — nouveau menu créé' : '❌ Composition refusée', 'success');
+    loadRestaurantNegotiations();
+    loadCompositionRequests();
+    if (action === 'accept') loadWeeklyPacks(); else loadCompositionProposals();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function openNegoRespondRest(id, entityName, companyName, originalPrice) {
+  document.getElementById('negoRespondIdRest').value = id;
+  document.getElementById('negoRespondTitleRest').textContent = `Négociation — ${entityName}`;
+  document.getElementById('negoRespondInfoRest').innerHTML = `<strong>Entreprise :</strong> ${companyName}<br><strong>Prix catalogue :</strong> ${fmtCFA(originalPrice)} FCFA`;
+  document.getElementById('negoCounterPriceRest').value = '';
+  document.getElementById('negoRespondMsgRest').value = '';
+  document.getElementById('negoRespondModalRest').classList.add('open');
+}
+
+async function respondNegoRest(action) {
+  const id = document.getElementById('negoRespondIdRest').value;
+  const proposed_price = document.getElementById('negoCounterPriceRest').value;
+  const message = document.getElementById('negoRespondMsgRest').value;
+  if (action === 'counter' && !proposed_price) { toast('Entrez un prix pour la contre-proposition', 'error'); return; }
+  try {
+    await apiFetch(`/api/restaurant/negotiations/${id}/respond`, {
+      method: 'POST', body: { action, proposed_price: proposed_price ? parseFloat(proposed_price) : undefined, message }
+    }, token);
+    closeModal(document.getElementById('negoRespondModalRest'));
+    toast(action === 'accept' ? '✅ Prix accepté' : action === 'reject' ? 'Proposition refusée' : '🔄 Contre-proposition envoyée', 'success');
+    loadRestaurantNegotiations();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+window.loadRestaurantNegotiations = loadRestaurantNegotiations;
+window.openNegoRespondRest = openNegoRespondRest;
+window.respondNegoRest = respondNegoRest;
+window.toggleClientPrivacy = toggleClientPrivacy;
+window.loadClientsPrivacy = loadClientsPrivacy;
 
 }); // end DOMContentLoaded
 </script>

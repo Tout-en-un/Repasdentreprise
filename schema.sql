@@ -609,3 +609,76 @@ ALTER TABLE invoices ADD COLUMN IF NOT EXISTS to_date DATE;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS sent BOOLEAN DEFAULT false;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS confirmed_at TIMESTAMP;
+
+-- ============================================
+-- FONCTIONNALITÉS v5.0 — Juin 2026
+-- Composition personnalisée + Négociations + Confidentialité
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS custom_weekly_compositions (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  restaurant_id INTEGER REFERENCES restaurants(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL DEFAULT 'Ma composition',
+  week_start DATE NOT NULL,
+  status VARCHAR(20) DEFAULT 'draft',
+  company_proposed_price DECIMAL(10,2),
+  restaurant_counter_price DECIMAL(10,2),
+  final_price DECIMAL(10,2),
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS custom_composition_dishes (
+  id SERIAL PRIMARY KEY,
+  composition_id INTEGER REFERENCES custom_weekly_compositions(id) ON DELETE CASCADE,
+  dish_id INTEGER REFERENCES weekly_day_dishes(id) ON DELETE CASCADE,
+  dish_name VARCHAR(255) NOT NULL,
+  pack_name VARCHAR(255),
+  day_of_week INTEGER NOT NULL,
+  quantity INTEGER DEFAULT 1,
+  unit_price DECIMAL(10,2) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS price_negotiations (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  restaurant_id INTEGER REFERENCES restaurants(id) ON DELETE CASCADE,
+  entity_type VARCHAR(30) NOT NULL,
+  entity_id INTEGER NOT NULL,
+  entity_name VARCHAR(255),
+  status VARCHAR(20) DEFAULT 'pending',
+  original_price DECIMAL(10,2),
+  final_agreed_price DECIMAL(10,2),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS negotiation_messages (
+  id SERIAL PRIMARY KEY,
+  negotiation_id INTEGER REFERENCES price_negotiations(id) ON DELETE CASCADE,
+  sent_by VARCHAR(20) NOT NULL,
+  sender_id INTEGER NOT NULL,
+  proposed_price DECIMAL(10,2),
+  message TEXT,
+  action VARCHAR(20) NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS restaurant_client_privacy (
+  id SERIAL PRIMARY KEY,
+  restaurant_id INTEGER REFERENCES restaurants(id) ON DELETE CASCADE,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  is_confidential BOOLEAN DEFAULT false,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(restaurant_id, company_id)
+);
+
+-- Heure de livraison souhaitée pour les abonnements et compositions
+ALTER TABLE company_weekly_selections ADD COLUMN IF NOT EXISTS delivery_time TIME DEFAULT '12:00:00';
+ALTER TABLE custom_weekly_compositions ADD COLUMN IF NOT EXISTS delivery_time TIME DEFAULT '12:00:00';
+);

@@ -112,7 +112,19 @@
       "Bash(git checkout *)",
       "Bash(npx vercel *)",
       "Bash(npm run *)",
-      "Bash(findstr /C:\"updateOrder\\\\|deleteOrder\\\\|editOrder\\\\|PUT.*order\\\\|DELETE.*order\" public\\\\employee\\\\index.html)"
+      "Bash(findstr /C:\"updateOrder\\\\|deleteOrder\\\\|editOrder\\\\|PUT.*order\\\\|DELETE.*order\" public\\\\employee\\\\index.html)",
+      "Bash(ipconfig)",
+      "Bash(findstr /i \"IPv4\")",
+      "Bash(netsh advfirewall *)",
+      "Bash(dir /s /b)",
+      "Skill(code-review)",
+      "Bash(python -c ' *)",
+      "Artifact",
+      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:3050/api/company/login\" -Method POST -ContentType \"application/json\" -Body '{\"email\":\"test.devapp7777@gmail.com\",\"password\":\"@admin.dev.app\"}' 2>&1 | Out-String)",
+      "PowerShell(psql *)",
+      "PowerShell(Set-Content *)",
+      "PowerShell(node --check \"F:/All projects/repasapp/foodchooseapp/api/index.js\" 2>&1)",
+      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:3050/api/auth/admin/login\" -Method POST -ContentType \"application/json\" -Body '{\"email\":\"test.devapp7777@gmail.com\",\"password\":\"@admin.dev.app\"}' | Select-Object role, name)"
     ]
   }
 }

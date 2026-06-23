@@ -4462,8 +4462,8 @@ if (!process.env.VERCEL) {
 
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.error(`❌ Port ${PORT} déjà occupé. Nouvel essai nodemon dans 2 s...`);
-      setTimeout(() => process.exit(1), 2000);
+      console.error(`❌ Port ${PORT} déjà occupé — arrête le processus Node existant puis relance.`);
+      process.exit(1);
     } else {
       console.error(`❌ Erreur serveur: ${err.message}`);
       process.exit(1);

@@ -5,6 +5,7 @@
   "main": "api/index.js",
   "scripts": {
     "start": "node api/index.js",
+    "predev": "node scripts/kill-port.js",
     "dev": "nodemon api/index.js",
     "deploy": "vercel --prod"
   },

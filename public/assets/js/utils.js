@@ -35,6 +35,8 @@ async function apiFetch(url, opts = {}, tok = null) {
   });
   const data = await res.json().catch(() => ({}));
   if (res.status === 401) {
+    // Les endpoints /auth/ retournent 401 pour mauvais identifiants — pas une session expirée
+    if (url.includes('/auth/')) throw new Error(data.error || 'Identifiants incorrects');
     // Session expirée ou token invalide → nettoyer et rediriger vers login
     const role = localStorage.getItem('fc_role');
     localStorage.clear();

@@ -151,13 +151,13 @@
       <p>Accès réservé à l'administrateur</p>
     </div>
     <div class="form-group">
-      <label>Email administrateur</label>
+      <label for="adminEmail">Email administrateur</label>
       <input class="form-control" type="email" id="adminEmail" placeholder="admin@example.com" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <div class="form-group">
-      <label>Mot de passe</label>
+      <label for="adminPwd">Mot de passe</label>
       <div class="pw-wrap">
-        <input class="form-control" type="password" id="adminPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+        <input class="form-control" type="password" id="adminPwd" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
         <button class="pw-toggle" type="button">👁</button>
       </div>
     </div>
@@ -310,7 +310,7 @@
               <option value="1">Disponible</option>
               <option value="0">Indisponible</option>
             </select>
-            <input type="text" id="filterSearch" placeholder="Rechercher un plat..." oninput="renderMenus()" style="flex:1;min-width:140px">
+            <input type="text" id="filterSearch" placeholder="Rechercher un plat..." oninput="renderMenusDebounced()" style="flex:1;min-width:140px">
             <span id="menusCount" style="font-size:12px;color:var(--muted);margin-left:auto;white-space:nowrap"></span>
           </div>
           <div class="table-wrap">
@@ -466,7 +466,7 @@
             <select id="filterOrderRestaurant" onchange="renderOrders()">
               <option value="">Tous les restaurants</option>
             </select>
-            <input type="text" id="filterOrderSearch" placeholder="Employé, entreprise, plat..." oninput="renderOrders()" style="flex:1;min-width:140px">
+            <input type="text" id="filterOrderSearch" placeholder="Employé, entreprise, plat..." oninput="renderOrdersDebounced()" style="flex:1;min-width:140px">
             <span id="ordersCount" style="font-size:12px;color:var(--muted);margin-left:auto;white-space:nowrap"></span>
           </div>
           <div class="table-wrap">
@@ -703,7 +703,7 @@
     <p id="pwdSubtitle" style="font-size:13px;color:var(--muted);margin-bottom:16px"></p>
     <div class="form-group">
       <label>Nouveau mot de passe</label>
-      <input class="form-control" type="password" id="newPwdInput" placeholder="Minimum 6 caractères">
+      <input class="form-control" type="password" id="newPwdInput" placeholder="Minimum 6 caractères" autocomplete="new-password">
     </div>
     <div id="pwdErr" style="color:#dc2626;font-size:13px;margin-bottom:10px;display:none"></div>
     <div class="modal-actions">
@@ -758,6 +758,7 @@ function showApp(name) {
   loadStats();
   loadRestaurants();
   loadCompanies();
+  loadPlatformTerms(); // charge tôt le taux de commission réel, utilisé par renderMenus()
 }
 
 function jwtOk(t) {
@@ -856,7 +857,8 @@ function renderMenus() {
   }
 
   tbody.innerHTML = data.map(m => {
-    const comm = (parseFloat(m.price) * 0.01).toFixed(0);
+    const commRate = parseFloat(_ptData?.commission_rate ?? 1);
+    const comm = (parseFloat(m.price) * commRate / 100).toFixed(0);
     const catTag = catLabel(m.category);
     const availTag = m.available
       ? '<span class="tag tag-green">Disponible</span>'
@@ -872,6 +874,7 @@ function renderMenus() {
     </tr>`;
   }).join('');
 }
+const renderMenusDebounced = debounce(renderMenus);
 
 // ── Commandes live ────────────────────────────────────────────────
 let _allOrders = [];
@@ -934,6 +937,7 @@ function renderOrders() {
     </tr>`;
   }).join('');
 }
+const renderOrdersDebounced = debounce(renderOrders);
 
 function startLiveRefresh() {
   if (_liveTimer) clearInterval(_liveTimer);
@@ -961,8 +965,8 @@ async function loadRestaurants() {
         <td><span class="tag tag-brown">${r.affiliations_count} affil.</span></td>
         <td style="color:var(--muted);font-size:12px">${fmtDate(r.created_at)}</td>
         <td style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-outline btn-sm" onclick="openPwdModal('restaurant',${r.id},'${esc(r.name)}')">🔑 MDP</button>
-          <button class="btn btn-danger btn-sm" onclick="openConfirm('restaurant',${r.id},'${esc(r.name)}')">🗑</button>
+          <button class="btn btn-outline btn-sm" onclick="openPwdModal('restaurant',${r.id},'${jsStr(r.name)}')">🔑 MDP</button>
+          <button class="btn btn-danger btn-sm" onclick="openConfirm('restaurant',${r.id},'${jsStr(r.name)}')">🗑</button>
         </td>
       </tr>`).join('');
   } catch (e) {
@@ -1364,8 +1368,8 @@ async function loadCompanies() {
         <td><span class="tag tag-brown">${c.affiliations_count} affil.</span></td>
         <td style="color:var(--muted);font-size:12px">${fmtDate(c.created_at)}</td>
         <td style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-outline btn-sm" onclick="openPwdModal('company',${c.id},'${esc(c.name)}')">🔑 MDP</button>
-          <button class="btn btn-danger btn-sm" onclick="openConfirm('company',${c.id},'${esc(c.name)}')">🗑</button>
+          <button class="btn btn-outline btn-sm" onclick="openPwdModal('company',${c.id},'${jsStr(c.name)}')">🔑 MDP</button>
+          <button class="btn btn-danger btn-sm" onclick="openConfirm('company',${c.id},'${jsStr(c.name)}')">🗑</button>
         </td>
       </tr>`).join('');
   } catch (e) {
@@ -1445,6 +1449,7 @@ function initNav() {
       if (page === 'contracts') { loadPlatformTerms(); }
     });
   });
+  makeNavKeyboardAccessible();
 }
 
 function initHamburger() {

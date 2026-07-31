@@ -73,7 +73,7 @@
 
     /* scroll indicator arrow */
     .scroll-indicator{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;animation:heroIn .8s .5s both;margin-top:8px}
-    .scroll-indicator span{font-size:10px;color:rgba(255,248,243,.3);font-weight:600;letter-spacing:1.5px;text-transform:uppercase}
+    .scroll-indicator span{font-size:10px;color:rgba(255,248,243,.55);font-weight:600;letter-spacing:1.5px;text-transform:uppercase}
     .scroll-arrow{width:32px;height:32px;border:1.5px solid rgba(255,248,243,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:scrollBounce 2s ease-in-out infinite}
     .scroll-arrow svg{width:14px;height:14px;stroke:rgba(255,248,243,.35);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
     @keyframes scrollBounce{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(6px);opacity:1}}
@@ -90,12 +90,12 @@
     .stats-bar{display:flex;gap:2px;justify-content:center;flex-wrap:wrap}
     .stat-pill{display:flex;align-items:center;gap:8px;padding:10px 20px;background:rgba(255,248,243,.05);border:1px solid rgba(255,248,243,.08);border-radius:12px;backdrop-filter:blur(4px)}
     .stat-pill-num{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--cream)}
-    .stat-pill-lbl{font-size:11px;color:rgba(255,248,243,.45);font-weight:500}
+    .stat-pill-lbl{font-size:11px;color:rgba(255,248,243,.55);font-weight:500}
     .stat-divider{width:1px;background:rgba(255,248,243,.1);margin:0 4px;align-self:stretch}
 
     /* section title */
     .section-title{font-family:'Playfair Display',serif;font-size:clamp(22px,3vw,30px);font-weight:900;color:var(--cream);text-align:center;margin-bottom:10px}
-    .section-sub{font-size:14px;color:rgba(255,248,243,.42);text-align:center;margin-bottom:28px;max-width:400px}
+    .section-sub{font-size:14px;color:rgba(255,248,243,.55);text-align:center;margin-bottom:28px;max-width:400px}
     .section-sep{width:52px;height:2px;background:linear-gradient(90deg,var(--orange),var(--gold));border-radius:2px;margin:0 auto 32px}
 
     /* feature cards */
@@ -108,7 +108,7 @@
     .feat:hover .feat-icon-wrap{transform:scale(1.1) rotate(-3deg)}
     .feat-icon-wrap svg{width:22px;height:22px;stroke:var(--orange);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
     .feat h3{font-size:14px;font-weight:700;color:var(--cream);margin-bottom:7px}
-    .feat p{font-size:12px;color:rgba(255,248,243,.42);line-height:1.6}
+    .feat p{font-size:12px;color:rgba(255,248,243,.55);line-height:1.6}
 
     /* back to top */
     .back-top{position:fixed;bottom:28px;right:20px;width:40px;height:40px;background:rgba(232,90,42,.8);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;transform:translateY(14px);transition:all .3s;backdrop-filter:blur(4px)}
@@ -155,8 +155,8 @@
 
 <!-- section nav dots -->
 <nav class="section-nav" id="sectionNav" aria-label="Navigation sections">
-  <div class="s-dot active" data-target="hero-section" data-label="Accueil"></div>
-  <div class="s-dot" data-target="features-section" data-label="Fonctionnalités"></div>
+  <div class="s-dot active" data-target="hero-section" data-label="Accueil" role="link" tabindex="0" aria-label="Accueil"></div>
+  <div class="s-dot" data-target="features-section" data-label="Fonctionnalités" role="link" tabindex="0" aria-label="Fonctionnalités"></div>
 </nav>
 
 <!-- back to top -->
@@ -282,7 +282,10 @@ backTop.addEventListener('click', () => scrollToSection('hero-section'));
 // Section nav dots
 const SECTIONS = ['hero-section', 'features-section'];
 const dots = document.querySelectorAll('.s-dot');
-dots.forEach(dot => dot.addEventListener('click', () => scrollToSection(dot.dataset.target)));
+dots.forEach(dot => {
+  dot.addEventListener('click', () => scrollToSection(dot.dataset.target));
+  dot.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToSection(dot.dataset.target); } });
+});
 
 function updateNav() {
   const mid = window.scrollY + window.innerHeight / 2;
@@ -323,14 +326,39 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 
 // Modal
-function openRegisterModal() { document.getElementById('registerModal').classList.add('open'); }
-function closeRegisterModal() { document.getElementById('registerModal').classList.remove('open'); }
+let _registerModalLastFocused = null;
+function openRegisterModal() {
+  const overlay = document.getElementById('registerModal');
+  overlay.classList.add('open');
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  _registerModalLastFocused = document.activeElement;
+  const box = overlay.querySelector('.modal-box') || overlay;
+  const focusable = box.querySelectorAll('a[href],button,textarea,input,select,[tabindex]:not([tabindex="-1"])');
+  (focusable[0] || box).focus?.();
+}
+function closeRegisterModal() {
+  document.getElementById('registerModal').classList.remove('open');
+  if (_registerModalLastFocused && document.body.contains(_registerModalLastFocused)) _registerModalLastFocused.focus();
+}
 if (sessionStorage.getItem('openRegister') === '1') {
   sessionStorage.removeItem('openRegister');
   openRegisterModal();
 }
 document.getElementById('registerModal').addEventListener('click', function(e) { if (e.target === this) closeRegisterModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRegisterModal(); });
+document.addEventListener('keydown', e => {
+  const overlay = document.getElementById('registerModal');
+  if (!overlay.classList.contains('open')) return;
+  if (e.key === 'Escape') { closeRegisterModal(); return; }
+  if (e.key === 'Tab') {
+    const box = overlay.querySelector('.modal-box') || overlay;
+    const focusable = [...box.querySelectorAll('a[href],button,textarea,input,select,[tabindex]:not([tabindex="-1"])')].filter(el => el.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
 
 // Particles canvas
 (function(){

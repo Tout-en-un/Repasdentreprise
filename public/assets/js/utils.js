@@ -2,6 +2,14 @@
 // Ce fichier centralise toutes les fonctions réutilisables de l'app,
 // pour éviter de dupliquer la logique dans chaque page.
 
+// ─── Debounce ──────────────────────────────────────────
+// Retarde l'exécution jusqu'à ce que l'appelant arrête d'appeler pendant `delay` ms — utilisé sur
+// les champs de recherche/filtre en oninput pour éviter un re-rendu complet à chaque frappe.
+function debounce(fn, delay = 200) {
+  let t;
+  return function (...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), delay); };
+}
+
 // ─── Formatage monétaire ──────────────────────────────────────────
 // Le FCFA est une monnaie entière : pas de centimes.
 // formate manuellement avec un espace normal (U+0020) — toLocaleString(fr-FR) produit U+202F.
@@ -10,6 +18,27 @@ function fmtCFA(v) {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
+
+// ─── Échappement HTML ─────────────────────────────────
+// Toute donnée qui vient de l'API (nom de plat, message de chat, nom d'entreprise/restaurant...)
+// est fournie par un tiers et ne doit JAMAIS être injectée brute via innerHTML — sinon un nom
+// ou message contenant du HTML/JS s'exécute dans le navigateur d'un autre utilisateur (XSS stockée).
+// Toujours passer par escapeHtml() avant d'insérer du texte dynamique dans du innerHTML.
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Échappe une valeur pour l'insérer dans une chaîne JS entre apostrophes générée dynamiquement
+// (ex: onclick="doThing('${jsStr(name)}')") — préférer JSON.stringify() + addEventListener quand possible.
+function jsStr(str) {
+  return String(str ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/</g, '\\x3C');
+}
 
 // L'API est sur le même domaine, donc une chaîne vide suffit comme base URL.
 // Si un jour on déplace l'API ailleurs, on n'a qu'un seul endroit à modifier.
@@ -20,17 +49,45 @@ const API = '';
 // Cette fonction essaie chacun dans l'ordre et renvoie le premier trouvé — pratique pour les appels génériques.
 function getToken() { return localStorage.getItem('fc_token') || localStorage.getItem('fc_admin_token') || localStorage.getItem('fc_co_token'); }
 
+// Toutes les clés localStorage posées par un login, quel que soit le rôle — utilisé pour
+// nettoyer une session avant d'en écrire une nouvelle (évite les résidus multi-rôles sur un
+// poste partagé) ou pour déconnecter complètement l'utilisateur.
+const AUTH_KEYS = ['fc_token','fc_role','fc_admin_token','fc_admin_name','fc_co_token','fc_name','fc_id','fc_employeeId'];
+function clearAuth() { AUTH_KEYS.forEach(k => localStorage.removeItem(k)); }
+
+// Vérifie qu'un JWT n'est pas expiré, sans appel réseau (décode juste le payload local).
+function jwtOk(t) {
+  try { return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).exp * 1000 > Date.now(); }
+  catch { return false; }
+}
+
 // Construit les headers HTTP qu'on envoie à chaque requête.
 // On accepte un token en paramètre pour les cas où on veut forcer un compte précis,
 // sinon on récupère automatiquement celui qui est connecté.
 function hdrs(tok) { return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tok || getToken()}` }; }
 
+// Ouvre/imprime un PDF protégé sans jamais mettre le token dans l'URL (query string) :
+// un token en query string finit dans les logs serveur, l'historique du navigateur et le Referer.
+// On récupère le PDF via fetch (header Authorization) puis on l'ouvre comme Blob URL local.
+async function openPdf(url, tok = null, { print = false } = {}) {
+  try {
+    const res = await fetch(API + url, { headers: { Authorization: `Bearer ${tok || getToken()}` } });
+    if (!res.ok) throw new Error(`Erreur ${res.status}`);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const w = window.open(blobUrl, '_blank');
+    if (print && w) w.onload = () => w.print();
+  } catch (e) {
+    toast('Impossible d\'ouvrir le PDF', 'error');
+  }
+}
+
 // Wrapper autour de fetch() qui gère le token, la sérialisation du body et les erreurs proprement.
 // Centraliser ça évite de répéter les mêmes try/catch et JSON.stringify() partout dans le code.
 async function apiFetch(url, opts = {}, tok = null) {
   const res = await fetch(API + url, {
-    headers: hdrs(tok),
     ...opts,
+    headers: { ...hdrs(tok), ...opts.headers },
     body: opts.body ? (typeof opts.body === 'string' ? opts.body : JSON.stringify(opts.body)) : undefined
   });
   const data = await res.json().catch(() => ({}));
@@ -60,7 +117,7 @@ function toast(msg, type = 'info') {
   t.className = `toast ${type}`;
   // Les icônes visuelles rendent le type de message immédiatement lisible, sans avoir à lire le texte
   const icons = { success: '✅', error: '❌', info: 'ℹ️' };
-  t.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  t.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${escapeHtml(msg)}</span>`;
   c.appendChild(t);
   setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, 3500);
 }
@@ -148,8 +205,8 @@ function renderNotifDropdown(items) {
   if (!items.length) { dd.innerHTML = '<div class="empty-state" style="padding:20px"><span class="icon">🔔</span>Aucune notification</div>'; return; }
   dd.innerHTML = items.slice(0,15).map(n => `
     <div class="notif-item ${n.read?'':'unread'}" onclick="markNotifRead(${n.id}, this)">
-      <div class="notif-title">${n.title||''}</div>
-      <div class="notif-msg">${n.message||''}</div>
+      <div class="notif-title">${escapeHtml(n.title)}</div>
+      <div class="notif-msg">${escapeHtml(n.message)}</div>
       <div class="notif-time">${timeAgo(n.created_at)}</div>
     </div>
   `).join('');
@@ -187,6 +244,27 @@ function initSidebar() {
       overlay.classList.remove('open');
     });
   }
+}
+
+// ─── Accessibilité clavier des items de nav ───────────
+// Chaque page lie ses .nav-item[data-page] à sa façon (initNav ci-dessous, ou sa propre logique
+// switchToPage) — dans tous les cas ce sont des <div> cliquables à la souris uniquement, sans
+// tabindex/role, donc inatteignables au clavier et invisibles pour un lecteur d'écran. Cette
+// fonction ajoute l'accessibilité clavier par-dessus, sans toucher au mécanisme de clic existant :
+// Entrée/Espace déclenche simplement le même .click() déjà géré par la page.
+function makeNavKeyboardAccessible(selector = '.nav-item[data-page]') {
+  document.querySelectorAll(selector).forEach(item => {
+    if (item.hasAttribute('tabindex')) return;
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
+    item.setAttribute('aria-current', item.classList.contains('active') ? 'page' : 'false');
+    item.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); item.click(); }
+    });
+    new MutationObserver(() => {
+      item.setAttribute('aria-current', item.classList.contains('active') ? 'page' : 'false');
+    }).observe(item, { attributes: true, attributeFilter: ['class'] });
+  });
 }
 
 // ─── Navigation ───────────────────────────────────────
@@ -331,6 +409,21 @@ function checkVideoDuration(file) {
 // ─── Password visibility toggle ───────────────────────
 // Permet de basculer les champs mot de passe entre masqué et visible.
 // L'attribut data-pw-init évite de brancher l'événement deux fois si la fonction est appelée plusieurs fois.
+// Bascule afficher/masquer pour un bouton .pw-toggle à icône SVG (œil ouvert/barré),
+// ciblé via un attribut data-for="idDuChamp" — ex: <button class="pw-toggle" data-for="pwd"
+// onclick="togglePw(this)"><svg>...</svg></button>. Pour les boutons à icône emoji texte,
+// voir initPasswordToggles() ci-dessous.
+function togglePw(btn) {
+  const inp = document.getElementById(btn.getAttribute('data-for'));
+  if (!inp) return;
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  const svg = btn.querySelector('svg');
+  if (svg) svg.innerHTML = show
+    ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+}
+
 function initPasswordToggles() {
   document.querySelectorAll('.pw-toggle:not([data-pw-init])').forEach(btn => {
     btn.setAttribute('data-pw-init', '1'); // On marque le bouton comme initialisé pour éviter les doublons d'écouteurs
@@ -343,6 +436,35 @@ function initPasswordToggles() {
         btn.textContent = input.type === 'password' ? '👁' : '🙈';
       }
     });
+  });
+}
+
+// ─── Indicateur de force du mot de passe ──────────────
+// Réutilisable pour tout <input type="password"> suivi, dans le même .form-group, d'un bloc
+// .pw-strength (barre .pw-strength-bar de 4 .pw-bar-seg + .pw-strength-label) — même structure
+// que sur les pages d'inscription, pour donner ce retour partout où un mot de passe est saisi.
+function initPasswordStrength(input) {
+  if (typeof input === 'string') input = document.getElementById(input);
+  if (!input) return;
+  const wrap = input.closest('.form-group');
+  const box = wrap && wrap.querySelector('.pw-strength');
+  if (!box) return;
+  const segs = [...box.querySelectorAll('.pw-bar-seg')];
+  const label = box.querySelector('.pw-strength-label');
+  input.addEventListener('input', () => {
+    const pw = input.value;
+    if (!pw) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    let score = 0;
+    if (pw.length >= 6)  score++;
+    if (pw.length >= 10) score++;
+    if (/[A-Z]/.test(pw) && /[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    const levels = ['weak','medium','strong','very-strong'];
+    const labels = ['Trop court','Moyen','Bon','Excellent'];
+    const colors = ['#F87171','#FCD34D','#86EFAC','#4ADE80'];
+    segs.forEach((s,i) => { s.className = 'pw-bar-seg'; if (i < score) s.classList.add(levels[score-1]); });
+    if (label) { label.textContent = labels[score-1] || ''; label.style.color = colors[score-1] || 'var(--muted)'; }
   });
 }
 
@@ -527,6 +649,12 @@ function shakeEl(el) { el.classList.add('shake'); setTimeout(() => el.classList.
 function setLoading(btn, label) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> ' + label; }
 function unsetLoading(btn, label) { btn.disabled = false; btn.innerHTML = label; }
 
+// Désactive/réactive tous les boutons d'un modal (ex: Accepter/Refuser/Contre-proposer) pendant
+// un appel réseau, pour empêcher un double-clic d'envoyer deux fois la même action.
+function setModalBusy(modalId, busy) {
+  document.querySelectorAll(`#${modalId} .modal-footer button`).forEach(b => b.disabled = busy);
+}
+
 // ─── Drink labels ─────────────────────────────────────
 // Correspondance entre les codes stockés en base et les labels affichés à l'utilisateur.
 // Évite de stocker des labels en clair en base et permet de les changer facilement.
@@ -655,6 +783,74 @@ function closeModal(overlay) {
     if (modal) modal.classList.remove('closing');
   }, 280);
 }
+
+// ─── Accessibilité des modales ────────────────────────
+// Chaque page ouvre ses modales à sa façon (onclick="...classList.add('open')" un peu partout),
+// sans jamais passer par une fonction centralisée — impossible donc de patcher chaque site
+// d'ouverture. On observe à la place le changement de classe sur .modal-overlay pour ajouter
+// automatiquement, sur TOUTES les modales de l'app sans toucher au code qui les ouvre :
+// rôle ARIA, piège du focus (Tab reste dans la modale), fermeture au clavier (Échap),
+// et restauration du focus sur l'élément cliqué avant l'ouverture.
+(function initModalA11y() {
+  let lastFocused = null;
+
+  function focusableIn(container) {
+    return [...container.querySelectorAll('a[href],button,textarea,input,select,[tabindex]:not([tabindex="-1"])')]
+      .filter(el => !el.disabled && el.offsetParent !== null);
+  }
+
+  function currentOpenOverlay() {
+    return document.querySelector('.modal-overlay.open');
+  }
+
+  document.addEventListener('keydown', e => {
+    const overlay = currentOpenOverlay();
+    if (!overlay) return;
+    if (e.key === 'Escape') {
+      // Certaines modales (ex: login.html) se ferment via style.display plutôt que via
+      // closeModal() ; data-close-fn indique alors la fonction de fermeture propre à la page.
+      const closeFn = overlay.dataset.closeFn && window[overlay.dataset.closeFn];
+      if (typeof closeFn === 'function') closeFn(); else closeModal(overlay);
+      return;
+    }
+    if (e.key === 'Tab') {
+      const container = overlay.querySelector('.modal') || overlay;
+      const focusable = focusableIn(container);
+      if (!focusable.length) return;
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
+
+  function onOverlayToggle(overlay) {
+    const isOpen = overlay.classList.contains('open');
+    const wasOpen = overlay.dataset.a11yOpen === '1';
+    if (isOpen && !wasOpen) {
+      overlay.dataset.a11yOpen = '1';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      lastFocused = document.activeElement;
+      const container = overlay.querySelector('.modal') || overlay;
+      if (container.tabIndex < 0) container.tabIndex = -1;
+      const focusable = focusableIn(container);
+      (focusable[0] || container).focus();
+    } else if (!isOpen && wasOpen) {
+      overlay.dataset.a11yOpen = '0';
+      if (lastFocused && document.body.contains(lastFocused)) lastFocused.focus();
+    }
+  }
+
+  function watch(overlay) {
+    if (overlay.dataset.a11yWatched) return;
+    overlay.dataset.a11yWatched = '1';
+    new MutationObserver(() => onOverlayToggle(overlay)).observe(overlay, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.modal-overlay').forEach(watch);
+  });
+})();
 
 // ─── PWA Install Prompt ───────────────────────────────────
 let _deferredInstallPrompt = null;

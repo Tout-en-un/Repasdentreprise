@@ -105,7 +105,9 @@ window.addEventListener('online', () => {
   const line = document.getElementById('statusLine');
   line.className = 'status-line online';
   line.innerHTML = '<span class="status-dot"></span> Connexion rétablie — rechargement...';
-  setTimeout(() => window.history.back() || window.location.replace('/'), 800);
+  // offline.html est servi par le service worker en remplacement de la page demandée,
+  // sans changer l'URL affichée — un simple reload recharge donc la bonne page.
+  setTimeout(() => window.location.reload(), 800);
 });
 
 window.addEventListener('offline', () => {

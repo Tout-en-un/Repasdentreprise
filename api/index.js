@@ -2,11 +2,9 @@ require('dotenv').config();
 
 process.on('uncaughtException', (err) => {
   console.error('❌ Exception non gérée:', err.stack || err.message);
-  process.exit(1);
 });
 process.on('unhandledRejection', (reason) => {
   console.error('❌ Rejet de promesse non géré:', reason?.stack || reason);
-  process.exit(1);
 });
 
 const express = require('express');
@@ -25,6 +23,7 @@ const PDFDocument = require('pdfkit');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const cron = require('node-cron');
 const webpush = require('web-push');
 const cloudinary = require('cloudinary').v2;
@@ -53,7 +52,33 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) { console.error('❌ JWT_SECRET non défini dans .env'); process.exit(1); }
 
 // ── Sécurité HTTP headers ────────────────────────────────────────────
-app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+// Le front-end n'a pas de build step : tout le JS est inline (onclick=, <script> sans nonce).
+// 'unsafe-inline' sur script-src est donc nécessaire pour ne pas casser l'app entière ; la CSP
+// reste utile pour bloquer le chargement de scripts/ressources depuis un domaine tiers (l'essentiel
+// du risque XSS ici est le vol de session, pas l'injection de <script src> externe) et pour
+// object-src/base-uri/frame-ancestors qui, eux, sont pleinement efficaces.
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      // Helmet durcit scriptSrcAttr à 'none' par défaut, ce qui bloquerait TOUS les onclick="" inline
+      // utilisés partout dans l'app (pas de build step / pas d'addEventListener généralisé) — il faut
+      // l'autoriser explicitement, sinon plus aucun bouton ne fonctionne.
+      scriptSrcAttr: ["'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+      imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com'],
+      mediaSrc: ["'self'", 'data:', 'https://res.cloudinary.com'],
+      connectSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'self'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
 
 // ── Rate limiting ────────────────────────────────────────────────────
 // Global: 2000 req/15min par IP — couvre les SPAs avec multiples appels par navigation
@@ -75,6 +100,10 @@ app.use('/api/auth/', authLimiter);
 const _allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
   : null;
+if (!_allowedOrigins && process.env.NODE_ENV === 'production') {
+  console.error('❌ ALLOWED_ORIGINS non défini en production — CORS ne peut pas rester ouvert à toute origine.');
+  process.exit(1);
+}
 app.use(cors({
   origin: _allowedOrigins
     ? (origin, cb) => (!origin || _allowedOrigins.includes(origin) ? cb(null, true) : cb(new Error('Origine CORS non autorisée')))
@@ -2497,11 +2526,14 @@ app.get('/api/super-admin/weekly-invoices', adminAuth, async (req, res) => {
   const { from, to } = req.query;
   try {
     let q = `
-      SELECT wi.*, r.name AS restaurant_name, c.name AS company_name, wp.name AS pack_name
+      SELECT wi.*, r.name AS restaurant_name,
+        CASE WHEN rcp.is_confidential THEN 'Client confidentiel' ELSE c.name END AS company_name,
+        wp.name AS pack_name
       FROM weekly_invoices wi
       LEFT JOIN restaurants r ON wi.restaurant_id=r.id
       LEFT JOIN companies c ON wi.company_id=c.id
       LEFT JOIN weekly_packs wp ON wi.weekly_pack_id=wp.id
+      LEFT JOIN restaurant_client_privacy rcp ON rcp.restaurant_id=wi.restaurant_id AND rcp.company_id=wi.company_id
       WHERE 1=1
     `;
     const params = [];
@@ -2606,17 +2638,30 @@ app.put('/api/notifications/read-all', async (req, res) => {
 // ════════════════════════════════════════════════════════════════
 //  MESSAGES
 // ════════════════════════════════════════════════════════════════
+// Vérifie que le token appartient bien à l'une des deux parties de la conversation
+// (empêche un compte quelconque de lire/écrire les messages d'une autre entreprise/restaurant)
+async function assertConversationParty(d, companyId, restaurantId, res) {
+  if (!companyId || !restaurantId) { res.status(400).json({ error: 'Paramètres manquants' }); return false; }
+  const isParty = (d.role === 'company' && String(d.id) === String(companyId)) ||
+                  (d.role === 'restaurant' && String(d.id) === String(restaurantId));
+  if (!isParty) { res.status(403).json({ error: 'Accès refusé à cette conversation' }); return false; }
+  const aff = await pool.query('SELECT 1 FROM affiliations WHERE company_id=$1 AND restaurant_id=$2', [companyId, restaurantId]);
+  if (!aff.rows.length) { res.status(403).json({ error: 'Aucune affiliation entre ces deux comptes' }); return false; }
+  return true;
+}
+
 app.get('/api/messages', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   const { companyId, restaurantId } = req.query;
   try {
-    jwt.verify(token, JWT_SECRET);
+    const d = jwt.verify(token, JWT_SECRET);
+    if (!(await assertConversationParty(d, companyId, restaurantId, res))) return;
     const r = await pool.query(
       'SELECT m.*,CASE WHEN m.sender_type=\'company\' THEN c.name ELSE r.name END AS sender_name FROM messages m LEFT JOIN companies c ON m.company_id=c.id LEFT JOIN restaurants r ON m.restaurant_id=r.id WHERE m.company_id=$1 AND m.restaurant_id=$2 ORDER BY m.created_at',
       [companyId, restaurantId]
     );
     res.json(r.rows);
-  } catch { res.json([]); }
+  } catch { res.status(401).json({ error: 'Non autorisé' }); }
 });
 
 app.post('/api/messages', async (req, res) => {
@@ -2624,6 +2669,7 @@ app.post('/api/messages', async (req, res) => {
   const { companyId, restaurantId, content, messageType, audioData, fileData, fileName, fileMime } = req.body;
   try {
     const d = jwt.verify(token, JWT_SECRET);
+    if (!(await assertConversationParty(d, companyId, restaurantId, res))) return;
     const senderType = d.role === 'restaurant' ? 'restaurant' : 'company';
     const senderId = d.id;
     const msgType = messageType === 'voice' ? 'voice' : messageType === 'file' ? 'file' : 'text';
@@ -2672,10 +2718,11 @@ app.put('/api/messages/read', async (req, res) => {
   const { companyId, restaurantId } = req.body;
   try {
     const d = jwt.verify(token, JWT_SECRET);
+    if (!(await assertConversationParty(d, companyId, restaurantId, res))) return;
     const field = d.role === 'restaurant' ? 'read_by_restaurant' : 'read_by_company';
     await pool.query(`UPDATE messages SET ${field}=TRUE WHERE company_id=$1 AND restaurant_id=$2`, [companyId, restaurantId]);
     res.json({ ok: true });
-  } catch { res.json({ ok: false }); }
+  } catch { res.status(401).json({ ok: false }); }
 });
 
 app.get('/api/messages/unread-count', async (req, res) => {
@@ -2683,10 +2730,11 @@ app.get('/api/messages/unread-count', async (req, res) => {
   const { companyId, restaurantId } = req.query;
   try {
     const d = jwt.verify(token, JWT_SECRET);
+    if (!(await assertConversationParty(d, companyId, restaurantId, res))) return;
     const field = d.role === 'restaurant' ? 'read_by_restaurant' : 'read_by_company';
     const r = await pool.query(`SELECT COUNT(*) FROM messages WHERE company_id=$1 AND restaurant_id=$2 AND ${field}=FALSE AND sender_type!=$3`, [companyId, restaurantId, d.role]);
     res.json({ count: parseInt(r.rows[0].count) });
-  } catch { res.json({ count: 0 }); }
+  } catch { res.status(401).json({ count: 0 }); }
 });
 
 // ════════════════════════════════════════════════════════════════
@@ -2766,10 +2814,8 @@ app.post('/api/admin/employees', companyAuth, async (req, res) => {
   if (!firstName||!lastName||!email||!employeeId) return res.status(400).json({ error: 'Champs requis' });
   const companyId = req.user.id;
   try {
-  // Mot de passe = nom de l'entreprise sans espaces + "123" (ex: "Elimmeka123")
-  const coRow = await pool.query('SELECT name FROM companies WHERE id=$1', [companyId]);
-  const companyName = coRow.rows[0]?.name || 'Company';
-  const defaultPwd = companyName.replace(/\s+/g, '') + '123';
+  // Mot de passe provisoire aléatoire (unique par employé, envoyé une seule fois par email)
+  const defaultPwd = crypto.randomBytes(6).toString('base64url');
     const hash = await bcrypt.hash(defaultPwd, 10);
     const r = await pool.query(
       'INSERT INTO users (company_id,employee_id,first_name,last_name,email,password_hash) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id,employee_id,first_name,last_name,email',
@@ -3866,50 +3912,67 @@ app.post('/api/employee/order', employeeAuth, async (req, res) => {
   if (!restaurantId) return res.status(400).json({ error: 'Restaurant requis' });
   if (type !== 'drink' && !menuId) return res.status(400).json({ error: 'Plat requis' });
   if (type !== 'food' && !drinkMenuId) return res.status(400).json({ error: 'Boisson requise' });
+  const client = await pool.connect();
+  let subsidy, r, clientReleased = false;
   try {
     let foodPrice = 0, drinkPrice = 0;
     let menu = null;
     if (menuId) {
-      const mRes = await pool.query('SELECT restaurant_id, price, category, name FROM menus WHERE id=$1 AND available=TRUE', [menuId]);
-      if (!mRes.rows.length) return res.status(404).json({ error: 'Plat indisponible' });
+      const mRes = await client.query('SELECT restaurant_id, price, category, name FROM menus WHERE id=$1 AND available=TRUE', [menuId]);
+      if (!mRes.rows.length) { client.release(); return res.status(404).json({ error: 'Plat indisponible' }); }
       menu = mRes.rows[0];
       foodPrice = parseFloat(menu.price) || 0;
     }
     if (drinkMenuId) {
-      const dRes = await pool.query('SELECT price FROM menus WHERE id=$1 AND available=TRUE', [drinkMenuId]);
-      if (!dRes.rows.length) return res.status(404).json({ error: 'Boisson indisponible' });
+      const dRes = await client.query('SELECT price FROM menus WHERE id=$1 AND available=TRUE', [drinkMenuId]);
+      if (!dRes.rows.length) { client.release(); return res.status(404).json({ error: 'Boisson indisponible' }); }
       drinkPrice = parseFloat(dRes.rows[0].price) || 0;
     }
-    // ── Calcul reste-à-payer AVANT insertion ──────────────────────
-    const subsidy = await calcSubsidyApplied(pool, req.user.companyId, req.user.id, foodPrice, drinkPrice);
 
-    const r = await pool.query(
+    await client.query('BEGIN');
+    // Verrou transactionnel par employé : sérialise les commandes concurrentes du même employé
+    // (ex: deux restaurants différents commandés en même temps) pour empêcher deux requêtes de lire
+    // le même solde d'enveloppe avant que l'autre n'ait écrit sa consommation — sans ce verrou,
+    // chacune calculerait sa couverture sur un solde périmé et l'enveloppe pourrait être dépassée.
+    await client.query('SELECT pg_advisory_xact_lock($1)', [req.user.id]);
+
+    // ── Calcul reste-à-payer AVANT insertion (à l'intérieur du verrou) ──
+    subsidy = await calcSubsidyApplied(client, req.user.companyId, req.user.id, foodPrice, drinkPrice);
+
+    r = await client.query(
       `INSERT INTO orders (company_id,restaurant_id,user_id,menu_id,drink_menu_id,order_type,order_date,drink_preference,notes,price,drink_price)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
       [req.user.companyId, restaurantId, req.user.id, menuId||null, drinkMenuId||null, type,
        todayStr(), drinkPreference||null, notes||null, foodPrice, drinkPrice]
     );
-    if (drinkPreference) await pool.query('UPDATE users SET drink_preference=$1 WHERE id=$2', [drinkPreference, req.user.id]);
+    if (drinkPreference) await client.query('UPDATE users SET drink_preference=$1 WHERE id=$2', [drinkPreference, req.user.id]);
     // ── Tracking enveloppe unique ──────────────────────────────
+    let envelope = 0, usedNow = 0;
     try {
-      const sub = await pool.query('SELECT * FROM company_subsidies WHERE company_id=$1 AND active=true', [req.user.companyId]);
+      const sub = await client.query('SELECT * FROM company_subsidies WHERE company_id=$1 AND active=true', [req.user.companyId]);
       if (sub.rows.length) {
         const cfg       = sub.rows[0];
-        const envelope  = parseFloat(cfg.amount || cfg.food_amount || 0);
+        envelope        = parseFloat(cfg.amount || cfg.food_amount || 0);
         const inclDrink = cfg.includes_drink || false;
         const key       = getPeriodKey(cfg.period_type);
         const eligible  = foodPrice + (inclDrink ? drinkPrice : 0);
-        if (eligible > 0) await adjustSubsidyUsage(pool, req.user.companyId, req.user.id, key, eligible);
-        const bal = await pool.query(
+        if (eligible > 0) await adjustSubsidyUsage(client, req.user.companyId, req.user.id, key, eligible);
+        const bal = await client.query(
           'SELECT used_food FROM subsidy_usage WHERE company_id=$1 AND user_id=$2 AND period_key=$3',
           [req.user.companyId, req.user.id, key]
         );
-        const usedNow = parseFloat(bal.rows[0]?.used_food || 0);
-        if (envelope > 0 && usedNow >= envelope)
-          createNotification('employee', req.user.id, '⚠️ Allocation épuisée',
-            `Votre allocation de ${fmtP(envelope)} FCFA est entièrement utilisée pour cette période.`, 'subsidy', {}).catch(()=>{});
+        usedNow = parseFloat(bal.rows[0]?.used_food || 0);
       }
     } catch(subErr) { console.error('subsidy tracking error:', subErr.message); }
+
+    await client.query('COMMIT');
+    client.release();
+    clientReleased = true;
+
+    if (envelope > 0 && usedNow >= envelope)
+      createNotification('employee', req.user.id, '⚠️ Allocation épuisée',
+        `Votre allocation de ${fmtP(envelope)} FCFA est entièrement utilisée pour cette période.`, 'subsidy', {}).catch(()=>{});
+
     const menuData = await pool.query('SELECT name FROM menus WHERE id=$1', [menuId]);
     const restData = await pool.query('SELECT id,name,email FROM restaurants WHERE id=$1', [restaurantId]);
     const coData = await pool.query('SELECT name FROM companies WHERE id=$1', [req.user.companyId]);
@@ -3945,6 +4008,7 @@ app.post('/api/employee/order', employeeAuth, async (req, res) => {
       drink_to_pay:      subsidy.drinkToPay      || 0,
     });
   } catch (e) {
+    if (!clientReleased) { try { await client.query('ROLLBACK'); } catch(_) {} finally { client.release(); } }
     if (e.code==='23505') return res.status(400).json({ error: 'Commande déjà existante pour ce restaurant aujourd\'hui' });
     res.status(500).json({ error: e.message });
   }
@@ -4180,7 +4244,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       const r = await pool.query('SELECT id, first_name AS name FROM users WHERE email=$1', [email]);
       user = r.rows[0];
     }
-    if (!user) return res.status(404).json({ error: 'Aucun compte trouvé pour cet email' });
+    // Réponse identique que le compte existe ou non — évite de révéler quels emails sont enregistrés.
+    // On n'envoie réellement l'OTP que si le compte existe.
+    if (!user) return res.json({ message: 'Si un compte existe pour cet email, un code a été envoyé' });
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
@@ -4202,7 +4268,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
         <p style="color:#8B6554;font-size:13px;margin-top:24px;border-top:1px solid #F0E6DE;padding-top:16px">© FoodChooseApp — Plateforme de choix de repas</p>
       </div>`
     );
-    res.json({ message: 'Code envoyé par email' });
+    res.json({ message: 'Si un compte existe pour cet email, un code a été envoyé' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -4559,20 +4625,24 @@ app.get('/api/super-admin/menus', adminAuth, async (req, res) => {
 // Commandes en temps réel (100 dernières)
 app.get('/api/super-admin/orders/live', adminAuth, async (req, res) => {
   try {
+    const rateR = await pool.query('SELECT commission_rate FROM platform_contract_terms WHERE id=1');
+    const commissionRate = parseFloat(rateR.rows[0]?.commission_rate ?? 1);
     const r = await pool.query(
       `SELECT o.id, o.order_date, o.status, o.drink_preference, o.created_at,
               r.name AS restaurant_name,
-              c.name AS company_name,
+              CASE WHEN rcp.is_confidential THEN 'Client confidentiel' ELSE c.name END AS company_name,
               u.first_name || ' ' || u.last_name AS employee_name,
               m.name AS menu_name, m.price AS menu_price, m.category AS menu_category,
-              ROUND(m.price * 0.01, 2) AS commission
+              ROUND(m.price * $1 / 100, 2) AS commission
        FROM orders o
        JOIN restaurants r ON r.id = o.restaurant_id
        JOIN companies c ON c.id = o.company_id
        JOIN users u ON u.id = o.user_id
        LEFT JOIN menus m ON m.id = o.menu_id
+       LEFT JOIN restaurant_client_privacy rcp ON rcp.restaurant_id = o.restaurant_id AND rcp.company_id = o.company_id
        ORDER BY o.created_at DESC
-       LIMIT 100`
+       LIMIT 100`,
+      [commissionRate]
     );
     res.json(r.rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -4720,7 +4790,7 @@ app.get('/api/super-admin/company-selections', adminAuth, async (req, res) => {
   try {
     const r = await pool.query(`
       SELECT cws.id, cws.week_start, cws.dish_qty, cws.status, cws.notes, cws.created_at,
-        c.name AS company_name,
+        CASE WHEN rcp.is_confidential THEN 'Client confidentiel' ELSE c.name END AS company_name,
         r.name AS restaurant_name,
         wp.name AS pack_name, wp.price AS pack_price,
         COALESCE(
@@ -4734,6 +4804,7 @@ app.get('/api/super-admin/company-selections', adminAuth, async (req, res) => {
       JOIN companies c ON c.id = cws.company_id
       JOIN restaurants r ON r.id = cws.restaurant_id
       LEFT JOIN weekly_packs wp ON wp.id = cws.weekly_pack_id
+      LEFT JOIN restaurant_client_privacy rcp ON rcp.restaurant_id = cws.restaurant_id AND rcp.company_id = cws.company_id
       ORDER BY cws.week_start DESC, cws.created_at DESC
     `);
     res.json(r.rows);

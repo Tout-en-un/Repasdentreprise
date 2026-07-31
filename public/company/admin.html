@@ -112,7 +112,7 @@
     <div class="card reveal">
       <div class="card-header">
         <span class="card-title">Tous les restaurants</span>
-        <input class="form-control" id="restSearch" placeholder="🔍 Rechercher..." style="width:220px;font-size:13px" oninput="filterRestaurants()">
+        <input class="form-control" id="restSearch" placeholder="🔍 Rechercher..." style="width:220px;font-size:13px" oninput="filterRestaurantsDebounced()">
       </div>
       <div class="card-body scroll-box" style="max-height:560px">
         <div class="rest-grid" id="allRestGrid"></div>
@@ -694,21 +694,21 @@
           <div class="form-group">
             <label id="coPwLabel">Mot de passe actuel</label>
             <div class="pw-wrap">
-              <input class="form-control" type="password" id="coPwCurrent" placeholder="Mot de passe actuel">
+              <input class="form-control" type="password" id="coPwCurrent" placeholder="Mot de passe actuel" autocomplete="current-password">
               <button class="pw-toggle" type="button">👁</button>
             </div>
           </div>
           <div class="form-group">
             <label>Nouveau mot de passe</label>
             <div class="pw-wrap">
-              <input class="form-control" type="password" id="coPwNew" placeholder="Minimum 6 caractères">
+              <input class="form-control" type="password" id="coPwNew" placeholder="Minimum 6 caractères" autocomplete="new-password">
               <button class="pw-toggle" type="button">👁</button>
             </div>
           </div>
           <div class="form-group">
             <label>Confirmer</label>
             <div class="pw-wrap">
-              <input class="form-control" type="password" id="coPwNew2" placeholder="Répétez le nouveau mot de passe">
+              <input class="form-control" type="password" id="coPwNew2" placeholder="Répétez le nouveau mot de passe" autocomplete="new-password">
               <button class="pw-toggle" type="button">👁</button>
             </div>
           </div>
@@ -877,7 +877,7 @@
 
     <div class="doc-search">
       <span class="doc-search-icon">🔍</span>
-      <input type="text" id="coDocSearchInput" placeholder="Rechercher dans la documentation…" oninput="filterCoDocSections(this.value)">
+      <input type="text" id="coDocSearchInput" placeholder="Rechercher dans la documentation…" oninput="filterCoDocSectionsDebounced(this.value)">
     </div>
 
     <div class="doc-toc">
@@ -1224,17 +1224,17 @@ async function loadCoInvoicesHistory() {
       const stBg    = inv.status==='confirmed'?'#D1FAE5':inv.status==='pending'?'#FEF3C7':'#FEE2E2';
       const stColor = inv.status==='confirmed'?'#065F46':inv.status==='pending'?'#92400E':'#991B1B';
       const stLabel = inv.status==='confirmed'?'Confirmée':inv.status==='pending'?'En attente':'Annulée';
-      const pdfUrl = inv.type === 'classic' ? `/api/admin/invoices/${inv.id}/pdf?token=${token}` : `/api/restaurant/weekly-invoices/${inv.id}/pdf?token=${token}`;
-      const noteIndicator = inv.notes ? `<span title="${inv.notes.replace(/"/g,'&quot;')}" style="font-size:11px;color:var(--muted);font-style:italic">💬</span>` : '';
+      const pdfUrl = inv.type === 'classic' ? `/api/admin/invoices/${inv.id}/pdf` : `/api/restaurant/weekly-invoices/${inv.id}/pdf`;
+      const noteIndicator = inv.notes ? `<span title="${escapeHtml(inv.notes)}" style="font-size:11px;color:var(--muted);font-style:italic">💬</span>` : '';
       return `<tr>
-        <td style="font-size:11px;color:var(--muted);white-space:nowrap"><strong>${ref}</strong> ${noteIndicator}</td>
+        <td style="font-size:11px;color:var(--muted);white-space:nowrap"><strong>${escapeHtml(ref)}</strong> ${noteIndicator}</td>
         <td>${typeBadge}</td>
-        <td style="font-size:13px">${inv.restaurant_name||'—'}</td>
+        <td style="font-size:13px">${escapeHtml(inv.restaurant_name||'—')}</td>
         <td style="font-size:12px;white-space:nowrap">${periode}</td>
         <td style="font-weight:700;color:var(--orange);white-space:nowrap">${fmtCFA(inv.total_amount||0)} FCFA</td>
         <td><span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:${stBg};color:${stColor}">${stLabel}</span></td>
         <td style="white-space:nowrap">
-          <button class="btn btn-outline btn-sm" onclick="window.open('${pdfUrl}','_blank')" title="PDF">📄</button>
+          <button class="btn btn-outline btn-sm" onclick="openPdf('${jsStr(pdfUrl)}',token)" title="PDF">📄</button>
           <button class="btn btn-danger btn-sm" onclick="deleteCoIhInvoice('${inv.type}',${inv.id})" title="Supprimer" style="padding:3px 7px">🗑</button>
         </td>
       </tr>`;
@@ -1268,7 +1268,7 @@ function _renderCoIhStats(rows) {
 }
 
 async function deleteCoIhInvoice(type, id) {
-  if (!confirm('Supprimer cette facture de votre historique ?\n\nCette action est irréversible.')) return;
+  if (!confirm('Supprimer cette facture de votre historique ?\n\nElle sera déplacée dans la corbeille, où vous pourrez la restaurer tant qu\'elle n\'est pas purgée définitivement.')) return;
   try {
     const url = type === 'classic' ? `/api/admin/invoices/${id}` : `/api/company/weekly-invoices/${id}`;
     await apiFetch(url, { method: 'DELETE' }, token);
@@ -1278,7 +1278,7 @@ async function deleteCoIhInvoice(type, id) {
 }
 
 async function clearAllCoInvoicesHistory() {
-  if (!confirm('Vider tout votre historique de factures reçues ?\n\nCette action est irréversible.')) return;
+  if (!confirm('Vider tout votre historique de factures reçues ?\n\nElles seront déplacées dans la corbeille, où vous pourrez les restaurer tant qu\'elles ne sont pas purgées définitivement.')) return;
   try {
     await Promise.all([
       apiFetch('/api/admin/invoices-history', { method: 'DELETE' }, token),
@@ -1630,6 +1630,7 @@ document.querySelectorAll('.nav-item[data-page]').forEach(item => {
   item.style.cursor = 'pointer';
   item.addEventListener('click', () => switchToPage(item.dataset.page));
 });
+makeNavKeyboardAccessible();
 
 try { initNotifications(); } catch(e) { console.error('initNotifications:', e); }
 loadDashboard();
@@ -1685,8 +1686,8 @@ async function searchAdminDishes(q) {
              style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:white;border:1.5px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer"
              onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
           <div>
-            <div style="font-weight:600;font-size:13.5px;color:var(--brown)">${m.name}</div>
-            <div style="font-size:11.5px;color:var(--muted)">${CAT_ICONS[m.category]||'🍽'} ${m.category} &nbsp;·&nbsp; 🍽 ${m.restaurant_name}</div>
+            <div style="font-weight:600;font-size:13.5px;color:var(--brown)">${escapeHtml(m.name)}</div>
+            <div style="font-size:11.5px;color:var(--muted)">${CAT_ICONS[m.category]||'🍽'} ${escapeHtml(m.category)} &nbsp;·&nbsp; 🍽 ${escapeHtml(m.restaurant_name)}</div>
           </div>
           <div style="font-weight:700;color:var(--orange);font-size:13px;white-space:nowrap">${fmtCFA(m.price||0)} FCFA</div>
         </div>
@@ -1710,6 +1711,7 @@ function filterRestaurants() {
   const q = document.getElementById('restSearch').value.toLowerCase();
   renderRestGrid('allRestGrid', allRestaurants.filter(r => r.name.toLowerCase().includes(q)));
 }
+const filterRestaurantsDebounced = debounce(filterRestaurants);
 
 function renderRestGrid(containerId, list) {
   const el = document.getElementById(containerId);
@@ -1718,11 +1720,11 @@ function renderRestGrid(containerId, list) {
     const sps = Array.isArray(r.specialties) ? r.specialties : JSON.parse(r.specialties||'[]');
     return `
       <div class="rest-card ${r.affiliated?'affiliated':''}" onclick="openRestDetail(${r.id})">
-        <div class="rest-avatar">${r.photo_url?`<img src="${r.photo_url}">`:'🍽'}</div>
-        <div style="font-weight:700;font-size:13.5px;color:var(--brown);margin-bottom:4px">${r.name}</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">📍 ${r.address||r.location||'—'}</div>
+        <div class="rest-avatar">${r.photo_url?`<img src="${escapeHtml(r.photo_url)}">`:'🍽'}</div>
+        <div style="font-weight:700;font-size:13.5px;color:var(--brown);margin-bottom:4px">${escapeHtml(r.name)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">📍 ${escapeHtml(r.address||r.location||'—')}</div>
         <div style="display:flex;flex-wrap:wrap;gap:4px">
-          ${sps.slice(0,2).map(s=>`<span style="background:#F0E6DE;color:var(--brown);font-size:10px;padding:2px 7px;border-radius:6px">${s}</span>`).join('')}
+          ${sps.slice(0,2).map(s=>`<span style="background:#F0E6DE;color:var(--brown);font-size:10px;padding:2px 7px;border-radius:6px">${escapeHtml(s)}</span>`).join('')}
           ${sps.length>2?`<span style="background:#F0E6DE;color:var(--brown);font-size:10px;padding:2px 7px;border-radius:6px">+${sps.length-2}</span>`:''}
         </div>
         <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
@@ -1789,12 +1791,12 @@ async function loadAffiliations() {
       const sps = Array.isArray(r.specialties) ? r.specialties : JSON.parse(r.specialties||'[]');
       return `
         <div class="rest-card affiliated">
-          <div class="rest-avatar">${r.photo_url?`<img src="${r.photo_url}">`:'🍽'}</div>
-          <div style="font-weight:700;font-size:13.5px;color:var(--brown);margin-bottom:4px">${r.name}</div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${sps.slice(0,2).join(', ')||'—'}</div>
+          <div class="rest-avatar">${r.photo_url?`<img src="${escapeHtml(r.photo_url)}">`:'🍽'}</div>
+          <div style="font-weight:700;font-size:13.5px;color:var(--brown);margin-bottom:4px">${escapeHtml(r.name)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${escapeHtml(sps.slice(0,2).join(', ')||'—')}</div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
             <span style="font-size:11px;color:var(--muted)">🍜 ${r.menu_count} menus</span>
-            <button class="btn btn-danger btn-sm" onclick="deaffiliateRest(${r.id},'${r.name.replace(/'/g,"\\'")}')">❌ Désaffilier</button>
+            <button class="btn btn-danger btn-sm" onclick="deaffiliateRest(${r.id},'${jsStr(r.name)}')">❌ Désaffilier</button>
           </div>
         </div>
       `;
@@ -1997,6 +1999,7 @@ async function loadInvoices() {
 }
 
 async function confirmInvoice(id) {
+  if (!confirm('Confirmer cette facture ? Le montant sera dû au restaurant.')) return;
   try {
     await apiFetch(`/api/admin/invoices/${id}/confirm`, { method: 'POST' }, token);
     toast('Facture confirmée!', 'success');
@@ -2045,14 +2048,14 @@ async function loadWeeklyInvoicesCo() {
         : '<span style="color:var(--muted);font-size:11px">—</span>';
       return `<tr>
         <td style="font-size:11px;white-space:nowrap">${inv.invoice_number}</td>
-        <td style="font-size:12px;font-weight:600">${inv.restaurant_name||'—'}</td>
+        <td style="font-size:12px;font-weight:600">${escapeHtml(inv.restaurant_name||'—')}</td>
         <td>${periodeHtml}</td>
         <td>${typeTag}</td>
         <td style="font-weight:700;color:var(--orange);white-space:nowrap">${fmtCFA(inv.total_amount||0)} FCFA</td>
         <td><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${stBg};color:${stColor}">${stLabel}</span></td>
         <td>${phoneTag}</td>
         <td style="white-space:nowrap">
-          <button class="btn btn-outline btn-sm" onclick="window.open('/api/restaurant/weekly-invoices/${inv.id}/pdf?token=${token}','_blank')" title="PDF">📄</button>
+          <button class="btn btn-outline btn-sm" onclick="openPdf('/api/restaurant/weekly-invoices/${inv.id}/pdf',token)" title="PDF">📄</button>
           ${inv.status !== 'confirmed' ? `<button class="btn btn-primary btn-sm" onclick="confirmWeeklyInv(${inv.id})" style="margin-left:2px">✓</button>` : ''}
         </td>
       </tr>`;
@@ -2061,6 +2064,7 @@ async function loadWeeklyInvoicesCo() {
 }
 
 async function confirmWeeklyInv(id) {
+  if (!confirm('Confirmer cette facture hebdomadaire ? Le montant sera dû au restaurant.')) return;
   try {
     await apiFetch(`/api/company/weekly-invoices/${id}/confirm`, { method: 'PUT', body: {} }, token);
     toast('Facture hebdomadaire confirmée !', 'success');
@@ -2069,12 +2073,10 @@ async function confirmWeeklyInv(id) {
 }
 
 function downloadInvoice(id) {
-  window.open(`/api/admin/invoices/${id}/pdf?token=${token}`, '_blank');
+  openPdf(`/api/admin/invoices/${id}/pdf`, token);
 }
 function printInvoice(id) {
-  fetch(`/api/admin/invoices/${id}/pdf`, { headers: { Authorization: `Bearer ${token}` } })
-    .then(r=>r.blob()).then(blob=>{ const url=URL.createObjectURL(blob); const w=window.open(url); if(w) w.onload=()=>w.print(); })
-    .catch(()=>toast('Erreur impression', 'error'));
+  openPdf(`/api/admin/invoices/${id}/pdf`, token, { print: true });
 }
 
 // ── Employees ─────────────────────────────────────────
@@ -2085,13 +2087,13 @@ async function loadEmployees() {
     const tb = document.getElementById('empTableBody');
     if (!emps.length) { tb.innerHTML = '<tr><td colspan="5"><div class="empty-state"><span class="icon">👥</span>Aucun employé</div></td></tr>'; return; }
     tb.innerHTML = emps.map(e=>`<tr>
-      <td><span style="background:#F0E6DE;color:var(--brown);padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600">${e.employee_id}</span></td>
+      <td><span style="background:#F0E6DE;color:var(--brown);padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600">${escapeHtml(e.employee_id)}</span></td>
       <td><div style="display:flex;align-items:center;gap:8px">
-        ${e.photo_url?`<img src="${e.photo_url}" style="width:28px;height:28px;border-radius:50%;object-fit:cover">`:`<div style="width:28px;height:28px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:700">${e.first_name?.[0]||'?'}</div>`}
-        <strong>${e.first_name} ${e.last_name}</strong></div></td>
-      <td style="font-size:12px;color:var(--muted)">${e.email}</td>
+        ${e.photo_url?`<img src="${escapeHtml(e.photo_url)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover">`:`<div style="width:28px;height:28px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:700">${escapeHtml(e.first_name?.[0]||'?')}</div>`}
+        <strong>${escapeHtml(e.first_name)} ${escapeHtml(e.last_name)}</strong></div></td>
+      <td style="font-size:12px;color:var(--muted)">${escapeHtml(e.email)}</td>
       <td style="font-size:12px;color:var(--muted)">${formatDate(e.created_at)}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteEmployee(${e.id},'${e.first_name}')">🗑</button></td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteEmployee(${e.id},'${jsStr(e.first_name)}')">🗑</button></td>
     </tr>`).join('');
   } catch(e) {}
 }
@@ -2360,23 +2362,23 @@ async function loadAdminConversations() {
     if (!convs.length) { el.innerHTML = '<div class="empty-state" style="padding:16px"><span class="icon">💬</span>Affiliez-vous à un restaurant pour communiquer</div>'; return; }
     el.innerHTML = convs.map(c=>{
       total += parseInt(c.unread||0);
-      const eName = (c.restaurant_name||'').replace(/'/g,"\\'");
-      const ePhoto = (c.photo_url||'').replace(/'/g,"\\'");
+      const eName = jsStr(c.restaurant_name||'');
+      const ePhoto = jsStr(c.photo_url||'');
       const avatar = c.photo_url
-        ? `<img src="${c.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+        ? `<img src="${escapeHtml(c.photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
         : '🍽';
       return `<div class="chat-conv ${currentChatRestId==c.restaurant_id?'active':''}" onclick="openAdminChat(${c.restaurant_id},'${eName}','${ePhoto}')">
         <div style="display:flex;align-items:center;gap:9px">
           <div class="user-avatar" style="width:34px;height:34px;font-size:14px;flex-shrink:0">${avatar}</div>
           <div style="flex:1;min-width:0">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:4px">
-              <div class="chat-conv-name">${c.restaurant_name}</div>
+              <div class="chat-conv-name">${escapeHtml(c.restaurant_name)}</div>
               <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
                 ${c.last_at?`<span style="font-size:10px;color:var(--muted)">${timeAgo(c.last_at)}</span>`:''}
                 ${c.unread>0?`<span style="background:var(--orange);color:white;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px">${c.unread}</span>`:''}
               </div>
             </div>
-            <div class="chat-conv-last">${c.last_message||'Pas encore de message'}</div>
+            <div class="chat-conv-last">${escapeHtml(c.last_message||'Pas encore de message')}</div>
           </div>
         </div>
       </div>`;
@@ -2493,16 +2495,16 @@ function renderAdminMsg(m) {
   if (m.message_type === 'file' && fileSrc) {
     let inner = '';
     if (m.file_mime?.startsWith('image/')) {
-      inner = `<img src="${fileSrc}" onclick="window.open('${fileSrc}','_blank')" alt="${m.file_name||'image'}" style="max-width:220px;max-height:200px;border-radius:9px;display:block;cursor:pointer;object-fit:cover">`;
+      inner = `<img src="${escapeHtml(fileSrc)}" onclick="window.open('${jsStr(fileSrc)}','_blank')" alt="${escapeHtml(m.file_name||'image')}" style="max-width:220px;max-height:200px;border-radius:9px;display:block;cursor:pointer;object-fit:cover">`;
     } else if (m.file_mime?.startsWith('video/')) {
-      inner = `<video controls style="max-width:220px;border-radius:9px;display:block;background:#000"><source src="${fileSrc}" type="${m.file_mime}"></video>`;
+      inner = `<video controls style="max-width:220px;border-radius:9px;display:block;background:#000"><source src="${escapeHtml(fileSrc)}" type="${escapeHtml(m.file_mime)}"></video>`;
     } else {
-      inner = `<a class="msg-file-doc" href="${fileSrc}" download="${m.file_name||'document'}">📄<span>${m.file_name||'Document'}</span></a>`;
+      inner = `<a class="msg-file-doc" href="${escapeHtml(fileSrc)}" download="${escapeHtml(m.file_name||'document')}">📄<span>${escapeHtml(m.file_name||'Document')}</span></a>`;
     }
-    const caption = m.content && !['📷 Photo','🎬 Vidéo'].includes(m.content) && !m.content.startsWith('📄') ? `<div style="font-size:12px;margin-top:3px">${m.content}</div>` : '';
+    const caption = m.content && !['📷 Photo','🎬 Vidéo'].includes(m.content) && !m.content.startsWith('📄') ? `<div style="font-size:12px;margin-top:3px">${escapeHtml(m.content)}</div>` : '';
     return `<div class="msg ${cls}"><div class="msg-file">${inner}${caption}<div class="msg-time">${timeAgo(m.created_at)}</div></div></div>`;
   }
-  return `<div class="msg ${cls}">${m.content}<div class="msg-time">${timeAgo(m.created_at)}</div></div>`;
+  return `<div class="msg ${cls}">${escapeHtml(m.content)}<div class="msg-time">${timeAgo(m.created_at)}</div></div>`;
 }
 
 async function openAdminChat(restId, restName, photo) {
@@ -2517,8 +2519,8 @@ async function openAdminChat(restId, restName, photo) {
   main.innerHTML = `
     <div class="chat-header">
       <button class="chat-back-btn" onclick="document.getElementById('adminChatSidebar').classList.add('show-mobile')" title="Retour">&#8592;</button>
-      <div class="user-avatar" style="width:30px;height:30px;font-size:14px">${photo?`<img src="${photo}">`:'🍽'}</div>
-      ${restName}
+      <div class="user-avatar" style="width:30px;height:30px;font-size:14px">${photo?`<img src="${escapeHtml(photo)}">`:'🍽'}</div>
+      ${escapeHtml(restName)}
     </div>
     <div class="chat-messages" id="adminChatMessages"></div>
     <div class="file-preview-bar" id="adminFilePreviewBar" style="display:none"></div>
@@ -2714,11 +2716,11 @@ async function loadWeeklyMenus() {
                 const dishesHtml = (day.dishes||[]).map(dish => `
                   <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
                     ${dish.image_url
-                      ? `<img src="${dish.image_url}" style="width:42px;height:42px;border-radius:8px;object-fit:cover;flex-shrink:0">`
+                      ? `<img src="${escapeHtml(dish.image_url)}" style="width:42px;height:42px;border-radius:8px;object-fit:cover;flex-shrink:0">`
                       : `<div style="width:42px;height:42px;border-radius:8px;background:#FFF0EA;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px">🍽</div>`}
                     <div style="flex:1;min-width:0">
-                      <div style="font-weight:600;font-size:13px;color:var(--brown)">${dish.name}</div>
-                      ${dish.description ? `<div style="font-size:11px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${dish.description}</div>` : ''}
+                      <div style="font-weight:600;font-size:13px;color:var(--brown)">${escapeHtml(dish.name)}</div>
+                      ${dish.description ? `<div style="font-size:11px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(dish.description)}</div>` : ''}
                     </div>
                     <span style="font-size:12px;font-weight:700;color:var(--orange);white-space:nowrap;flex-shrink:0">${fmtCFA(dish.price||0)} FCFA</span>
                   </div>`).join('');
@@ -2743,7 +2745,7 @@ async function loadWeeklyMenus() {
                   <div style="padding:10px 16px;background:#FAFAFA;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none"
                        onclick="const b=this.nextElementSibling;const open=b.style.display!=='none';b.style.display=open?'none':'';this.querySelector('.chv').style.transform=open?'':'rotate(180deg)'">
                     <div style="width:22px;height:22px;border-radius:6px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0">${mi+1}</div>
-                    <span style="font-size:12px;font-weight:700;color:var(--brown);flex:1">${menu.name}</span>
+                    <span style="font-size:12px;font-weight:700;color:var(--brown);flex:1">${escapeHtml(menu.name)}</span>
                     <span style="font-size:11px;color:var(--muted)">${(menu.days||[]).length} jour${(menu.days||[]).length>1?'s':''}</span>
                     <svg class="chv" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex-shrink:0"><polyline points="6 9 12 15 18 9"/></svg>
                   </div>
@@ -2755,8 +2757,8 @@ async function loadWeeklyMenus() {
 
             const packId   = pack.id;
             const restId   = pack.restaurant_id;
-            const packName = pack.name.replace(/'/g,"\\'");
-            const restName = rest.name.replace(/'/g,"\\'");
+            const packName = jsStr(pack.name);
+            const restName = jsStr(rest.name);
             const price    = pack.price || 0;
             const minQty   = pack.min_order_qty || 8;
 
@@ -2767,7 +2769,7 @@ async function loadWeeklyMenus() {
                      onclick="togglePackDetail('pd-${packId}',this)">
                   <div style="flex:1;min-width:0">
                     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                      <span style="font-weight:700;font-size:15px;color:var(--brown)">${pack.name}</span>
+                      <span style="font-weight:700;font-size:15px;color:var(--brown)">${escapeHtml(pack.name)}</span>
                       ${alreadySub ? '<span style="font-size:11px;font-weight:700;background:#dcfce7;color:#16a34a;padding:2px 9px;border-radius:20px;white-space:nowrap">✅ Abonné</span>' : ''}
                     </div>
                     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;align-items:center">
@@ -2898,7 +2900,7 @@ function renderWeeklyOrders(selections) {
 
       // Logo restaurant
       const restAvatar = s.restaurant_photo
-        ? `<img src="${s.restaurant_photo}" style="width:38px;height:38px;border-radius:10px;object-fit:cover;flex-shrink:0">`
+        ? `<img src="${escapeHtml(s.restaurant_photo)}" style="width:38px;height:38px;border-radius:10px;object-fit:cover;flex-shrink:0">`
         : `<div style="width:38px;height:38px;background:#FFF0EA;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🍽</div>`;
 
       return `
@@ -2907,15 +2909,15 @@ function renderWeeklyOrders(selections) {
         <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;${extrasHtml||delivHtml?'border-bottom:1px solid var(--border)':''}">
           ${restAvatar}
           <div style="flex:1;min-width:0">
-            <div style="font-size:14px;font-weight:700;color:var(--brown)">${s.pack_name||'Pack supprimé'}</div>
+            <div style="font-size:14px;font-weight:700;color:var(--brown)">${escapeHtml(s.pack_name||'Pack supprimé')}</div>
             <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:3px">
-              <span style="font-size:11px;color:var(--muted)">🍽 ${s.restaurant_name||'—'}</span>
+              <span style="font-size:11px;color:var(--muted)">🍽 ${escapeHtml(s.restaurant_name||'—')}</span>
               <span style="font-size:11px;color:var(--muted)">🍽 ${s.dish_qty} plats/jour</span>
               ${s.delivery_time ? `<span style="font-size:11px;font-weight:700;color:var(--brown);background:#FFF0EA;padding:1px 7px;border-radius:8px">🕐 Livraison ${s.delivery_time.slice(0,5)}</span>` : ''}
               ${parseFloat(s.pack_price||0) > 0
                 ? `<span style="font-size:11px;font-weight:600;color:var(--orange)">💰 ${fmtCFA(s.pack_price)} FCFA</span>`
                 : ''}
-              ${s.notes ? `<span style="font-size:11px;color:var(--muted);font-style:italic">📝 ${s.notes}</span>` : ''}
+              ${s.notes ? `<span style="font-size:11px;color:var(--muted);font-style:italic">📝 ${escapeHtml(s.notes)}</span>` : ''}
             </div>
           </div>
           <!-- Statut + actions -->
@@ -2996,8 +2998,8 @@ function openWeeklyOrderModal(packId, restaurantId, packName, price, minQty, res
   document.getElementById('woPackId').value = packId;
   document.getElementById('woRestaurantId').value = restaurantId;
   document.getElementById('woPackInfo').innerHTML = `
-    <div style="font-weight:700;font-size:14px;color:var(--brown);margin-bottom:4px">${packName}</div>
-    <div style="color:var(--muted);font-size:12px;margin-bottom:6px">🍽 ${restaurantName||''}</div>
+    <div style="font-weight:700;font-size:14px;color:var(--brown);margin-bottom:4px">${escapeHtml(packName)}</div>
+    <div style="color:var(--muted);font-size:12px;margin-bottom:6px">🍽 ${escapeHtml(restaurantName||'')}</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <span style="background:var(--orange);color:#fff;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600">💰 ${fmtCFA(price)} FCFA / semaine</span>
       <span style="background:var(--border);color:var(--muted);border-radius:20px;padding:2px 10px;font-size:12px">Min. ${parseInt(minQty)||8} plats/jour</span>
@@ -3398,6 +3400,7 @@ window.confirmWeeklyInv = confirmWeeklyInv;
       if (match && query) sec.classList.add('open');
     });
   };
+  window.filterCoDocSectionsDebounced = debounce(window.filterCoDocSections);
   window.toggleCoFaq = function(item) { item.classList.toggle('open'); };
   window.initCoDocSearch = function() {
     const inp = document.getElementById('coDocSearchInput');
@@ -3447,7 +3450,7 @@ function renderDishBrowser() {
   browser.style.display = '';
   const packs = [...new Set(_allRestaurantDishes.map(d => d.pack_name))];
   packFilter.innerHTML = '<span style="font-size:12px;color:var(--muted);align-self:center">Filtrer:</span>' +
-    packs.map(p => `<button class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px" onclick="filterDishBrowser('${p.replace(/'/g,"\\'")}')">📦 ${p}</button>`).join('') +
+    packs.map(p => `<button class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px" onclick="filterDishBrowser('${jsStr(p)}')">📦 ${escapeHtml(p)}</button>`).join('') +
     '<button class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px" onclick="filterDishBrowser(\'\')">Tous</button>';
   renderDishList('');
 }
@@ -3464,10 +3467,10 @@ function renderDishList(packFilter) {
     return;
   }
   list.innerHTML = dishes.map(d => `
-    <div style="border:1px solid var(--border);border-radius:8px;padding:8px;cursor:pointer;background:#fff;transition:all .15s;position:relative" onclick="pickDayForDish(${d.id},'${d.name.replace(/'/g,"\\'")}','${(d.pack_name||'').replace(/'/g,"\\'")}',${d.price||0})" onmouseover="this.style.borderColor='var(--orange)';this.style.boxShadow='0 2px 8px rgba(232,90,42,.15)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'" title="Cliquer pour choisir le jour et ajouter">
-      ${d.image_url ? `<img src="${d.image_url}" style="width:100%;height:60px;object-fit:cover;border-radius:6px;margin-bottom:4px">` : ''}
-      <div style="font-size:12px;font-weight:600;color:var(--brown)">${d.name}</div>
-      <div style="font-size:10px;color:var(--muted)">${d.pack_name}</div>
+    <div style="border:1px solid var(--border);border-radius:8px;padding:8px;cursor:pointer;background:#fff;transition:all .15s;position:relative" onclick="pickDayForDish(${d.id},'${jsStr(d.name)}','${jsStr(d.pack_name||'')}',${d.price||0})" onmouseover="this.style.borderColor='var(--orange)';this.style.boxShadow='0 2px 8px rgba(232,90,42,.15)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'" title="Cliquer pour choisir le jour et ajouter">
+      ${d.image_url ? `<img src="${escapeHtml(d.image_url)}" style="width:100%;height:60px;object-fit:cover;border-radius:6px;margin-bottom:4px">` : ''}
+      <div style="font-size:12px;font-weight:600;color:var(--brown)">${escapeHtml(d.name)}</div>
+      <div style="font-size:10px;color:var(--muted)">${escapeHtml(d.pack_name)}</div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
         <span style="font-size:11px;color:var(--orange);font-weight:700">${fmtCFA(d.price)} FCFA</span>
         <span style="font-size:9px;background:#FFF0EA;color:var(--orange);border-radius:4px;padding:1px 5px">+ Ajouter</span>
@@ -3479,8 +3482,8 @@ function pickDayForDish(dishId, dishName, packName, unitPrice) {
   _pendingDish = { dishId, dishName, packName, unitPrice };
   document.getElementById('compoDayPickerTitle').textContent = `📅 Quel jour pour ce plat ?`;
   document.getElementById('compoDayPickerInfo').innerHTML =
-    `<strong style="font-size:14px;color:var(--brown)">${dishName}</strong><br>
-     <span style="color:var(--muted);font-size:11px">${packName}</span>&nbsp;•&nbsp;
+    `<strong style="font-size:14px;color:var(--brown)">${escapeHtml(dishName)}</strong><br>
+     <span style="color:var(--muted);font-size:11px">${escapeHtml(packName)}</span>&nbsp;•&nbsp;
      <span style="color:var(--orange);font-weight:700">${fmtCFA(unitPrice)} FCFA</span>`;
   const btns = document.getElementById('compoDayBtns');
   btns.innerHTML = [1,2,3,4,5].map(day => {
@@ -3567,7 +3570,7 @@ async function loadCompanyCompositions() {
         return `<div style="text-align:center;min-width:0">
           <div style="font-size:9px;font-weight:800;color:${cc};margin-bottom:2px">${shortDay[day]}</div>
           ${dayDishes.length
-            ? dayDishes.map(d => `<div style="font-size:10px;color:var(--brown);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${d.dish_name}">${d.dish_name}${d.quantity>1?` ×${d.quantity}`:''}</div>`).join('')
+            ? dayDishes.map(d => `<div style="font-size:10px;color:var(--brown);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escapeHtml(d.dish_name)}">${escapeHtml(d.dish_name)}${d.quantity>1?` ×${d.quantity}`:''}</div>`).join('')
             : `<div style="font-size:10px;color:#ccc">—</div>`}
         </div>`;
       }).join('');
@@ -3577,10 +3580,10 @@ async function loadCompanyCompositions() {
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px">
           <div style="min-width:0;flex:1">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              <span style="font-weight:700;font-size:14px;color:var(--brown)">${c.name}</span>
+              <span style="font-weight:700;font-size:14px;color:var(--brown)">${escapeHtml(c.name)}</span>
               <span style="background:${sc}18;color:${sc};font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px">${statusLabel[c.status]||c.status}</span>
             </div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px">🏪 ${c.restaurant_name} &nbsp;•&nbsp; 📅 Sem. du ${c.week_start} &nbsp;•&nbsp; ${totalDishes} plat(s)${c.delivery_time ? ` &nbsp;•&nbsp; 🕐 <strong>${c.delivery_time.slice(0,5)}</strong>` : ''}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">🏪 ${escapeHtml(c.restaurant_name)} &nbsp;•&nbsp; 📅 Sem. du ${c.week_start} &nbsp;•&nbsp; ${totalDishes} plat(s)${c.delivery_time ? ` &nbsp;•&nbsp; 🕐 <strong>${c.delivery_time.slice(0,5)}</strong>` : ''}</div>
             ${c.company_proposed_price || c.restaurant_counter_price || c.final_price ? `
             <div style="font-size:11px;margin-top:4px;display:flex;gap:10px;flex-wrap:wrap">
               ${c.company_proposed_price ? `<span>💰 Proposé : <strong>${fmtCFA(c.company_proposed_price)} FCFA</strong></span>` : ''}
@@ -3592,7 +3595,7 @@ async function loadCompanyCompositions() {
           <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;min-width:130px">
             ${['draft','negotiating','submitted'].includes(c.status) ? `<button class="btn btn-outline btn-sm" onclick="editComposition(${c.id})">✏️ Modifier</button>` : ''}
             ${c.status === 'draft' ? `<button class="btn btn-primary btn-sm" onclick="quickSubmitCompo(${c.id})">📤 Soumettre</button>` : ''}
-            ${c.status === 'negotiating' ? `<button class="btn btn-warning btn-sm" style="background:#D97706;color:#fff;border:none" onclick="openCoReplyNego(${c.id},'${(c.name||'').replace(/'/g,"\\'")}',${c.restaurant_counter_price||0})">💬 Répondre</button>` : ''}
+            ${c.status === 'negotiating' ? `<button class="btn btn-warning btn-sm" style="background:#D97706;color:#fff;border:none" onclick="openCoReplyNego(${c.id},'${jsStr(c.name||'')}',${c.restaurant_counter_price||0})">💬 Répondre</button>` : ''}
             ${['draft','rejected'].includes(c.status) ? `<button class="btn btn-danger btn-sm" onclick="deleteComposition(${c.id})">🗑 Supprimer</button>` : ''}
           </div>
         </div>
@@ -3750,6 +3753,9 @@ async function respondCompositionCompany(action) {
   const company_proposed_price = document.getElementById('compoCoCounterPrice').value;
   const notes = document.getElementById('compoCoMsg').value;
   if (action === 'counter' && !company_proposed_price) { toast('Entrez un prix pour la contre-proposition', 'error'); return; }
+  if (action === 'accept' && !confirm('Accepter cette contre-proposition ?')) return;
+  if (action === 'reject' && !confirm('Clôturer cette négociation ?')) return;
+  setModalBusy('compoCoRespondModal', true);
   try {
     await apiFetch(`/api/company/custom-compositions/${id}/respond`, {
       method: 'POST', body: { action, company_proposed_price: company_proposed_price ? parseFloat(company_proposed_price) : undefined, notes }
@@ -3758,7 +3764,7 @@ async function respondCompositionCompany(action) {
     toast(action === 'accept' ? '✅ Contre-proposition acceptée' : action === 'reject' ? 'Négociation clôturée' : '🔄 Nouvelle proposition envoyée', 'success');
     loadCompanyCompositions();
     loadCompanyNegotiations();
-  } catch(e) { toast(e.message, 'error'); }
+  } catch(e) { toast(e.message, 'error'); } finally { setModalBusy('compoCoRespondModal', false); }
 }
 
 window.loadCompanyCompositions = loadCompanyCompositions;
@@ -3857,8 +3863,8 @@ async function loadCompanyNegotiations() {
       <div style="border:2px solid ${isMyTurn ? '#D97706' : 'var(--border)'};border-radius:12px;padding:14px;margin-bottom:12px;background:${isMyTurn?'#fffbf0':'#fff'}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px">
           <div style="min-width:0">
-            <div style="font-weight:700;font-size:14px;color:var(--brown);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n.entity_name || entityLabel[n.entity_type] || n.entity_type}</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px">🏪 ${n.restaurant_name} &nbsp;•&nbsp; ${entityLabel[n.entity_type]||n.entity_type}${n._source==='composition'?' 📋':''}</div>
+            <div style="font-weight:700;font-size:14px;color:var(--brown);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(n.entity_name || entityLabel[n.entity_type] || n.entity_type)}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">🏪 ${escapeHtml(n.restaurant_name)} &nbsp;•&nbsp; ${entityLabel[n.entity_type]||n.entity_type}${n._source==='composition'?' 📋':''}</div>
           </div>
           <span style="background:${statusColor[n.status]||'#9ca3af'}18;color:${statusColor[n.status]||'#9ca3af'};font-size:11px;font-weight:700;padding:4px 10px;border-radius:10px;white-space:nowrap;flex-shrink:0">${statusLabel[n.status]||n.status}</span>
         </div>
@@ -3878,9 +3884,9 @@ async function loadCompanyNegotiations() {
             const actionText = (m.action==='propose'||m.action==='counter') ? `💰 <strong>${fmtCFA(m.proposed_price||0)} FCFA</strong>` : m.action==='accept' ? '✅ <strong>Accepté</strong>' : '❌ <strong>Refusé</strong>';
             return `<div style="display:flex;${isMe?'justify-content:flex-end':'justify-content:flex-start'};margin-bottom:6px">
               <div style="max-width:75%;background:${isMe?'#2563EB':'#F3F4F6'};color:${isMe?'#fff':'#374151'};border-radius:${isMe?'12px 12px 4px 12px':'12px 12px 12px 4px'};padding:8px 12px;font-size:12px">
-                <div style="font-size:10px;opacity:.75;margin-bottom:3px;font-weight:600">${isMe?'Vous':n.restaurant_name}</div>
+                <div style="font-size:10px;opacity:.75;margin-bottom:3px;font-weight:600">${isMe?'Vous':escapeHtml(n.restaurant_name)}</div>
                 <div>${actionText}</div>
-                ${m.message ? `<div style="font-style:italic;font-size:11px;margin-top:4px;opacity:.85">"${m.message}"</div>` : ''}
+                ${m.message ? `<div style="font-style:italic;font-size:11px;margin-top:4px;opacity:.85">"${escapeHtml(m.message)}"</div>` : ''}
               </div>
             </div>`;
           }).join('')}
@@ -3892,7 +3898,7 @@ async function loadCompanyNegotiations() {
           <span style="font-size:11px;color:#D97706;font-weight:600;align-self:center">👆 C'est votre tour :</span>
           ${n._source==='composition' ? `
             <button class="btn btn-success btn-sm" onclick="respondCompositionFromNegoCompany(${n.id},'accept')">✅ Accepter</button>
-            <button class="btn btn-outline btn-sm" onclick="openCoReplyNego(${n.id},'${(n.entity_name||'').replace(/'/g,"\\'")}',${lastMsg ? lastMsg.proposed_price||0 : n.original_price||0})">🔄 Contre-proposer</button>
+            <button class="btn btn-outline btn-sm" onclick="openCoReplyNego(${n.id},'${jsStr(n.entity_name||'')}',${lastMsg ? lastMsg.proposed_price||0 : n.original_price||0})">🔄 Contre-proposer</button>
             <button class="btn btn-danger btn-sm" onclick="respondCompositionFromNegoCompany(${n.id},'reject')">❌ Refuser</button>
           ` : `
             <button class="btn btn-success btn-sm" onclick="respondNegoCompanyDirect(${n.id},'accept')">✅ Accepter</button>
@@ -3959,6 +3965,9 @@ async function respondNegoCompany(action) {
   const proposed_price = document.getElementById('negoCoCounterPrice').value;
   const message = document.getElementById('negoCoMsg').value;
   if (action === 'counter' && !proposed_price) { toast('Entrez un prix pour la contre-proposition', 'error'); return; }
+  if (action === 'accept' && !confirm('Accepter ce prix ?')) return;
+  if (action === 'reject' && !confirm('Clôturer cette négociation ?')) return;
+  setModalBusy('negoCoRespondModal', true);
   try {
     await apiFetch(`/api/company/negotiations/${id}/respond`, {
       method: 'POST', body: { action, proposed_price: proposed_price ? parseFloat(proposed_price) : undefined, message }
@@ -3966,14 +3975,14 @@ async function respondNegoCompany(action) {
     closeModal(document.getElementById('negoCoRespondModal'));
     toast(action === 'accept' ? '✅ Prix accepté' : action === 'reject' ? 'Négociation clôturée' : '🔄 Contre-proposition envoyée', 'success');
     loadCompanyNegotiations();
-  } catch(e) { toast(e.message, 'error'); }
+  } catch(e) { toast(e.message, 'error'); } finally { setModalBusy('negoCoRespondModal', false); }
 }
 
 function openStartNegotiation(restaurantId, entityType, entityId, entityName, originalPrice) {
   document.getElementById('startNegoRestaurantId').value = restaurantId;
   document.getElementById('startNegoEntityType').value = entityType;
   document.getElementById('startNegoEntityId').value = entityId;
-  document.getElementById('startNegoInfo').innerHTML = `<strong>${entityName}</strong><br>Prix actuel : <strong>${fmtCFA(originalPrice)} FCFA</strong>`;
+  document.getElementById('startNegoInfo').innerHTML = `<strong>${escapeHtml(entityName)}</strong><br>Prix actuel : <strong>${fmtCFA(originalPrice)} FCFA</strong>`;
   document.getElementById('startNegoPrice').value = '';
   document.getElementById('startNegoMsg').value = '';
   document.getElementById('startNegoModal').classList.add('open');
@@ -3987,6 +3996,7 @@ async function submitNegotiation() {
   const proposed_price = document.getElementById('startNegoPrice').value;
   const message = document.getElementById('startNegoMsg').value;
   if (!proposed_price) { toast('Entrez un prix à proposer', 'error'); return; }
+  setModalBusy('startNegoModal', true);
   try {
     await apiFetch('/api/company/negotiations', {
       method: 'POST', body: { restaurant_id, entity_type, entity_id, entity_name, proposed_price: parseFloat(proposed_price), message }
@@ -3994,10 +4004,18 @@ async function submitNegotiation() {
     closeModal(document.getElementById('startNegoModal'));
     toast('💬 Proposition envoyée au restaurant', 'success');
     switchToPage('negotiations-co');
-  } catch(e) { toast(e.message, 'error'); }
+  } catch(e) { toast(e.message, 'error'); } finally { setModalBusy('startNegoModal', false); }
 }
 
 async function respondCompositionFromNegoCompany(id, action) {
+  if (action === 'accept') {
+    const n = _negsData.find(x => x.id == id);
+    const lastMsg = n && (n.messages||[]).slice(-1)[0];
+    const price = lastMsg?.proposed_price ?? n?.original_price ?? 0;
+    if (!confirm(`Accepter cette composition pour ${fmtCFA(price)} FCFA ?`)) return;
+  } else if (action === 'reject') {
+    if (!confirm('Refuser et clôturer cette composition ?')) return;
+  }
   try {
     await apiFetch(`/api/company/custom-compositions/${id}/respond`, { method: 'POST', body: { action } }, token);
     toast(action === 'accept' ? '✅ Composition acceptée' : '❌ Composition refusée', 'success');

@@ -36,6 +36,9 @@
     .rest-btn:hover,.rest-btn.active{border-color:var(--orange);background:#FFF0EA;transform:translateY(-2px)}
     /* Grille des menus : 3 colonnes */
     .menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    /* Évite qu'un nom de plat long ne déborde de sa carte, surtout sur les colonnes étroites */
+    .menu-card{min-width:0}
+    .menu-card>div:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     /* Responsive tablette : 2 colonnes pour restaurants et menus */
     @media(max-width:700px){.rest-list{grid-template-columns:repeat(2,1fr)}.menu-grid{grid-template-columns:repeat(2,1fr)}}
     /* Responsive mobile : 1 colonne */
@@ -399,7 +402,7 @@
           <div class="form-group">
             <label>Nouveau mot de passe</label>
             <div class="pw-wrap">
-              <input class="form-control" type="password" id="newPwd" placeholder="Nouveau mot de passe">
+              <input class="form-control" type="password" id="newPwd" placeholder="Nouveau mot de passe" autocomplete="new-password">
               <button class="pw-toggle" type="button">👁</button>
             </div>
           </div>
@@ -408,7 +411,7 @@
           <div class="form-group">
             <label>Confirmer</label>
             <div class="pw-wrap">
-              <input class="form-control" type="password" id="newPwd2" placeholder="Confirmer">
+              <input class="form-control" type="password" id="newPwd2" placeholder="Confirmer" autocomplete="new-password">
               <button class="pw-toggle" type="button">👁</button>
             </div>
           </div>
@@ -585,6 +588,7 @@ function showApp() {
     item.style.cursor = 'pointer';
     item.addEventListener('click', () => switchToPage(item.dataset.page));
   });
+  makeNavKeyboardAccessible();
 
   // Chargement initial de la page repas (page par défaut)
   initMealPage();
@@ -632,12 +636,12 @@ async function searchDishes(q) {
 
       // Génère le HTML des résultats — chaque item est cliquable et navigue vers le restaurant
       results.innerHTML = data.map(m => `
-        <div onclick="goToRestaurantMenu(${m.restaurant_id}, '${m.restaurant_name.replace(/'/g,"\\'")}', ${m.id})"
+        <div onclick="goToRestaurantMenu(${m.restaurant_id}, '${jsStr(m.restaurant_name)}', ${m.id})"
              style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--cream);border:1.5px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;transition:border-color .2s"
              onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
           <div>
-            <div style="font-weight:600;font-size:13.5px;color:var(--brown)">${m.name}</div>
-            <div style="font-size:11.5px;color:var(--muted)">🍽 ${m.restaurant_name}</div>
+            <div style="font-weight:600;font-size:13.5px;color:var(--brown)">${escapeHtml(m.name)}</div>
+            <div style="font-size:11.5px;color:var(--muted)">🍽 ${escapeHtml(m.restaurant_name)}</div>
           </div>
           <div style="font-weight:700;color:var(--orange);font-size:13px;white-space:nowrap">${fmtCFA(m.price||0)} FCFA</div>
         </div>
@@ -758,13 +762,13 @@ async function loadRestaurants() {
       // Désérialisation des spécialités (tableau JSON ou tableau natif)
       const sps = Array.isArray(r.specialties) ? r.specialties : JSON.parse(r.specialties||'[]');
       return `
-        <div class="rest-btn" onclick="selectRestaurant(${r.id}, '${r.name.replace(/'/g,"\\'")}')">
+        <div class="rest-btn" onclick="selectRestaurant(${r.id}, '${jsStr(r.name)}')">
           <!-- Avatar du restaurant : photo ou emoji par défaut -->
-          <div class="rest-avatar" style="margin-bottom:10px;width:52px;height:52px">${r.photo_url?`<img src="${r.photo_url}">`:'🍽'}</div>
+          <div class="rest-avatar" style="margin-bottom:10px;width:52px;height:52px">${r.photo_url?`<img src="${escapeHtml(r.photo_url)}">`:'🍽'}</div>
           <!-- Nom du restaurant -->
-          <div style="font-weight:700;font-size:13.5px;color:var(--brown);margin-bottom:4px">${r.name}</div>
+          <div style="font-weight:700;font-size:13.5px;color:var(--brown);margin-bottom:4px">${escapeHtml(r.name)}</div>
           <!-- Première spécialité culinaire -->
-          <div style="font-size:11px;color:var(--muted)">${sps.slice(0,1).join('')||'Restaurant'}</div>
+          <div style="font-size:11px;color:var(--muted)">${escapeHtml(sps.slice(0,1).join('')||'Restaurant')}</div>
           <!-- Nombre de menus disponibles -->
           <div style="margin-top:8px;font-size:12px;color:var(--orange)">🍜 ${r.menu_count} menus</div>
         </div>
@@ -850,9 +854,9 @@ async function selectRestaurant(id, name) {
         grid.innerHTML = Object.entries(byCat).map(([cat, items]) =>
           `<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:6px">${CAT_ICONS[cat]||'🍽'} ${cat}</div>
           ${items.map(m => `
-            <div class="menu-card" id="mc-${m.id}" onclick="selectMenu(${m.id}, '${m.name.replace(/'/g,"\\'")}', ${m.price||0})">
-              <div style="font-weight:700;font-size:13.5px;color:var(--brown);margin-bottom:5px">${m.name}</div>
-              ${m.description ? `<div style="font-size:12px;color:var(--muted);margin-bottom:6px">${m.description}</div>` : ''}
+            <div class="menu-card" id="mc-${m.id}" onclick="selectMenu(${m.id}, '${jsStr(m.name)}', ${m.price||0})">
+              <div style="font-weight:700;font-size:13.5px;color:var(--brown);margin-bottom:5px">${escapeHtml(m.name)}</div>
+              ${m.description ? `<div style="font-size:12px;color:var(--muted);margin-bottom:6px">${escapeHtml(m.description)}</div>` : ''}
               <div style="font-weight:600;color:var(--orange)">${fmtCFA(m.price||0)} FCFA</div>
             </div>`).join('')}`
         ).join('');
@@ -868,9 +872,9 @@ async function selectRestaurant(id, name) {
       else {
         noMsg.style.display = 'none';
         dgrid.innerHTML = drinks.map(m => `
-          <div class="menu-card" id="dc-${m.id}" onclick="selectDrink(${m.id}, '${m.name.replace(/'/g,"\\'")}', ${m.price||0})">
-            <div style="font-weight:700;font-size:13.5px;color:#1e40af;margin-bottom:5px">🥤 ${m.name}</div>
-            ${m.description ? `<div style="font-size:12px;color:var(--muted);margin-bottom:6px">${m.description}</div>` : ''}
+          <div class="menu-card" id="dc-${m.id}" onclick="selectDrink(${m.id}, '${jsStr(m.name)}', ${m.price||0})">
+            <div style="font-weight:700;font-size:13.5px;color:#1e40af;margin-bottom:5px">🥤 ${escapeHtml(m.name)}</div>
+            ${m.description ? `<div style="font-size:12px;color:var(--muted);margin-bottom:6px">${escapeHtml(m.description)}</div>` : ''}
             <div style="font-weight:600;color:#3b82f6">${fmtCFA(m.price||0)} FCFA</div>
           </div>`).join('');
       }
@@ -961,6 +965,8 @@ function selectDrink(id, name, price) {
 }
 
 async function confirmOrder() {
+  const btn = document.getElementById('confirmOrderBtn');
+  if (btn.disabled) return; // évite la double soumission (double-clic, latence réseau)
   const showFood  = _currentOrderType !== 'drink';
   const showDrink = _currentOrderType !== 'food';
   if (showFood  && !selectedMenuId)  { toast('Sélectionnez un plat', 'error');   return; }
@@ -972,6 +978,8 @@ async function confirmOrder() {
     restaurantId:selectedRestId,
     orderType:   _currentOrderType
   };
+  const originalLabel = btn.textContent;
+  setLoading(btn, 'Validation...');
   try {
     if (window._isModifying && window._todayOrderId) {
       await apiFetch(`/api/employee/order/${window._todayOrderId}`, { method: 'PUT', body: JSON.stringify(body) }, empToken);
@@ -983,7 +991,7 @@ async function confirmOrder() {
     window._isModifying = false;
     showOrderTypeView();
     initMealPage();
-  } catch(e) { toast(e.message, 'error'); }
+  } catch(e) { toast(e.message, 'error'); } finally { unsetLoading(btn, originalLabel); }
 }
 
 /**
@@ -1059,9 +1067,9 @@ async function loadEmpHistory() {
         <div class="hist-icon">${h.action==='created'?'🛒':h.action==='deleted'?'🗑':'✏️'}</div>
         <div style="flex:1">
           <!-- Nom du menu commandé -->
-          <div style="font-weight:600;font-size:13.5px;color:var(--brown)">${h.menu_name||'—'}</div>
+          <div style="font-weight:600;font-size:13.5px;color:var(--brown)">${escapeHtml(h.menu_name||'—')}</div>
           <!-- Restaurant et préférence boisson -->
-          <div style="font-size:12px;color:var(--muted)">${h.restaurant_name||'—'} • ${DRINK_LABELS[h.drink_preference]||''}</div>
+          <div style="font-size:12px;color:var(--muted)">${escapeHtml(h.restaurant_name||'—')} • ${DRINK_LABELS[h.drink_preference]||''}</div>
           <!-- Date de la commande formatée -->
           <div style="font-size:11px;color:var(--muted)">${formatDate(h.order_date)}</div>
         </div>
@@ -1330,11 +1338,11 @@ async function loadWeeklyMenus() {
       pgrid.innerHTML = '<div class="empty-state"><span class="icon">🖼</span>Aucun programme hebdomadaire disponible</div>';
     } else {
       pgrid.innerHTML = programs.map(p => `
-        <div class="program-card" onclick="document.getElementById('empProgramLightbox').style.display='flex';document.getElementById('empProgramLightboxImg').src='${p.image_url}'">
-          <img src="${p.image_url}" alt="${p.title || 'Programme'}">
+        <div class="program-card" onclick="document.getElementById('empProgramLightbox').style.display='flex';document.getElementById('empProgramLightboxImg').src='${jsStr(p.image_url)}'">
+          <img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.title || 'Programme')}">
           <div class="program-card-info">
-            <div style="font-weight:700;font-size:13px;color:var(--brown)">${p.title || 'Programme'}</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:2px">${p.restaurant_name}</div>
+            <div style="font-weight:700;font-size:13px;color:var(--brown)">${escapeHtml(p.title || 'Programme')}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">${escapeHtml(p.restaurant_name)}</div>
           </div>
         </div>
       `).join('');
@@ -1349,24 +1357,24 @@ async function loadWeeklyMenus() {
           const daysHtml = (menu.days || []).map(day => {
             const dishesHtml = (day.dishes || []).map(dish => `
               <div class="dish-row">
-                ${dish.image_url ? `<img src="${dish.image_url}" alt="${dish.name}">` : '<div style="width:40px;height:40px;border-radius:7px;background:var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">🍽</div>'}
+                ${dish.image_url ? `<img src="${escapeHtml(dish.image_url)}" alt="${escapeHtml(dish.name)}">` : '<div style="width:40px;height:40px;border-radius:7px;background:var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">🍽</div>'}
                 <div style="flex:1">
-                  <div style="font-weight:600;font-size:13px;color:var(--brown)">${dish.name}</div>
-                  ${dish.description ? `<div style="font-size:11px;color:var(--muted)">${dish.description}</div>` : ''}
+                  <div style="font-weight:600;font-size:13px;color:var(--brown)">${escapeHtml(dish.name)}</div>
+                  ${dish.description ? `<div style="font-size:11px;color:var(--muted)">${escapeHtml(dish.description)}</div>` : ''}
                 </div>
                 <div style="font-weight:700;color:var(--orange);font-size:13px;white-space:nowrap">${fmtCFA(dish.price||0)} FCFA</div>
               </div>
             `).join('');
             return `<div style="margin-bottom:14px"><div style="margin-bottom:6px"><span class="day-pill">${EMP_DAY_NAMES[day.day_of_week] || 'Jour '+day.day_of_week}</span>${day.is_optional ? '<span style="font-size:10px;color:var(--muted);margin-left:6px">(optionnel)</span>' : ''}</div><div style="padding:0 4px">${dishesHtml || '<div style="font-size:12px;color:var(--muted)">Aucun plat</div>'}</div></div>`;
           }).join('');
-          return `<div style="padding:12px 16px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:var(--brown);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">${menu.name}</div>${daysHtml}</div>`;
+          return `<div style="padding:12px 16px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:var(--brown);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">${escapeHtml(menu.name)}</div>${daysHtml}</div>`;
         }).join('');
         return `
           <div class="pack-card">
             <div class="pack-card-header" onclick="this.parentElement.querySelector('.pack-card-body').classList.toggle('open')">
               <div style="flex:1">
-                <div style="font-weight:700;font-size:14px;color:var(--brown)">${pack.name}</div>
-                <div style="font-size:12px;color:var(--muted);margin-top:2px">🍽 ${pack.restaurant_name}</div>
+                <div style="font-weight:700;font-size:14px;color:var(--brown)">${escapeHtml(pack.name)}</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:2px">🍽 ${escapeHtml(pack.restaurant_name)}</div>
                 <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
                   <span style="font-size:11px;background:var(--orange-light,#fff3e0);color:var(--orange);border-radius:6px;padding:2px 8px;font-weight:600">${fmtCFA(pack.price||0)} FCFA</span>
                   <span style="font-size:11px;background:var(--border);color:var(--muted);border-radius:6px;padding:2px 8px">Min. ${pack.min_order_qty||1} plats</span>
@@ -1426,7 +1434,7 @@ function renderEmpWeeklySelections(selections) {
           <div style="font-size:11px;font-weight:700;color:var(--brown);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px">Extras</div>
           ${s.extras.map(e => `
             <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:4px">
-              <span style="color:var(--text)">${e.item_name} <span style="color:var(--muted);font-size:11px">(${e.item_type})</span></span>
+              <span style="color:var(--text)">${escapeHtml(e.item_name)} <span style="color:var(--muted);font-size:11px">(${escapeHtml(e.item_type)})</span></span>
               <span style="font-weight:600;color:var(--orange)">${e.quantity} × ${fmtCFA(e.unit_price||0)} FCFA</span>
             </div>
           `).join('')}
@@ -1436,8 +1444,8 @@ function renderEmpWeeklySelections(selections) {
         <div style="background:var(--card-bg,#fff);border:1px solid ${isCurrent ? 'var(--orange)' : 'var(--border)'};border-radius:10px;padding:14px;margin-bottom:10px">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
             <div style="flex:1">
-              <div style="font-weight:700;font-size:14px;color:var(--brown)">${s.pack_name || '—'}</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:2px">🍽 ${s.restaurant_name}</div>
+              <div style="font-weight:700;font-size:14px;color:var(--brown)">${escapeHtml(s.pack_name || '—')}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">🍽 ${escapeHtml(s.restaurant_name)}</div>
             </div>
             <span style="font-size:11px;font-weight:600;color:${statusColor[s.status]||'var(--muted)'};background:${statusBg[s.status]||'var(--border)'};border-radius:20px;padding:3px 10px;white-space:nowrap">${statusLabel[s.status]||s.status}</span>
           </div>
@@ -1445,7 +1453,7 @@ function renderEmpWeeklySelections(selections) {
             <span style="font-size:11px;background:var(--orange-light,#fff3e0);color:var(--orange);border-radius:6px;padding:2px 8px;font-weight:600">${fmtCFA(s.pack_price||0)} FCFA</span>
             <span style="font-size:11px;background:var(--border);color:var(--muted);border-radius:6px;padding:2px 8px">${s.dish_qty} plat(s) commandé(s)</span>
           </div>
-          ${s.notes ? `<div style="margin-top:8px;font-size:12px;color:var(--muted);font-style:italic">${s.notes}</div>` : ''}
+          ${s.notes ? `<div style="margin-top:8px;font-size:12px;color:var(--muted);font-style:italic">${escapeHtml(s.notes)}</div>` : ''}
           ${extrasHtml}
         </div>
       `;

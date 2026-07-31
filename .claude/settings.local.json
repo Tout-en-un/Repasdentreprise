@@ -124,7 +124,11 @@
       "PowerShell(psql *)",
       "PowerShell(Set-Content *)",
       "PowerShell(node --check \"F:/All projects/repasapp/foodchooseapp/api/index.js\" 2>&1)",
-      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:3050/api/auth/admin/login\" -Method POST -ContentType \"application/json\" -Body '{\"email\":\"test.devapp7777@gmail.com\",\"password\":\"@admin.dev.app\"}' | Select-Object role, name)"
+      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:3050/api/auth/admin/login\" -Method POST -ContentType \"application/json\" -Body '{\"email\":\"test.devapp7777@gmail.com\",\"password\":\"@admin.dev.app\"}' | Select-Object role, name)",
+      "Bash(echo \"---exit $?---\")",
+      "Bash(echo \"---exit:$?---\")",
+      "Bash(npx --yes playwright --version)",
+      "Bash(export NODE_PATH=\"C:\\\\Users\\\\hp\\\\AppData\\\\Roaming\\\\npm\\\\node_modules\")"
     ]
   }
 }

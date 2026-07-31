@@ -63,7 +63,7 @@
     .form-control::placeholder{color:#C4A898}
     .pw-wrap{position:relative}
     .pw-wrap .form-control{padding-right:42px}
-    .pw-toggle{position:absolute;right:11px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:3px;display:flex;align-items:center;transition:color .2s}
+    .pw-toggle{position:absolute;right:2px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:12px;display:flex;align-items:center;transition:color .2s}
     .pw-toggle:hover{color:var(--orange)}
     .pw-toggle svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
@@ -232,7 +232,7 @@
     <div class="form-group">
       <label>Mot de passe *</label>
       <div class="pw-wrap">
-        <input class="form-control" id="restPwd" type="password" placeholder="Minimum 6 caractères">
+        <input class="form-control" id="restPwd" type="password" placeholder="Minimum 6 caractères" autocomplete="new-password">
         <button class="pw-toggle" type="button">
           <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
@@ -241,7 +241,7 @@
     <div class="form-group">
       <label>Confirmer le mot de passe *</label>
       <div class="pw-wrap">
-        <input class="form-control" id="restPwd2" type="password" placeholder="Répétez le mot de passe">
+        <input class="form-control" id="restPwd2" type="password" placeholder="Répétez le mot de passe" autocomplete="new-password">
         <button class="pw-toggle" type="button">
           <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>

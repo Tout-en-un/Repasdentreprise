@@ -60,6 +60,7 @@ body { font-family: 'DM Sans', sans-serif; background: #F5EDE6; color: var(--tex
 }
 .nav-item:hover { color: var(--cream); }
 .nav-item.active { color: var(--cream); background: rgba(232,90,42,.15); border-left-color: var(--orange); }
+.nav-item:focus-visible { outline: 2px solid var(--orange); outline-offset: -2px; }
 .nav-badge { margin-left: auto; background: var(--orange); color: white; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 20px; min-width: 18px; text-align: center; }
 .sidebar-footer { padding: 14px 20px; border-top: 1px solid rgba(255,248,243,.08); }
 .user-card { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; }

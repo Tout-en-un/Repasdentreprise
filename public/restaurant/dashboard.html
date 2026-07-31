@@ -252,21 +252,21 @@
             <div class="form-group">
               <label>Mot de passe actuel</label>
               <div class="pw-wrap">
-                <input class="form-control" type="password" id="pwCurrent" placeholder="Mot de passe actuel">
+                <input class="form-control" type="password" id="pwCurrent" placeholder="Mot de passe actuel" autocomplete="current-password">
                 <button class="pw-toggle" type="button">👁</button>
               </div>
             </div>
             <div class="form-group">
               <label>Nouveau mot de passe</label>
               <div class="pw-wrap">
-                <input class="form-control" type="password" id="pwNew" placeholder="Minimum 6 caractères">
+                <input class="form-control" type="password" id="pwNew" placeholder="Minimum 6 caractères" autocomplete="new-password">
                 <button class="pw-toggle" type="button">👁</button>
               </div>
             </div>
             <div class="form-group">
               <label>Confirmer</label>
               <div class="pw-wrap">
-                <input class="form-control" type="password" id="pwNew2" placeholder="Répétez le mot de passe">
+                <input class="form-control" type="password" id="pwNew2" placeholder="Répétez le mot de passe" autocomplete="new-password">
                 <button class="pw-toggle" type="button">👁</button>
               </div>
             </div>
@@ -593,7 +593,7 @@
     <div class="card reveal" style="margin-bottom:16px">
       <div class="card-body" style="padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <input class="form-control" id="clientSearch" placeholder="🔍 Rechercher une entreprise…"
-          oninput="filterClients(this.value)" style="flex:1;min-width:180px">
+          oninput="filterClientsDebounced(this.value)" style="flex:1;min-width:180px">
         <button class="btn btn-outline btn-sm" onclick="loadClients()">🔄</button>
         <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer">
           <input type="checkbox" id="showConfidentialFilter" onchange="filterClients(document.getElementById('clientSearch').value)">
@@ -758,7 +758,7 @@
 
     <div class="doc-search">
       <span class="doc-search-icon">🔍</span>
-      <input type="text" id="docSearchInput" placeholder="Rechercher dans la documentation…" oninput="filterDocSections(this.value)">
+      <input type="text" id="docSearchInput" placeholder="Rechercher dans la documentation…" oninput="filterDocSectionsDebounced(this.value)">
     </div>
 
     <div class="doc-toc">
@@ -1226,6 +1226,7 @@ function filterClients(q) {
   if (onlyConf) filtered = filtered.filter(c => _clientsPrivacy[c.id]?.is_confidential);
   renderClientCards(filtered);
 }
+const filterClientsDebounced = debounce(filterClients);
 
 async function toggleClientPrivacy(companyId, currentState) {
   const newState = !currentState;
@@ -1255,16 +1256,16 @@ function renderClientCards(clients) {
     const lastOrder  = c.last_order_date ? fmtD(c.last_order_date) : 'Jamais';
     const sinceDate  = fmtD(c.affiliated_since);
     return `
-    <div class="card reveal" style="cursor:pointer;transition:box-shadow .15s" onclick="openClientDetail(${c.id},'${c.name.replace(/'/g,"\\'")}')">
+    <div class="card reveal" style="cursor:pointer;transition:box-shadow .15s" onclick="openClientDetail(${c.id},'${jsStr(c.name)}')">
       <div class="card-body">
         <!-- En-tête -->
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
           <div style="width:46px;height:46px;border-radius:12px;background:#FFF0EA;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">
-            ${c.logo_url ? `<img src="${c.logo_url}" style="width:46px;height:46px;border-radius:12px;object-fit:cover">` : '🏢'}
+            ${c.logo_url ? `<img src="${escapeHtml(c.logo_url)}" style="width:46px;height:46px;border-radius:12px;object-fit:cover">` : '🏢'}
           </div>
           <div style="min-width:0">
-            <div style="font-weight:700;font-size:14px;color:var(--brown);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</div>
-            <div style="font-size:11px;color:var(--muted)">${c.email || ''}</div>
+            <div style="font-weight:700;font-size:14px;color:var(--brown);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.name)}</div>
+            <div style="font-size:11px;color:var(--muted)">${escapeHtml(c.email || '')}</div>
           </div>
           ${hasPending ? `<span style="margin-left:auto;background:#FEF3C7;color:#92400E;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;flex-shrink:0">${c.pending_invoices} en attente</span>` : ''}
         </div>
@@ -1285,7 +1286,7 @@ function renderClientCards(clients) {
         </div>
         <!-- Abonnement + dernière commande -->
         <div style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:3px">
-          <div>${c.pack_name ? `📅 Abonnement : <strong style="color:var(--brown)">${c.pack_name}</strong> (${c.dish_qty || '?'} repas/j)` : '📅 Pas d\'abonnement actif'}</div>
+          <div>${c.pack_name ? `📅 Abonnement : <strong style="color:var(--brown)">${escapeHtml(c.pack_name)}</strong> (${c.dish_qty || '?'} repas/j)` : '📅 Pas d\'abonnement actif'}</div>
           <div>🕐 Dernière commande : <strong style="color:var(--brown)">${lastOrder}</strong></div>
           <div>💰 CA total : <strong style="color:var(--orange)">${fmtCFA(c.revenue_total || 0)} FCFA</strong></div>
           <div>📌 Affilié depuis : ${sinceDate}</div>
@@ -1297,8 +1298,8 @@ function renderClientCards(clients) {
         </div>
         <!-- Actions -->
         <div style="display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-          <button class="btn btn-outline btn-sm" style="flex:1;font-size:11px" onclick="event.stopPropagation();openChat(${c.id},'${c.name.replace(/'/g,"\\'")}',null);switchToPage('messages')">💬 Message</button>
-          <button class="btn btn-primary btn-sm" style="flex:1;font-size:11px" onclick="event.stopPropagation();openClientDetail(${c.id},'${c.name.replace(/'/g,"\\'")}')">👁 Détail</button>
+          <button class="btn btn-outline btn-sm" style="flex:1;font-size:11px" onclick="event.stopPropagation();openChat(${c.id},'${jsStr(c.name)}',null);switchToPage('messages')">💬 Message</button>
+          <button class="btn btn-primary btn-sm" style="flex:1;font-size:11px" onclick="event.stopPropagation();openClientDetail(${c.id},'${jsStr(c.name)}')">👁 Détail</button>
         </div>
       </div>
     </div>`;
@@ -1599,17 +1600,17 @@ function renderOrderChart(data) {
 
 function exportPDF(type) {
   if (!token) { toast('Non connecté', 'error'); return; }
-  window.open(`/api/restaurant/export-pdf?period=${type}&token=${token}`, '_blank');
+  openPdf(`/api/restaurant/export-pdf?period=${type}`, token);
 }
 
 function exportOrdersPDF() {
   if (!token) { toast('Non connecté', 'error'); return; }
   const from = parseFrDate(document.getElementById('ordersFrom').value) || document.getElementById('ordersFrom').value;
   const to   = parseFrDate(document.getElementById('ordersTo').value)   || document.getElementById('ordersTo').value;
-  const params = [`token=${token}`];
+  const params = [];
   if (from) params.push('from=' + from);
   if (to)   params.push('to='   + to);
-  window.open('/api/restaurant/orders/export-pdf?' + params.join('&'), '_blank');
+  openPdf('/api/restaurant/orders/export-pdf' + (params.length ? '?' + params.join('&') : ''), token);
 }
 
 // ═══ MENUS ═══
@@ -1620,7 +1621,7 @@ async function loadMenus() {
     if (!menus.length) { wrap.innerHTML = '<div class="empty-state"><span class="icon">🍜</span>Aucun menu</div>'; return; }
     wrap.innerHTML = `<table><thead><tr><th>Nom</th><th>Catégorie</th><th>Prix</th><th>Statut</th><th>Actions</th></tr></thead><tbody>${menus.map(m => `
       <tr>
-        <td>${m.name}</td>
+        <td>${escapeHtml(m.name)}</td>
         <td>${m.category === 'plat' ? '🍜 Plat' : m.category === 'boisson' ? '🥤 Boisson' : m.category === 'snack' ? '🥨 Snack' : m.category === 'dessert' ? '🍰 Dessert' : '🥐 Petit-déj'}</td>
         <td>${fmtCFA(m.price)} CFA</td>
         <td><span style="padding:4px 8px;border-radius:6px;background:${m.available ? '#D1FAE5' : '#FEE2E2'};color:${m.available ? '#065F46' : '#991B1B'}">${m.available ? 'Actif' : 'Inactif'}</span></td>
@@ -1938,8 +1939,8 @@ async function loadConfirmedOrders() {
   } catch(e) { console.error('loadConfirmedOrders:', e); }
 }
 
-function downloadRestInvoice(id) { window.open(`/api/restaurant/invoices/${id}/pdf?token=${token}`, '_blank'); }
-function printRestInvoice(id) { window.open(`/api/restaurant/invoices/${id}/pdf?token=${token}`, '_blank'); }
+function downloadRestInvoice(id) { openPdf(`/api/restaurant/invoices/${id}/pdf`, token); }
+function printRestInvoice(id) { openPdf(`/api/restaurant/invoices/${id}/pdf`, token, { print: true }); }
 
 function openInvoiceModal(invoiceId, companyId) {
   currentInvoiceId = invoiceId;
@@ -2020,23 +2021,23 @@ async function loadConversations() {
     list.innerHTML = convs.map(c => {
       totalUnread += parseInt(c.unread || 0);
       const active = currentChatCompanyId == c.company_id ? 'active' : '';
-      const eName = (c.company_name || '').replace(/'/g, "\\'");
-      const ePhoto = (c.logo_url || '').replace(/'/g, "\\'");
+      const eName = jsStr(c.company_name || '');
+      const ePhoto = jsStr(c.logo_url || '');
       const avatar = c.logo_url
-        ? `<img src="${c.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+        ? `<img src="${escapeHtml(c.logo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
         : '🏢';
       return `<div class="chat-conv ${active}" onclick="openChat(${c.company_id},'${eName}','${ePhoto}')">
         <div style="display:flex;align-items:center;gap:9px">
           <div class="user-avatar" style="width:34px;height:34px;font-size:14px;flex-shrink:0">${avatar}</div>
           <div style="flex:1;min-width:0">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:4px">
-              <div class="chat-conv-name">${c.company_name}</div>
+              <div class="chat-conv-name">${escapeHtml(c.company_name)}</div>
               <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
                 ${c.last_at ? `<span style="font-size:10px;color:var(--muted)">${timeAgo(c.last_at)}</span>` : ''}
                 ${c.unread > 0 ? `<span style="background:var(--orange);color:white;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px">${c.unread}</span>` : ''}
               </div>
             </div>
-            <div class="chat-conv-last">${c.last_message || 'Pas encore de message'}</div>
+            <div class="chat-conv-last">${escapeHtml(c.last_message || 'Pas encore de message')}</div>
           </div>
         </div>
       </div>`;
@@ -2052,22 +2053,22 @@ function renderRestMsg(m) {
   const audioSrc = m.audio_url || m.audio_data;
   const fileSrc = m.file_url || m.file_data;
   if (m.message_type === 'voice' && audioSrc) {
-    return `<div class="msg ${cls}"><div class="msg-voice"><div class="voice-badge">🎙 Message vocal</div><audio controls src="${audioSrc}"></audio><div class="msg-time">${timeAgo(m.created_at)}</div></div></div>`;
+    return `<div class="msg ${cls}"><div class="msg-voice"><div class="voice-badge">🎙 Message vocal</div><audio controls src="${escapeHtml(audioSrc)}"></audio><div class="msg-time">${timeAgo(m.created_at)}</div></div></div>`;
   }
   if (m.message_type === 'file' && fileSrc) {
     let inner = '';
     if (m.file_mime?.startsWith('image/')) {
-      inner = `<img src="${fileSrc}" onclick="window.open('${fileSrc}','_blank')" alt="${m.file_name||'image'}" style="max-width:220px;max-height:200px;border-radius:9px;display:block;cursor:pointer;object-fit:cover">`;
+      inner = `<img src="${escapeHtml(fileSrc)}" onclick="window.open('${jsStr(fileSrc)}','_blank')" alt="${escapeHtml(m.file_name||'image')}" style="max-width:220px;max-height:200px;border-radius:9px;display:block;cursor:pointer;object-fit:cover">`;
     } else if (m.file_mime?.startsWith('video/')) {
-      inner = `<video controls style="max-width:220px;border-radius:9px;display:block;background:#000"><source src="${fileSrc}" type="${m.file_mime}"></video>`;
+      inner = `<video controls style="max-width:220px;border-radius:9px;display:block;background:#000"><source src="${escapeHtml(fileSrc)}" type="${escapeHtml(m.file_mime)}"></video>`;
     } else {
-      inner = `<a class="msg-file-doc" href="${fileSrc}" download="${m.file_name||'document'}">📄<span>${m.file_name||'Document'}</span></a>`;
+      inner = `<a class="msg-file-doc" href="${escapeHtml(fileSrc)}" download="${escapeHtml(m.file_name||'document')}">📄<span>${escapeHtml(m.file_name||'Document')}</span></a>`;
     }
     const caption = m.content && !['📷 Photo','🎬 Vidéo'].includes(m.content) && !m.content.startsWith('📄')
-      ? `<div style="font-size:12px;margin-top:3px">${m.content}</div>` : '';
+      ? `<div style="font-size:12px;margin-top:3px">${escapeHtml(m.content)}</div>` : '';
     return `<div class="msg ${cls}"><div class="msg-file">${inner}${caption}<div class="msg-time">${timeAgo(m.created_at)}</div></div></div>`;
   }
-  return `<div class="msg ${cls}">${m.content}<div class="msg-time">${timeAgo(m.created_at)}</div></div>`;
+  return `<div class="msg ${cls}">${escapeHtml(m.content)}<div class="msg-time">${timeAgo(m.created_at)}</div></div>`;
 }
 
 function openChat(companyId, companyName, photo) {
@@ -2079,13 +2080,13 @@ function openChat(companyId, companyName, photo) {
   document.getElementById('chatSidebar')?.classList.remove('show-mobile');
   const main = document.getElementById('chatMain');
   const avatar = photo
-    ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+    ? `<img src="${escapeHtml(photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
     : '🏢';
   main.innerHTML = `
     <div class="chat-header">
       <button class="chat-back-btn" onclick="document.getElementById('chatSidebar').classList.add('show-mobile')" title="Retour">&#8592;</button>
       <div class="user-avatar" style="width:32px;height:32px;font-size:14px;flex-shrink:0">${avatar}</div>
-      <span style="flex:1;font-weight:600">${companyName || 'Entreprise'}</span>
+      <span style="flex:1;font-weight:600">${escapeHtml(companyName || 'Entreprise')}</span>
     </div>
     <div class="chat-messages" id="restChatMessages"></div>
     <div class="file-preview-bar" id="restFilePreviewBar" style="display:none"></div>
@@ -2286,11 +2287,11 @@ function loadOrders(from, to, companyId) {
       if (hasInvoiced) {
         buttons = '<span style="color:var(--success);font-size:12px">✓ Facturée</span>';
       } else if (hasValidated) {
-        buttons = '<button class="btn btn-primary btn-sm" onclick="createInvoiceForCompany(\''+co+'\', '+companyId+', \''+orderDate+'\')">🧾 Générer facture</button>';
+        buttons = '<button class="btn btn-primary btn-sm" onclick="createInvoiceForCompany('+JSON.stringify(co).replace(/"/g,'&quot;')+', '+companyId+', '+JSON.stringify(orderDate).replace(/"/g,'&quot;')+')">🧾 Générer facture</button>';
       } else {
-        buttons = '<button class="btn btn-outline btn-sm" onclick="createBatchForCompany('+companyId+', \''+orderDate+'\')">📦 Confirmer</button>';
+        buttons = '<button class="btn btn-outline btn-sm" onclick="createBatchForCompany('+companyId+', '+JSON.stringify(orderDate).replace(/"/g,'&quot;')+')">📦 Confirmer</button>';
       }
-      el.innerHTML += '<div style="background:#F9F1EB;padding:16px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:12px"><div>🏢 '+co+' <span style="font-size:12px;color:var(--muted)">'+ords.length+' cmd</span></div><div style="display:flex;gap:8px;align-items:center">'+buttons+'</div></div></div>';
+      el.innerHTML += '<div style="background:#F9F1EB;padding:16px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:12px"><div>🏢 '+escapeHtml(co)+' <span style="font-size:12px;color:var(--muted)">'+ords.length+' cmd</span></div><div style="display:flex;gap:8px;align-items:center">'+buttons+'</div></div></div>';
     });
   }).catch(function(e) { toast(e.message || 'Erreur chargement commandes', 'error'); });
 }
@@ -2308,6 +2309,7 @@ document.querySelectorAll('.nav-item[data-page]').forEach(function(item) {
   item.style.cursor = 'pointer';
   item.addEventListener('click', function() { switchToPage(item.dataset.page); });
 });
+makeNavKeyboardAccessible();
 
 // Init
 try { initSidebar(); } catch(e) { console.error('initSidebar:', e); }
@@ -2340,7 +2342,7 @@ async function loadWeeklyPacks() {
             <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
           </div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:14px;font-weight:700;color:var(--brown)">${p.name}</div>
+            <div style="font-size:14px;font-weight:700;color:var(--brown)">${escapeHtml(p.name)}</div>
             <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:3px">
               <span style="font-size:11px;color:var(--muted)">🍽 Min. ${p.min_order_qty||8} plats/jour</span>
               ${menuCount > 0 ? `<span style="font-size:11px;color:var(--muted)">📋 ${menuCount} menu${menuCount>1?'s':''}</span>` : ''}
@@ -2351,7 +2353,7 @@ async function loadWeeklyPacks() {
             <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;${isActive?'background:#dcfce7;color:#16a34a':'background:#F3F4F6;color:#6B7280'}">
               ${isActive ? '✅ Actif' : '💤 Inactif'}
             </span>
-            <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editWeeklyPack(${p.id},'${p.name.replace(/'/g,"\\'")}','${(p.description||'').replace(/'/g,"\\'")}',${p.min_order_qty||8})" title="Modifier" style="padding:4px 9px">
+            <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editWeeklyPack(${p.id},'${jsStr(p.name)}','${jsStr(p.description||'')}',${p.min_order_qty||8})" title="Modifier" style="padding:4px 9px">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
             <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();deleteWeeklyPack(${p.id})" title="Supprimer" style="padding:4px 9px;color:#dc2626;border-color:#fca5a5">
@@ -2389,8 +2391,8 @@ async function loadCompositionProposals() {
       <div style="border:${isNegotiating ? '2px solid #D97706' : '1px solid var(--border)'};border-radius:12px;padding:14px;margin-bottom:10px;background:${isNegotiating ? '#fffbf0' : '#fafafa'}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap">
           <div>
-            <div style="font-weight:700;font-size:14px;color:var(--brown)">${c.name || 'Composition'}</div>
-            <div style="font-size:12px;color:var(--muted)">🏢 ${c.company_name} · Semaine du ${weekStart}</div>
+            <div style="font-weight:700;font-size:14px;color:var(--brown)">${escapeHtml(c.name || 'Composition')}</div>
+            <div style="font-size:12px;color:var(--muted)">🏢 ${escapeHtml(c.company_name)} · Semaine du ${weekStart}</div>
             ${isNegotiating ? `<div style="font-size:11px;color:#D97706;font-weight:600;margin-top:2px">🔄 En négociation</div>` : ''}
           </div>
           <div style="text-align:right;flex-shrink:0">
@@ -2402,12 +2404,12 @@ async function loadCompositionProposals() {
           ${Object.entries(byDay).sort(([a],[b]) => a - b).map(([day, dishes]) => `
             <div style="background:white;border:1px solid var(--border);border-radius:8px;padding:5px 9px;min-width:64px">
               <div style="font-size:10px;font-weight:700;color:var(--brown);margin-bottom:2px">${dayNames[day] || day}</div>
-              ${dishes.map(d => `<div style="font-size:11px;color:#374151">${d.dish_name}${d.quantity > 1 ? ' ×' + d.quantity : ''}</div>`).join('')}
+              ${dishes.map(d => `<div style="font-size:11px;color:#374151">${escapeHtml(d.dish_name)}${d.quantity > 1 ? ' ×' + d.quantity : ''}</div>`).join('')}
             </div>`).join('')}
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border)">
           <button class="btn btn-success btn-sm" onclick="acceptCompositionProposal(${c.id})">✅ Accepter → créer Menu</button>
-          <button class="btn btn-outline btn-sm" onclick="openCompositionRespond(${c.id},'${(c.name||'Composition').replace(/'/g,"\\'")}','${(c.company_name||'').replace(/'/g,"\\'")}',${c.company_proposed_price||0})">🔄 Contre-proposer</button>
+          <button class="btn btn-outline btn-sm" onclick="openCompositionRespond(${c.id},'${jsStr(c.name||'Composition')}','${jsStr(c.company_name||'')}',${c.company_proposed_price||0})">🔄 Contre-proposer</button>
           <button class="btn btn-danger btn-sm" onclick="rejectCompositionProposal(${c.id})">❌ Refuser</button>
         </div>
       </div>`;
@@ -2416,6 +2418,7 @@ async function loadCompositionProposals() {
 }
 
 async function acceptCompositionProposal(id) {
+  if (!confirm('Accepter cette composition ? Un nouveau menu sera créé selon les prix convenus.')) return;
   try {
     await apiFetch(`/api/restaurant/composition-requests/${id}/respond`, { method: 'PUT', body: { action: 'accept' } }, token);
     toast('✅ Composition acceptée — nouveau menu créé dans Mes packs', 'success');
@@ -2425,6 +2428,7 @@ async function acceptCompositionProposal(id) {
 }
 
 async function rejectCompositionProposal(id) {
+  if (!confirm('Refuser cette composition ?')) return;
   try {
     await apiFetch(`/api/restaurant/composition-requests/${id}/respond`, { method: 'PUT', body: { action: 'reject' } }, token);
     toast('Composition refusée', 'success');
@@ -3497,7 +3501,7 @@ async function clearWeekDailyEntries() {
   const weekStart = document.getElementById('pdjWeekStart')?.value;
   const companyId = document.getElementById('pdjCompanySelect')?.value;
   if (!weekStart) return toast('Choisissez une semaine', 'error');
-  if (!confirm('Vider tous les points du jour de cette semaine ?\n\nCette action est irréversible.')) return;
+  if (!confirm('Vider tous les points du jour de cette semaine ?\n\nIls seront déplacés dans la corbeille, où vous pourrez les restaurer tant qu\'ils ne sont pas purgés définitivement.')) return;
   try {
     const qs = `?week_start=${weekStart}${companyId ? '&company_id=' + companyId : ''}`;
     const r = await apiFetch(`/api/restaurant/daily-entries${qs}`, { method: 'DELETE' }, token);
@@ -3691,8 +3695,8 @@ async function loadWeeklyInvoicesList() {
       return `<tr>
         <td style="font-size:11px;white-space:nowrap">${inv.invoice_number}</td>
         <td style="font-size:12px">
-          ${inv.company_name||'—'}
-          ${hasNote ? `<div style="font-size:11px;color:var(--muted);font-style:italic;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${inv.notes.replace(/"/g,'&quot;')}">💬 ${inv.notes}</div>` : ''}
+          ${escapeHtml(inv.company_name||'—')}
+          ${hasNote ? `<div style="font-size:11px;color:var(--muted);font-style:italic;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(inv.notes)}">💬 ${escapeHtml(inv.notes)}</div>` : ''}
         </td>
         <td>${periodeHtml}</td>
         <td>${typeTag}</td>
@@ -3700,7 +3704,7 @@ async function loadWeeklyInvoicesList() {
         <td><span style="font-size:11px;font-weight:700;background:${stBg};color:${stColor};padding:2px 8px;border-radius:10px">${stLabel}</span></td>
         <td>${sentTag}</td>
         <td style="white-space:nowrap">
-          <button class="btn btn-outline btn-sm" onclick="window.open('/api/restaurant/weekly-invoices/${inv.id}/pdf?token=${token}','_blank')" title="Télécharger PDF">📄</button>
+          <button class="btn btn-outline btn-sm" onclick="openPdf('/api/restaurant/weekly-invoices/${inv.id}/pdf',token)" title="Télécharger PDF">📄</button>
           <button class="btn btn-outline btn-sm" onclick="openWiCommentModal(${inv.id},${JSON.stringify(inv.notes||'')})" title="Commentaire" style="padding:2px 6px">💬</button>
           <button class="btn btn-danger btn-sm" onclick="deleteWi(${inv.id})" title="Supprimer" style="padding:2px 6px;margin-left:2px">🗑</button>
         </td>
@@ -3797,19 +3801,19 @@ async function loadInvoicesHistory() {
       const sentBadge = inv.sent
         ? '<span style="font-size:11px;color:#2563EB;font-weight:600">📤 Oui</span>'
         : '<span style="font-size:11px;color:var(--muted)">Non</span>';
-      const noteCell = inv.notes ? `<span title="${inv.notes.replace(/"/g,'&quot;')}" style="font-size:11px;color:var(--muted);font-style:italic;max-width:100px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">💬 ${inv.notes}</span>` : '—';
-      const pdfUrl = inv.type === 'classic' ? `/api/restaurant/invoices/${inv.id}/pdf?token=${token}` : `/api/restaurant/weekly-invoices/${inv.id}/pdf?token=${token}`;
+      const noteCell = inv.notes ? `<span title="${escapeHtml(inv.notes)}" style="font-size:11px;color:var(--muted);font-style:italic;max-width:100px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">💬 ${escapeHtml(inv.notes)}</span>` : '—';
+      const pdfUrl = inv.type === 'classic' ? `/api/restaurant/invoices/${inv.id}/pdf` : `/api/restaurant/weekly-invoices/${inv.id}/pdf`;
       return `<tr>
-        <td style="font-size:11px;color:var(--muted);white-space:nowrap"><strong>${ref}</strong></td>
+        <td style="font-size:11px;color:var(--muted);white-space:nowrap"><strong>${escapeHtml(ref)}</strong></td>
         <td>${typeBadge}</td>
-        <td style="font-size:13px">${inv.company_name||'—'}</td>
+        <td style="font-size:13px">${escapeHtml(inv.company_name||'—')}</td>
         <td style="font-size:12px;white-space:nowrap">${periode}</td>
         <td style="font-weight:700;color:var(--orange);white-space:nowrap">${fmtCFA(inv.total_amount||0)} FCFA</td>
         <td><span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:${stBg};color:${stColor}">${stLabel}</span></td>
         <td>${sentBadge}</td>
         <td style="max-width:120px">${noteCell}</td>
         <td style="white-space:nowrap">
-          <button class="btn btn-outline btn-sm" onclick="window.open('${pdfUrl}','_blank')" title="PDF">📄</button>
+          <button class="btn btn-outline btn-sm" onclick="openPdf('${jsStr(pdfUrl)}',token)" title="PDF">📄</button>
           <button class="btn btn-outline btn-sm" onclick="openIhNoteModal('${inv.type}',${inv.id},${JSON.stringify(inv.notes||'')})" title="Commenter" style="padding:3px 7px">💬</button>
           <button class="btn btn-danger btn-sm" onclick="deleteIhInvoice('${inv.type}',${inv.id})" title="Supprimer" style="padding:3px 7px">🗑</button>
         </td>
@@ -3844,7 +3848,7 @@ function _renderIhStats(rows) {
 }
 
 async function deleteIhInvoice(type, id) {
-  if (!confirm('Supprimer définitivement cette facture ?')) return;
+  if (!confirm('Supprimer cette facture de votre historique ?\n\nElle sera déplacée dans la corbeille, où vous pourrez la restaurer tant qu\'elle n\'est pas purgée définitivement.')) return;
   try {
     const url = type === 'classic' ? `/api/restaurant/invoices/${id}` : `/api/restaurant/weekly-invoices/${id}`;
     await apiFetch(url, { method: 'DELETE' }, token);
@@ -3854,7 +3858,7 @@ async function deleteIhInvoice(type, id) {
 }
 
 async function clearAllInvoicesHistory() {
-  if (!confirm('Vider tout l\'historique des factures (classiques ET hebdomadaires) ?\n\nCette action est irréversible.')) return;
+  if (!confirm('Vider tout l\'historique des factures (classiques ET hebdomadaires) ?\n\nElles seront déplacées dans la corbeille, où vous pourrez les restaurer tant qu\'elles ne sont pas purgées définitivement.')) return;
   try {
     await Promise.all([
       apiFetch('/api/restaurant/invoices-history', { method: 'DELETE' }, token),
@@ -4183,6 +4187,7 @@ function filterDocSections(q) {
     if (match && query) sec.classList.add('open');
   });
 }
+const filterDocSectionsDebounced = debounce(filterDocSections);
 function toggleFaq(item) { item.classList.toggle('open'); }
 function initDocSearch() {
   const inp = document.getElementById('docSearchInput');
@@ -4221,15 +4226,15 @@ async function loadCompositionRequests() {
       const daysHtml = [1,2,3,4,5].map(d => {
         const items = dishesByDay[d] || [];
         if (!items.length) return '';
-        return `<div style="margin-bottom:6px"><strong style="font-size:11px;color:var(--brown)">${DAY_NAMES[d]} :</strong> ${items.map(i=>`<span style="background:#f3f4f6;padding:1px 6px;border-radius:6px;font-size:11px">${i.dish_name} ×${i.quantity}</span>`).join(' ')}</div>`;
+        return `<div style="margin-bottom:6px"><strong style="font-size:11px;color:var(--brown)">${DAY_NAMES[d]} :</strong> ${items.map(i=>`<span style="background:#f3f4f6;padding:1px 6px;border-radius:6px;font-size:11px">${escapeHtml(i.dish_name)} ×${i.quantity}</span>`).join(' ')}</div>`;
       }).join('');
       const totalDishes = (c.dishes || []).reduce((s,d) => s + (d.quantity||1), 0);
       return `
       <div style="border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px">
           <div>
-            <div style="font-weight:700;font-size:14px;color:var(--brown)">${c.name || 'Composition sans nom'}</div>
-            <div style="font-size:12px;color:var(--muted)">${c.company_name} • Semaine du ${c.week_start} • ${totalDishes} plat(s)</div>
+            <div style="font-weight:700;font-size:14px;color:var(--brown)">${escapeHtml(c.name || 'Composition sans nom')}</div>
+            <div style="font-size:12px;color:var(--muted)">${escapeHtml(c.company_name)} • Semaine du ${c.week_start} • ${totalDishes} plat(s)</div>
           </div>
           <span style="background:${statusColor[c.status] || '#9ca3af'}20;color:${statusColor[c.status] || '#9ca3af'};font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;white-space:nowrap">${statusLabel[c.status] || c.status}</span>
         </div>
@@ -4238,13 +4243,13 @@ async function loadCompositionRequests() {
           ${c.company_proposed_price ? `<span>💰 Proposé : <strong style="color:var(--orange)">${fmtCFA(c.company_proposed_price)} FCFA</strong></span>` : ''}
           ${c.restaurant_counter_price ? `<span>🔄 Contre-proposition : <strong>${fmtCFA(c.restaurant_counter_price)} FCFA</strong></span>` : ''}
           ${c.final_price ? `<span>✅ Prix final : <strong style="color:#16a34a">${fmtCFA(c.final_price)} FCFA</strong></span>` : ''}
-          ${c.notes ? `<span>📝 ${c.notes}</span>` : ''}
+          ${c.notes ? `<span>📝 ${escapeHtml(c.notes)}</span>` : ''}
         </div>
         ${['submitted','negotiating'].includes(c.status) ? `
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-danger btn-sm" onclick="openCompositionRespond(${c.id},'${(c.name||'').replace(/'/g,"\\'")}','${(c.company_name||'').replace(/'/g,"\\'")}',${c.company_proposed_price||0})">❌ Refuser</button>
-          <button class="btn btn-outline btn-sm" onclick="openCompositionRespond(${c.id},'${(c.name||'').replace(/'/g,"\\'")}','${(c.company_name||'').replace(/'/g,"\\'")}',${c.company_proposed_price||0})">🔄 Contre-proposer</button>
-          <button class="btn btn-success btn-sm" onclick="openCompositionRespond(${c.id},'${(c.name||'').replace(/'/g,"\\'")}','${(c.company_name||'').replace(/'/g,"\\'")}',${c.company_proposed_price||0})">✅ Accepter</button>
+          <button class="btn btn-danger btn-sm" onclick="quickRespondComposition(${c.id},'reject')">❌ Refuser</button>
+          <button class="btn btn-outline btn-sm" onclick="openCompositionRespond(${c.id},'${jsStr(c.name||'')}','${jsStr(c.company_name||'')}',${c.company_proposed_price||0})">🔄 Contre-proposer</button>
+          <button class="btn btn-success btn-sm" onclick="quickRespondComposition(${c.id},'accept')">✅ Accepter</button>
         </div>` : ''}
       </div>`;
     }).join('');
@@ -4257,11 +4262,24 @@ function openCompositionRespond(id, name, companyName, proposedPrice) {
   document.getElementById('compRespondId').value = id;
   document.getElementById('compRespondTitle').textContent = `Répondre à la composition — ${name}`;
   document.getElementById('compRespondInfo').innerHTML = `
-    <strong>Entreprise :</strong> ${companyName}<br>
+    <strong>Entreprise :</strong> ${escapeHtml(companyName)}<br>
     <strong>Prix proposé :</strong> ${proposedPrice ? fmtCFA(proposedPrice) + ' FCFA' : 'Non spécifié'}`;
   document.getElementById('compCounterPrice').value = proposedPrice || '';
   document.getElementById('compRespondMessage').value = '';
   document.getElementById('compRespondModal').classList.add('open');
+}
+
+// Accepter/Refuser directement depuis la carte, sans passer par le modal de contre-proposition
+// (qui ne doit s'ouvrir que pour "Contre-proposer", où un prix/message est à saisir).
+async function quickRespondComposition(id, action) {
+  if (action === 'accept' && !confirm('Accepter cette composition ? Un nouveau menu sera créé selon les prix convenus.')) return;
+  if (action === 'reject' && !confirm('Refuser cette composition ?')) return;
+  try {
+    await apiFetch(`/api/restaurant/composition-requests/${id}/respond`, { method: 'PUT', body: { action } }, token);
+    toast(action === 'accept' ? '✅ Composition acceptée — nouveau menu créé' : 'Composition refusée', 'success');
+    loadCompositionRequests();
+    if (action === 'accept') loadWeeklyPacks(); else loadCompositionProposals();
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 async function respondComposition(action) {
@@ -4269,6 +4287,9 @@ async function respondComposition(action) {
   const counter_price = document.getElementById('compCounterPrice').value;
   const message = document.getElementById('compRespondMessage').value;
   if (action === 'counter' && !counter_price) { toast('Entrez un prix pour votre contre-proposition', 'error'); return; }
+  if (action === 'accept' && !confirm('Accepter cette composition ? Un nouveau menu sera créé selon les prix convenus.')) return;
+  if (action === 'reject' && !confirm('Refuser cette composition ?')) return;
+  setModalBusy('compRespondModal', true);
   try {
     await apiFetch(`/api/restaurant/composition-requests/${id}/respond`, {
       method: 'PUT', body: { action, counter_price: counter_price ? parseFloat(counter_price) : undefined, message }
@@ -4278,7 +4299,7 @@ async function respondComposition(action) {
     loadCompositionRequests();
     if (action === 'accept') { loadWeeklyPacks(); }
     else { loadCompositionProposals(); }
-  } catch(e) { toast(e.message, 'error'); }
+  } catch(e) { toast(e.message, 'error'); } finally { setModalBusy('compRespondModal', false); }
 }
 
 window.loadCompositionRequests = loadCompositionRequests;
@@ -4337,21 +4358,21 @@ async function loadRestaurantNegotiations() {
       <div style="border:${isMyTurn ? '2px solid #2563EB' : '1px solid var(--border)'};border-radius:12px;padding:16px;margin-bottom:12px;background:${isMyTurn ? '#eff6ff' : ''}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">
           <div style="min-width:0">
-            <div style="font-weight:700;font-size:14px;color:var(--brown)">${n.entity_name || entityLabel[n.entity_type] || n.entity_type}</div>
-            <div style="font-size:12px;color:var(--muted)">${n.company_name} · ${entityLabel[n.entity_type] || n.entity_type}${n._source === 'composition' ? ' 📋' : ''}</div>
+            <div style="font-weight:700;font-size:14px;color:var(--brown)">${escapeHtml(n.entity_name || entityLabel[n.entity_type] || n.entity_type)}</div>
+            <div style="font-size:12px;color:var(--muted)">${escapeHtml(n.company_name)} · ${entityLabel[n.entity_type] || n.entity_type}${n._source === 'composition' ? ' 📋' : ''}</div>
           </div>
           <span style="background:${statusColor[n.status]||'#9ca3af'}20;color:${statusColor[n.status]||'#9ca3af'};font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;white-space:nowrap">${statusLabel[n.status]||n.status}</span>
         </div>
         <div style="display:flex;gap:12px;font-size:12px;margin-bottom:10px;flex-wrap:wrap;padding:6px 10px;background:#f9fafb;border-radius:8px">
           <span>Prix proposé : <strong>${fmtCFA(n.original_price||0)} FCFA</strong></span>
-          ${lastMsg && lastMsg.proposed_price !== n.original_price ? `<span>Dernière offre : <strong style="color:var(--orange)">${fmtCFA(lastMsg.proposed_price||0)} FCFA</strong> (${lastMsg.sent_by === 'company' ? n.company_name : 'Vous'})</span>` : ''}
+          ${lastMsg && lastMsg.proposed_price !== n.original_price ? `<span>Dernière offre : <strong style="color:var(--orange)">${fmtCFA(lastMsg.proposed_price||0)} FCFA</strong> (${lastMsg.sent_by === 'company' ? escapeHtml(n.company_name) : 'Vous'})</span>` : ''}
           ${n.final_agreed_price ? `<span style="color:#16a34a;font-weight:700">✅ Accordé : ${fmtCFA(n.final_agreed_price)} FCFA</span>` : ''}
         </div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:10px;max-height:120px;overflow-y:auto">
           ${(n.messages||[]).map(m => `<div style="padding:3px 0;border-bottom:1px solid #f3f4f6">
-            <span style="font-weight:600;color:${m.sent_by==='company'?'#2563EB':'var(--orange)'}">${m.sent_by === 'company' ? n.company_name : 'Vous'}</span>
+            <span style="font-weight:600;color:${m.sent_by==='company'?'#2563EB':'var(--orange)'}">${m.sent_by === 'company' ? escapeHtml(n.company_name) : 'Vous'}</span>
             ${m.action === 'propose' || m.action === 'counter' ? '💰 ' + fmtCFA(m.proposed_price||0) + ' FCFA' : m.action === 'accept' ? '✅ Accepté' : '❌ Refusé'}
-            ${m.message ? `— "${m.message}"` : ''}
+            ${m.message ? `— "${escapeHtml(m.message)}"` : ''}
           </div>`).join('')}
         </div>
         ${isMyTurn ? `
@@ -4359,12 +4380,12 @@ async function loadRestaurantNegotiations() {
           <span style="font-size:11px;color:#2563EB;font-weight:600;align-self:center">👆 C'est votre tour :</span>
           ${n._source === 'composition' ? `
             <button class="btn btn-danger btn-sm" onclick="respondCompositionRest(${n.id},'reject')">❌ Refuser</button>
-            <button class="btn btn-outline btn-sm" onclick="openCompositionRespond(${n.id},'${(n.entity_name||'').replace(/'/g,"\\'")}','${(n.company_name||'').replace(/'/g,"\\'")}',${n.original_price||0})">🔄 Contre-proposer</button>
+            <button class="btn btn-outline btn-sm" onclick="openCompositionRespond(${n.id},'${jsStr(n.entity_name||'')}','${jsStr(n.company_name||'')}',${n.original_price||0})">🔄 Contre-proposer</button>
             <button class="btn btn-success btn-sm" onclick="respondCompositionRest(${n.id},'accept')">✅ Accepter</button>
           ` : `
-            <button class="btn btn-danger btn-sm" onclick="openNegoRespondRest(${n.id},'${(n.entity_name||'').replace(/'/g,"\\'")}','${(n.company_name||'').replace(/'/g,"\\'")}',${n.original_price||0})">❌ Refuser</button>
-            <button class="btn btn-outline btn-sm" onclick="openNegoRespondRest(${n.id},'${(n.entity_name||'').replace(/'/g,"\\'")}','${(n.company_name||'').replace(/'/g,"\\'")}',${n.original_price||0})">🔄 Contre-proposer</button>
-            <button class="btn btn-success btn-sm" onclick="openNegoRespondRest(${n.id},'${(n.entity_name||'').replace(/'/g,"\\'")}','${(n.company_name||'').replace(/'/g,"\\'")}',${n.original_price||0})">✅ Accepter</button>
+            <button class="btn btn-danger btn-sm" onclick="openNegoRespondRest(${n.id},'${jsStr(n.entity_name||'')}','${jsStr(n.company_name||'')}',${n.original_price||0})">❌ Refuser</button>
+            <button class="btn btn-outline btn-sm" onclick="openNegoRespondRest(${n.id},'${jsStr(n.entity_name||'')}','${jsStr(n.company_name||'')}',${n.original_price||0})">🔄 Contre-proposer</button>
+            <button class="btn btn-success btn-sm" onclick="openNegoRespondRest(${n.id},'${jsStr(n.entity_name||'')}','${jsStr(n.company_name||'')}',${n.original_price||0})">✅ Accepter</button>
           `}
         </div>` : ''}
       </div>`;
@@ -4376,6 +4397,8 @@ async function loadRestaurantNegotiations() {
 }
 
 async function respondCompositionRest(id, action) {
+  if (action === 'accept' && !confirm('Accepter cette composition ? Un nouveau menu sera créé selon les prix convenus.')) return;
+  if (action === 'reject' && !confirm('Refuser cette composition ?')) return;
   try {
     await apiFetch(`/api/restaurant/composition-requests/${id}/respond`, { method: 'PUT', body: { action } }, token);
     toast(action === 'accept' ? '✅ Composition acceptée — nouveau menu créé' : '❌ Composition refusée', 'success');
@@ -4388,7 +4411,7 @@ async function respondCompositionRest(id, action) {
 function openNegoRespondRest(id, entityName, companyName, originalPrice) {
   document.getElementById('negoRespondIdRest').value = id;
   document.getElementById('negoRespondTitleRest').textContent = `Négociation — ${entityName}`;
-  document.getElementById('negoRespondInfoRest').innerHTML = `<strong>Entreprise :</strong> ${companyName}<br><strong>Prix catalogue :</strong> ${fmtCFA(originalPrice)} FCFA`;
+  document.getElementById('negoRespondInfoRest').innerHTML = `<strong>Entreprise :</strong> ${escapeHtml(companyName)}<br><strong>Prix catalogue :</strong> ${fmtCFA(originalPrice)} FCFA`;
   document.getElementById('negoCounterPriceRest').value = '';
   document.getElementById('negoRespondMsgRest').value = '';
   document.getElementById('negoRespondModalRest').classList.add('open');
@@ -4399,6 +4422,9 @@ async function respondNegoRest(action) {
   const proposed_price = document.getElementById('negoCounterPriceRest').value;
   const message = document.getElementById('negoRespondMsgRest').value;
   if (action === 'counter' && !proposed_price) { toast('Entrez un prix pour la contre-proposition', 'error'); return; }
+  if (action === 'accept' && !confirm('Accepter ce prix ? Cet engagement sera transmis à l\'entreprise.')) return;
+  if (action === 'reject' && !confirm('Refuser cette proposition ?')) return;
+  setModalBusy('negoRespondModalRest', true);
   try {
     await apiFetch(`/api/restaurant/negotiations/${id}/respond`, {
       method: 'POST', body: { action, proposed_price: proposed_price ? parseFloat(proposed_price) : undefined, message }
@@ -4406,7 +4432,7 @@ async function respondNegoRest(action) {
     closeModal(document.getElementById('negoRespondModalRest'));
     toast(action === 'accept' ? '✅ Prix accepté' : action === 'reject' ? 'Proposition refusée' : '🔄 Contre-proposition envoyée', 'success');
     loadRestaurantNegotiations();
-  } catch(e) { toast(e.message, 'error'); }
+  } catch(e) { toast(e.message, 'error'); } finally { setModalBusy('negoRespondModalRest', false); }
 }
 
 window.loadRestaurantNegotiations = loadRestaurantNegotiations;
